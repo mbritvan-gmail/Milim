@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { supabaseConfigured } from "@/lib/supabase/env";
 
 export function LoginForm({ next }: { next: string }) {
   const [email, setEmail] = useState("");
@@ -13,19 +14,32 @@ export function LoginForm({ next }: { next: string }) {
     setStatus("sending");
     setMessage("");
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(next)}`,
-      },
-    });
-
-    if (error) {
+    if (!supabaseConfigured) {
       setStatus("error");
-      setMessage(error.message);
-    } else {
-      setStatus("sent");
+      setMessage(
+        "Sign-in isn't set up on this site yet (missing Supabase settings). Add the Supabase environment variables in Vercel, then redeploy.",
+      );
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(next)}`,
+        },
+      });
+
+      if (error) {
+        setStatus("error");
+        setMessage(error.message);
+      } else {
+        setStatus("sent");
+      }
+    } catch {
+      setStatus("error");
+      setMessage("Couldn't reach the sign-in service. Check your connection and try again.");
     }
   }
 
