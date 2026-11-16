@@ -88,7 +88,20 @@ export class AnthropicProvider implements AIProvider {
     this.model = process.env.AI_MODEL || "claude-sonnet-5-5";
   }
 
-  async analyzeLyrics({ title, lines }: AnalyzeLyricsInput): Promise<LyricsAnalysis> {
+  async analyzeLyrics({ title, lines: allLines }: AnalyzeLyricsInput): Promise<LyricsAnalysis> {
+    // Choruses repeat: translate each distinct line once and reuse it for the repeats.
+    // This is faster, cheaper, and keeps repeated lines perfectly consistent.
+    const uniqueIndex = new Map<string, number>();
+    const lines: string[] = [];
+    const firstOccurrence: number[] = []; // unique index -> first position in allLines
+    allLines.forEach((line, i) => {
+      if (!uniqueIndex.has(line)) {
+        uniqueIndex.set(line, lines.length);
+        lines.push(line);
+        firstOccurrence.push(i);
+      }
+    });
+
     // Process chunks in parallel to keep long songs fast.
     const chunks: { offset: number; lines: string[] }[] = [];
     for (let i = 0; i < lines.length; i += CHUNK_SIZE) {
@@ -98,7 +111,8 @@ export class AnthropicProvider implements AIProvider {
     const signal = AbortSignal.timeout(DEADLINE_MS);
     const results = await Promise.all(chunks.map((c) => this.analyzeChunk(title, c.lines, c.offset, signal)));
 
-    const outLines: AnalyzedLine[] = results.flatMap((r) => r.lines);
+    const uniqueAnalyzed: AnalyzedLine[] = results.flatMap((r) => r.lines);
+    const outLines: AnalyzedLine[] = allLines.map((line) => uniqueAnalyzed[uniqueIndex.get(line)!]);
 
     // Merge vocab across chunks, keeping the first entry for each word (by lemma).
     const seen = new Set<string>();
@@ -107,7 +121,8 @@ export class AnthropicProvider implements AIProvider {
       const key = word.lemma;
       if (!seen.has(key)) {
         seen.add(key);
-        vocab.push(word);
+        // Point the word at the first place the line appears in the full lyrics.
+        vocab.push({ ...word, line_index: firstOccurrence[word.line_index] ?? word.line_index });
       }
     }
     return { lines: outLines, vocab };
@@ -144,7 +159,7 @@ export class AnthropicProvider implements AIProvider {
     const response = await this.client.messages.parse(
       {
         model: this.model,
-        max_tokens: 16000,
+        max_tokens: 6000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: buildUserMessage(title, lines, offset) }],
         output_config: {
@@ -201,7 +216,7 @@ export class AnthropicProvider implements AIProvider {
             const response = await this.client.messages.parse(
               {
                 model: this.model,
-                max_tokens: 8000,
+                max_tokens: 4000,
                 system: DISTRACTOR_PROMPT,
                 messages: [{ role: "user", content: `Words:\n${listing}` }],
                 output_config: { effort: "low", format: zodOutputFormat(DistractorSchema) },

@@ -34,7 +34,7 @@ export function NewSongForm() {
         <label htmlFor="title" className="text-sm text-muted">
           Song title
         </label>
-        <input id="title" name="title" required maxLength={120} className={field} placeholder="e.g. Hallelujah" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <input id="title" name="title" required maxLength={120} className={field} placeholder="e.g. Hatikvah" value={title} onChange={(e) => setTitle(e.target.value)} />
       </div>
 
       <div className="flex flex-col gap-2">

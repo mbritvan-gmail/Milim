@@ -25,11 +25,18 @@ const SECTION_NAMES: [RegExp, string][] = [
 
 // English name for a section label, for display ("[בית 2]" -> "Verse 2").
 export function sectionEnglish(label: string): string | null {
-  const inner = label.trim().replace(/^\[|\]$/g, "").trim();
+  // Tolerate stray quotes or punctuation, e.g. "['בית א]".
+  const inner = label
+    .trim()
+    .replace(/^\[|\]$/g, "")
+    .replace(/^[^\p{L}\d]+/u, "")
+    .trim();
   for (const [pattern, name] of SECTION_NAMES) {
     if (pattern.test(inner)) {
-      const number = inner.match(/\d+/);
-      return number ? `${name} ${number[0]}` : name;
+      const digits = inner.match(/\d+/);
+      const letter = inner.match(/\s([אבגד])['׳]?$/);
+      const number = digits ? digits[0] : letter ? String("אבגד".indexOf(letter[1]) + 1) : null;
+      return number ? `${name} ${number}` : name;
     }
   }
   // An English-only label we don't recognise is shown as written.

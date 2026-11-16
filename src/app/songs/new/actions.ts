@@ -12,15 +12,30 @@ export type CreateSongState = { error?: string };
 
 const DAILY_SONG_LIMIT = 15;
 
-export async function createSong(
-  _prev: CreateSongState,
-  formData: FormData,
-): Promise<CreateSongState> {
+type CreateSongOutcome = { error?: string; songId?: string; signedOut?: boolean };
+
+// Wraps the real work so that any unexpected failure becomes a friendly message in the
+// form instead of crashing the page. (redirect() works by throwing, so it's called here,
+// outside the try block.)
+export async function createSong(_prev: CreateSongState, formData: FormData): Promise<CreateSongState> {
+  let outcome: CreateSongOutcome;
+  try {
+    outcome = await runCreateSong(formData);
+  } catch (error) {
+    console.error("createSong crashed", error);
+    return { error: "Something went wrong while saving your song. Please try again." };
+  }
+  if (outcome.signedOut) redirect("/login");
+  if (outcome.songId) redirect(`/songs/${outcome.songId}`);
+  return { error: outcome.error };
+}
+
+async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) return { signedOut: true };
 
   const title = String(formData.get("title") ?? "").trim();
   const artist = String(formData.get("artist") ?? "").trim();
@@ -58,7 +73,9 @@ export async function createSong(
 
   let songId: string;
   try {
+    const aiStarted = Date.now();
     const analysis = await getAIProvider().analyzeLyrics({ title, lines });
+    console.log(`createSong: AI done lines=${lines.length} words=${analysis.vocab.length} ms=${Date.now() - aiStarted}`);
 
     // Put section labels (Verse, Chorus...) back in their original places. They are not
     // translated by the AI; they get a standard English name instead.
@@ -155,7 +172,7 @@ export async function createSong(
     return { error: "Something went wrong while saving your song. Please try again." };
   }
 
-  redirect(`/songs/${songId}`);
+  return { songId };
 }
 
 export type SpotifySearchResult = { matches?: SpotifyMatch[]; error?: string };
