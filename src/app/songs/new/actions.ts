@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
-import { MAX_LINES, MAX_LYRICS_CHARS, splitLyrics } from "@/lib/lyrics";
+import { MAX_LINES, MAX_LYRICS_CHARS, parseLyrics, sectionEnglish } from "@/lib/lyrics";
 import { parseMedia } from "@/lib/media";
 
 export type CreateSongState = { error?: string };
@@ -32,7 +32,8 @@ export async function createSong(
     return { error: `Lyrics are too long (max ${MAX_LYRICS_CHARS.toLocaleString()} characters).` };
   }
 
-  const lines = splitLyrics(lyrics);
+  const items = parseLyrics(lyrics);
+  const lines = items.filter((i) => !i.section).map((i) => i.text);
   if (lines.length === 0) return { error: "Paste some Hebrew lyrics (we couldn't find any Hebrew text)." };
   if (lines.length > MAX_LINES) return { error: `Too many lines (max ${MAX_LINES}). Try one song at a time.` };
 
@@ -57,6 +58,22 @@ export async function createSong(
   try {
     const analysis = await getAIProvider().analyzeLyrics({ title, lines });
 
+    // Put section labels (Verse, Chorus...) back in their original places. They are not
+    // translated by the AI; they get a standard English name instead.
+    type Row = { hebrew: string; transliteration: string | null; english: string | null };
+    const rows: Row[] = [];
+    const positionOfLyric: number[] = []; // lyric index (as the AI saw it) -> final position
+    let lyricIndex = 0;
+    for (const item of items) {
+      if (item.section) {
+        rows.push({ hebrew: item.text, transliteration: null, english: sectionEnglish(item.text) });
+      } else {
+        const l = analysis.lines[lyricIndex++];
+        positionOfLyric.push(rows.length);
+        rows.push({ hebrew: l.hebrew, transliteration: l.transliteration || null, english: l.english || null });
+      }
+    }
+
     // Always create as private first, so a failure part-way can be cleaned up
     // (public songs can't be deleted). Make it public only at the very end.
     const { data: song, error: songError } = await supabase
@@ -78,13 +95,7 @@ export async function createSong(
       const { data: lineRows, error: linesError } = await supabase
         .from("lines")
         .insert(
-          analysis.lines.map((l, i) => ({
-            song_id: songId,
-            position: i,
-            hebrew: l.hebrew,
-            transliteration: l.transliteration || null,
-            english: l.english || null,
-          })),
+          rows.map((r, i) => ({ song_id: songId, position: i, ...r })),
         )
         .select("id, position");
       if (linesError || !lineRows) throw new Error(`lines insert: ${linesError?.message}`);
@@ -117,7 +128,7 @@ export async function createSong(
             song_id: songId,
             vocab_entry_id: vocabId,
             surface_form: w.surface_form,
-            line_id: lineIdByPosition.get(w.line_index) ?? null,
+            line_id: lineIdByPosition.get(positionOfLyric[w.line_index]) ?? null,
             source: "ai",
           });
         }

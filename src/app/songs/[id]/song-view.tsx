@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { isSectionLabel } from "@/lib/lyrics";
 import { setTransliteration } from "./actions";
 
 export type SongLine = { id: string; hebrew: string; transliteration: string | null; english: string | null };
@@ -26,7 +27,9 @@ export function SongView({
   const [showTranslit, setShowTranslit] = useState(initialShowTranslit);
   const [, startTransition] = useTransition();
 
-  const allRevealed = revealed.size === lines.length;
+  // Section labels (Verse, Chorus...) are headings, not tappable lines.
+  const lyricLines = lines.filter((l) => !isSectionLabel(l.hebrew));
+  const allRevealed = lyricLines.length > 0 && lyricLines.every((l) => revealed.has(l.id));
 
   function toggleLine(id: string) {
     setRevealed((prev) => {
@@ -51,7 +54,7 @@ export function SongView({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <button
             type="button"
-            onClick={() => setRevealed(allRevealed ? new Set() : new Set(lines.map((l) => l.id)))}
+            onClick={() => setRevealed(allRevealed ? new Set() : new Set(lyricLines.map((l) => l.id)))}
             className="rounded-full border border-border px-3 py-1.5 text-sm text-foreground hover:bg-surface-2"
           >
             {allRevealed ? "Hide all English" : "Show all English"}
@@ -76,6 +79,16 @@ export function SongView({
 
         <ul className="flex flex-col gap-2">
           {lines.map((line) => {
+            if (isSectionLabel(line.hebrew)) {
+              return (
+                <li key={line.id} className="flex items-baseline gap-2 px-1 pt-4 text-sm font-medium text-accent">
+                  <span lang="he" className="hebrew">
+                    {line.hebrew.replace(/^\[|\]$/g, "")}
+                  </span>
+                  {line.english && <span className="text-muted">· {line.english}</span>}
+                </li>
+              );
+            }
             const open = revealed.has(line.id);
             return (
               <li key={line.id}>
