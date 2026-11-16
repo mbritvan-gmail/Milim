@@ -37,6 +37,7 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 7. Housekeeping: delete the stray Vercel variable named `default` if still present.
 
 ## Notes
+- Spotify embeds play 30-second previews unless the listener is logged in to Spotify (Premium for full songs); Safari often blocks that. We added an "Open the full song" link. Possible later: Spotify Web Playback SDK (Premium only), or YouTube links for full playback.
 - Friends-and-family scale for now. Tighten rules (vocab insert policy, moderation) before a wider rollout.
 - Do not share the Supabase `sb_secret_...` key anywhere. It isn't needed yet.
 - Dashboard menu names in Supabase and Vercel change often; when unsure, send a screenshot.
