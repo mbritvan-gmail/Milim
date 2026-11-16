@@ -5,8 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import { parseMedia } from "@/lib/media";
 import { SongView, type SongLine, type SongWord } from "./song-view";
 import { SongActions } from "./song-actions";
+import { QuizStartButton } from "./quiz-start-button";
+import { prepareQuiz } from "./quiz/actions";
 
 export const metadata = { title: "Song · Milim" };
+
+// Preparing quiz answers with the AI the first time can take a little while.
+export const maxDuration = 60;
 
 export default function SongPage({ params }: { params: Promise<{ id: string }> }) {
   return (
@@ -31,7 +36,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
 
   // Row-level security decides what this user may see; a song they can't see is
   // simply "not found".
-  const [songRes, linesRes, wordsRes, profileRes] = await Promise.all([
+  const [songRes, linesRes, wordsRes, profileRes, attemptsRes] = await Promise.all([
     supabase.from("songs").select("id, title, artist, media_url, visibility, owner_id").eq("id", id).maybeSingle(),
     supabase.from("lines").select("id, hebrew, transliteration, english").eq("song_id", id).order("position"),
     supabase
@@ -39,6 +44,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       .select("surface_form, vocab_entries(id, lemma, transliteration, english, part_of_speech)")
       .eq("song_id", id),
     supabase.from("profiles").select("show_transliteration").eq("id", user.id).maybeSingle(),
+    supabase.from("quiz_attempts").select("score, total").eq("song_id", id).order("taken_at", { ascending: false }).limit(50),
   ]);
 
   const song = songRes.data;
@@ -50,6 +56,11 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
     return entry ? [{ ...entry, surface_form: row.surface_form }] : [];
   });
   const media = parseMedia(song.media_url);
+  const attempts = attemptsRes.data ?? [];
+  const best = attempts.reduce<{ score: number; total: number } | null>(
+    (b, a) => (!b || a.score / a.total > b.score / b.total ? a : b),
+    null,
+  );
 
   return (
     <>
@@ -86,6 +97,24 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
           </a>
         </p>
       )}
+
+      <section aria-label="Quiz" className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+        <h2 className="text-lg font-semibold">Practice</h2>
+        {words.length === 0 ? (
+          <p className="text-sm text-muted">This song has no key words yet, so there&apos;s nothing to quiz.</p>
+        ) : (
+          <>
+            <p className="text-sm text-muted">
+              {attempts.length === 0
+                ? `Test yourself on ${words.length} key words.`
+                : `Best score ${best!.score}/${best!.total} · ${attempts.length} ${attempts.length === 1 ? "attempt" : "attempts"}`}
+            </p>
+            <form action={prepareQuiz.bind(null, song.id)}>
+              <QuizStartButton label={attempts.length === 0 ? "Take the quiz" : "Take the quiz again"} />
+            </form>
+          </>
+        )}
+      </section>
 
       <SongView lines={lines} words={words} initialShowTranslit={profileRes.data?.show_transliteration ?? true} />
 

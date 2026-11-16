@@ -25,16 +25,19 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Verified end to end by the user with a real song. Bracketed section labels like `[Chorus]` / `[בית א']` become headings (not translated).
 - No server-side refusal fallback is configured (lyrics are benign); refusals show a friendly error.
 
+## Built since (awaiting live test)
+- Per-song quiz at `/songs/[id]/quiz`: up to 15 words (unlearned first), 4 choices, Clue button (shows the lyric line), instant feedback,
+  server-graded results saved to `quiz_attempts`/`quiz_answers`, Leitner updates via `record_answer`, retakes, best score on the song page.
+  Wrong answers are written once by the AI (`generateDistractors`), cached in `quiz_options`, topped up from other words if needed.
+- "Find on YouTube" on the add-lyrics form. Needs `YOUTUBE_API_KEY` in Vercel (Google Cloud -> YouTube Data API v3 key; about 100 searches/day free).
+
 ## Next steps, in order
-1. Spotify song lookup on the add-lyrics form ("Find on Spotify"). Code needs `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in Vercel (Secret, Production).
-2. Custom domain `milim.britvan.net` (in progress): Vercel Settings -> Domains -> Add Existing; CNAME in Namecheap (host `milim`, value shown by Vercel);
-   then Supabase Site URL = `https://milim.britvan.net` and add `https://milim.britvan.net/**` to Redirect URLs (keep the vercel.app one).
-3. (Delete/archive/remove-from-list is built: private owner -> delete; public owner -> archive; others -> remove from list.)
-   Edit/regenerate translations, tap a word to add key vocab, remove vocab (owner only).
-4. Per-song quiz (cached distractors in `quiz_options`), results + retakes, Leitner flashcards, Master Dictionary page.
-5. Libraries, public library page, edit suggestions + owner approval.
-6. Help page / tips: explain that section names should be put in [brackets] (e.g. [Chorus], [בית 2]) when pasting lyrics; one line per row; public is permanent.
-7. Housekeeping: delete the stray Vercel variable named `default` if still present.
+1. Live test the quiz on a real song; fix whatever shows up. Set up `YOUTUBE_API_KEY` and test YouTube search.
+2. Leitner flashcards (due words across songs) and the Master Dictionary page (browse/practice all words, mark as known via `mark_word_known`).
+3. Edit/regenerate translations, tap a word to add key vocab, remove vocab (owner only).
+4. Libraries, public library page, edit suggestions + owner approval.
+5. Help page / tips: section names in [brackets], one line per row, public is permanent.
+6. Housekeeping: delete the stray Vercel variable named `default` if still present.
 
 ## Notes
 - Spotify embeds play 30-second previews unless the listener is logged in to Spotify (Premium for full songs); Safari often blocks that. We added an "Open the full song" link. Possible later: Spotify Web Playback SDK (Premium only), or YouTube links for full playback.

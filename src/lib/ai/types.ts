@@ -32,8 +32,12 @@ export type AnalyzeLyricsInput = {
   lines: string[];
 };
 
+export type DistractorInput = { lemma: string; english: string; part_of_speech?: string | null };
+
 export interface AIProvider {
   analyzeLyrics(input: AnalyzeLyricsInput): Promise<LyricsAnalysis>;
+  /** Wrong-but-plausible English answers for quiz questions, aligned with the input. */
+  generateDistractors(words: DistractorInput[]): Promise<string[][]>;
 }
 
 /** An error whose message is safe to show to the user. */

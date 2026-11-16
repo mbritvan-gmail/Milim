@@ -7,6 +7,7 @@ import {
   type AnalyzeLyricsInput,
   type AnalyzedLine,
   type AnalyzedWord,
+  type DistractorInput,
   type LyricsAnalysis,
 } from "./types";
 
@@ -35,6 +36,20 @@ const ChunkSchema = z.object({
     }),
   ),
 });
+
+const DistractorSchema = z.object({
+  items: z.array(z.object({ n: z.number().int(), distractors: z.array(z.string()) })),
+});
+
+const DISTRACTOR_PROMPT = `You write multiple-choice wrong answers for a Hebrew vocabulary quiz.
+
+You receive numbered Hebrew words with their correct English meaning. For each word write exactly 3 WRONG English answers that a learner might plausibly pick:
+- Same part of speech, similar length and register as the correct answer, and written in the same style (if the correct answer is "to run", wrong answers for verbs also start with "to").
+- Clearly wrong: never a synonym or near-synonym of the correct answer, and never the correct answer itself.
+- No two alike. Short glosses (one to three words), lower case unless a proper noun.
+- Ideally real words a learner could confuse with it (similar meaning area, or a similar-sounding Hebrew word), but not so close that two answers could both be correct.`;
+
+const DISTRACTOR_CHUNK = 30;
 
 const SYSTEM_PROMPT = `You help English speakers learn Hebrew through song lyrics.
 
@@ -168,5 +183,49 @@ export class AnthropicProvider implements AIProvider {
       }));
 
     return { lines: outLines, vocab };
+  }
+
+  async generateDistractors(words: DistractorInput[]): Promise<string[][]> {
+    const signal = AbortSignal.timeout(DEADLINE_MS);
+    const out: string[][] = words.map(() => []);
+
+    const jobs: Promise<void>[] = [];
+    for (let start = 0; start < words.length; start += DISTRACTOR_CHUNK) {
+      const slice = words.slice(start, start + DISTRACTOR_CHUNK);
+      jobs.push(
+        (async () => {
+          const listing = slice
+            .map((w, i) => `${i + 1}. ${w.lemma}${w.part_of_speech ? ` (${w.part_of_speech})` : ""} = ${w.english}`)
+            .join("\n");
+          try {
+            const response = await this.client.messages.parse(
+              {
+                model: this.model,
+                max_tokens: 8000,
+                system: DISTRACTOR_PROMPT,
+                messages: [{ role: "user", content: `Words:\n${listing}` }],
+                output_config: { effort: "low", format: zodOutputFormat(DistractorSchema) },
+              },
+              { signal },
+            );
+            if (response.stop_reason === "refusal" || !response.parsed_output) {
+              throw new AIError("The AI couldn't write quiz answers.");
+            }
+            for (const item of response.parsed_output.items) {
+              const idx = start + item.n - 1;
+              if (idx >= start && idx < start + slice.length) out[idx] = item.distractors;
+            }
+          } catch (error) {
+            if (error instanceof AIError) throw error;
+            if (signal.aborted || error instanceof Anthropic.APIUserAbortError) {
+              throw new AIError("Preparing the quiz took too long.");
+            }
+            throw new AIError("The AI service had a problem preparing the quiz.");
+          }
+        })(),
+      );
+    }
+    await Promise.all(jobs);
+    return out;
   }
 }

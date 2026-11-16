@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { createSong, findOnSpotify, type CreateSongState } from "./actions";
+import { createSong, findOnSpotify, findOnYouTube, type CreateSongState } from "./actions";
 import type { SpotifyMatch } from "@/lib/spotify";
 
 const field =
@@ -13,15 +13,17 @@ export function NewSongForm() {
   const [artist, setArtist] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
   const [matches, setMatches] = useState<SpotifyMatch[]>([]);
-  const [spotifyError, setSpotifyError] = useState("");
+  const [searchError, setSearchError] = useState("");
   const [searching, startSearch] = useTransition();
+  const [searchingKind, setSearchingKind] = useState<"spotify" | "youtube">("spotify");
 
-  function searchSpotify() {
-    setSpotifyError("");
+  function searchMedia(kind: "spotify" | "youtube") {
+    setSearchError("");
     setMatches([]);
+    setSearchingKind(kind);
     startSearch(async () => {
-      const result = await findOnSpotify(title, artist);
-      if (result.error) setSpotifyError(result.error);
+      const result = kind === "spotify" ? await findOnSpotify(title, artist) : await findOnYouTube(title, artist);
+      if (result.error) setSearchError(result.error);
       else setMatches(result.matches ?? []);
     });
   }
@@ -73,15 +75,26 @@ export function NewSongForm() {
           value={mediaUrl}
           onChange={(e) => setMediaUrl(e.target.value)}
         />
-        <button
-          type="button"
-          onClick={searchSpotify}
-          disabled={searching || !title.trim()}
-          className="self-start rounded-full border border-border px-4 py-2 text-sm hover:bg-surface-2 disabled:opacity-50"
-        >
-          {searching ? "Searching…" : "Find on Spotify"}
-        </button>
-        {spotifyError && <p className="text-sm text-danger">{spotifyError}</p>}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => searchMedia("spotify")}
+            disabled={searching || !title.trim()}
+            className="rounded-full border border-border px-4 py-2 text-sm hover:bg-surface-2 disabled:opacity-50"
+          >
+            {searching && searchingKind === "spotify" ? "Searching…" : "Find on Spotify"}
+          </button>
+          <button
+            type="button"
+            onClick={() => searchMedia("youtube")}
+            disabled={searching || !title.trim()}
+            className="rounded-full border border-border px-4 py-2 text-sm hover:bg-surface-2 disabled:opacity-50"
+          >
+            {searching && searchingKind === "youtube" ? "Searching…" : "Find on YouTube"}
+          </button>
+        </div>
+        <p className="text-xs text-muted">YouTube plays the full song in the player; Spotify may play only a preview.</p>
+        {searchError && <p className="text-sm text-danger">{searchError}</p>}
         {matches.length > 0 && (
           <ul className="flex flex-col gap-2">
             {matches.map((m) => (
