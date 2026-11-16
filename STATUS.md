@@ -15,16 +15,24 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Full magic-link sign-in works on https://milim-seven.vercel.app via Resend SMTP (sender milim@britvan.net),
   using the custom Magic Link template that points at `/auth/confirm?token_hash=...`.
 
+## Built, awaiting live test (needs the real Anthropic key + Supabase on the deployed site)
+- `/songs/new`: paste Hebrew lyrics (+ title, artist, optional Spotify/YouTube link, private/public) -> Claude translates lines,
+  adds transliteration, and extracts key vocab -> saved to Supabase -> `/songs/[id]`.
+- `/songs/[id]`: tap a line to reveal English, "show all", pronunciation (transliteration) toggle saved to the profile, key words list, embedded player.
+- AI layer: `src/lib/ai/` (provider interface; `AnthropicProvider`; model from `AI_MODEL`, default `claude-sonnet-5-5`).
+  Long songs are split into 25-line chunks processed in parallel; replies are schema-validated (Zod) with one retry.
+- Safeguards: 15 new songs per user per 24h, 100 lines / 12,000 characters per song, non-Hebrew lines ignored.
+- Unit-checked locally with a stubbed AI client (chunking, merging, retries, refusals). NOT yet run against the real API or database.
+- No server-side refusal fallback is configured (lyrics are benign); refusals show a friendly error.
+
 ## Next steps, in order
-1. Create an Anthropic API key (console.anthropic.com). Add it as `ANTHROPIC_API_KEY` in Vercel (Config not needed; use Secret, Production).
-   Never paste it in chat. For testing from the build session, the key can be supplied through the secure credential form.
-2. Build the paste-lyrics page and the Claude translation + vocab step. Provider interface under `src/lib/ai/`,
-   model from `AI_MODEL` (default `claude-sonnet-5-5`).
-3. Song reading view (tap to reveal English, transliteration toggle), vocab management, quiz, flashcards (Leitner),
-   libraries, public library and suggestions, Spotify/YouTube embeds.
-4. Custom domain `milim.britvan.net`: add it in Vercel, then a CNAME in Namecheap (host `milim`, value shown by Vercel).
+1. Live test on the deployed site: add a short song, check translations/vocab/transliteration; fix whatever the real API or database shows.
+2. Edit/regenerate translations, tap a word to add key vocab, remove vocab (owner only).
+3. Per-song quiz (cached distractors in `quiz_options`), results + retakes, Leitner flashcards, Master Dictionary page.
+4. Libraries, public library page, edit suggestions + owner approval.
+5. Custom domain `milim.britvan.net`: add it in Vercel, then a CNAME in Namecheap (host `milim`, value shown by Vercel).
    Then change Supabase Site URL / Redirect URLs to the new domain.
-5. Housekeeping: delete the stray Vercel variable named `default` if still present.
+6. Housekeeping: delete the stray Vercel variable named `default` if still present.
 
 ## Notes
 - Friends-and-family scale for now. Tighten rules (vocab insert policy, moderation) before a wider rollout.
