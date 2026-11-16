@@ -10,7 +10,11 @@ import {
   type LyricsAnalysis,
 } from "./types";
 
-const CHUNK_SIZE = 25;
+// Small chunks run in parallel, so a long song takes about as long as one short one.
+const CHUNK_SIZE = 12;
+// Give up a little before the hosting platform's own time limit (60s) so the user gets a
+// clear message instead of a generic browser error.
+const DEADLINE_MS = 50_000;
 
 const ChunkSchema = z.object({
   lines: z.array(
@@ -76,15 +80,16 @@ export class AnthropicProvider implements AIProvider {
       chunks.push({ offset: i, lines: lines.slice(i, i + CHUNK_SIZE) });
     }
 
-    const results = await Promise.all(chunks.map((c) => this.analyzeChunk(title, c.lines, c.offset)));
+    const signal = AbortSignal.timeout(DEADLINE_MS);
+    const results = await Promise.all(chunks.map((c) => this.analyzeChunk(title, c.lines, c.offset, signal)));
 
     const outLines: AnalyzedLine[] = results.flatMap((r) => r.lines);
 
-    // Merge vocab across chunks, dropping duplicates (same lemma and gloss).
+    // Merge vocab across chunks, keeping the first entry for each word (by lemma).
     const seen = new Set<string>();
     const vocab: AnalyzedWord[] = [];
     for (const word of results.flatMap((r) => r.vocab)) {
-      const key = `${word.lemma}|${word.english.toLowerCase()}`;
+      const key = word.lemma;
       if (!seen.has(key)) {
         seen.add(key);
         vocab.push(word);
@@ -93,34 +98,47 @@ export class AnthropicProvider implements AIProvider {
     return { lines: outLines, vocab };
   }
 
-  private async analyzeChunk(title: string | undefined, lines: string[], offset: number) {
+  private async analyzeChunk(title: string | undefined, lines: string[], offset: number, signal: AbortSignal) {
     // One retry covers an occasional malformed or incomplete reply.
     let lastError: unknown;
+    const started = Date.now();
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        return await this.callModel(title, lines, offset);
+        const result = await this.callModel(title, lines, offset, signal);
+        console.log(`analyzeChunk offset=${offset} lines=${lines.length} attempt=${attempt + 1} ms=${Date.now() - started}`);
+        return result;
       } catch (error) {
         lastError = error;
         if (error instanceof AIError) throw error; // refusals etc.: don't retry
+        if (signal.aborted || error instanceof Anthropic.APIUserAbortError) {
+          console.error(`analyzeChunk offset=${offset} timed out after ${Date.now() - started}ms`);
+          throw new AIError(
+            "This song is taking too long to translate. Try again, or add it in smaller parts (about 30 lines at a time).",
+          );
+        }
       }
     }
+    console.error(`analyzeChunk offset=${offset} failed`, lastError);
     if (lastError instanceof Anthropic.APIError) {
       throw new AIError(`The AI service had a problem (${lastError.status ?? "network"}). Please try again.`);
     }
     throw new AIError("The AI returned an unexpected answer. Please try again.");
   }
 
-  private async callModel(title: string | undefined, lines: string[], offset: number) {
-    const response = await this.client.messages.parse({
-      model: this.model,
-      max_tokens: 16000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildUserMessage(title, lines, offset) }],
-      output_config: {
-        effort: "medium",
-        format: zodOutputFormat(ChunkSchema),
+  private async callModel(title: string | undefined, lines: string[], offset: number, signal: AbortSignal) {
+    const response = await this.client.messages.parse(
+      {
+        model: this.model,
+        max_tokens: 16000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: buildUserMessage(title, lines, offset) }],
+        output_config: {
+          effort: "medium",
+          format: zodOutputFormat(ChunkSchema),
+        },
       },
-    });
+      { signal },
+    );
 
     if (response.stop_reason === "refusal") {
       throw new AIError("The AI couldn't process these lyrics. Try different lyrics or fewer lines.");

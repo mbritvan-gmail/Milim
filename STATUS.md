@@ -20,7 +20,7 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
   adds transliteration, and extracts key vocab -> saved to Supabase -> `/songs/[id]`.
 - `/songs/[id]`: tap a line to reveal English, "show all", pronunciation (transliteration) toggle saved to the profile, key words list, embedded player.
 - AI layer: `src/lib/ai/` (provider interface; `AnthropicProvider`; model from `AI_MODEL`, default `claude-sonnet-5-5`).
-  Long songs are split into 25-line chunks processed in parallel; replies are schema-validated (Zod) with one retry.
+  Long songs are split into 12-line chunks processed in parallel; replies are schema-validated (Zod) with one retry.
 - Safeguards: 15 new songs per user per 24h, 100 lines / 12,000 characters per song, non-Hebrew lines ignored.
 - Verified end to end by the user with a real song. Bracketed section labels like `[Chorus]` / `[בית א']` become headings (not translated).
 - No server-side refusal fallback is configured (lyrics are benign); refusals show a friendly error.

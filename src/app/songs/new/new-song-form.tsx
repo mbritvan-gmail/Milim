@@ -56,7 +56,7 @@ export function NewSongForm() {
           className={`${field} hebrew min-h-48 text-lg`}
           placeholder="הדבק כאן את המילים"
         />
-        <p className="text-xs text-muted">One line per row. Only lines with Hebrew are used.</p>
+        <p className="text-xs text-muted">One line per row. Put section names in brackets, like [Chorus] or [בית 2]. Only lines with Hebrew are used.</p>
       </div>
 
       <div className="flex flex-col gap-2">
