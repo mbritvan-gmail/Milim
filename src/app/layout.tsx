@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Heebo, Inter } from "next/font/google";
+import { Assistant, Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -7,8 +7,9 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const heebo = Heebo({
-  variable: "--font-heebo",
+// Hebrew text font. To try another, swap this import (e.g. Rubik, Noto_Sans_Hebrew, Frank_Ruhl_Libre).
+const hebrewFont = Assistant({
+  variable: "--font-hebrew-face",
   subsets: ["hebrew", "latin"],
 });
 
@@ -24,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${heebo.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${hebrewFont.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

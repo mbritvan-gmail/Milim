@@ -10,7 +10,9 @@ import { findVideos, YouTubeError, type YouTubeMatch } from "@/lib/youtube";
 
 export type CreateSongState = { error?: string };
 
-const DAILY_SONG_LIMIT = 15;
+// A safety net against runaway AI costs (each song costs a few cents). Set DAILY_SONG_LIMIT in
+// Vercel to change it; the default is generous for friends and family.
+const DAILY_SONG_LIMIT = Number(process.env.DAILY_SONG_LIMIT) || 100;
 
 type CreateSongOutcome = { error?: string; songId?: string; signedOut?: boolean };
 

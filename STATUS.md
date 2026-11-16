@@ -4,7 +4,7 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 
 ## Done
 - Product decisions locked (see README "Rules baked into the database").
-- Next.js 16 app, dark/soft-blue theme, Heebo Hebrew font.
+- Next.js 16 app, dark/soft-blue theme, Assistant Hebrew font (swap in src/app/layout.tsx).
 - Supabase project created; migration `supabase/migrations/20261116000000_initial_schema.sql` applied (13 tables + `master_dictionary` view).
 - Vercel project deployed from this branch.
 - Magic-link login coded: `/login`, `/auth/confirm`, `/auth/signout`, protected `/songs`, and `src/proxy.ts`.
@@ -40,6 +40,7 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 6. Housekeeping: delete the stray Vercel variable named `default` if still present.
 
 ## Notes
+- Daily new-song limit is a cost safety net: `DAILY_SONG_LIMIT` env var, default 100 per user per 24h.
 - Spotify embeds play 30-second previews unless the listener is logged in to Spotify (Premium for full songs); Safari often blocks that. We added an "Open the full song" link. Possible later: Spotify Web Playback SDK (Premium only), or YouTube links for full playback.
 - Friends-and-family scale for now. Tighten rules (vocab insert policy, moderation) before a wider rollout.
 - Do not share the Supabase `sb_secret_...` key anywhere. It isn't needed yet.

@@ -72,6 +72,15 @@ export async function submitQuiz(
   songId: string,
   answers: QuizAnswer[],
 ): Promise<QuizResult | { error: string }> {
+  try {
+    return await gradeQuiz(songId, answers);
+  } catch (error) {
+    console.error("submitQuiz crashed", error);
+    return { error: "Something went wrong saving your quiz." };
+  }
+}
+
+async function gradeQuiz(songId: string, answers: QuizAnswer[]): Promise<QuizResult | { error: string }> {
   const supabase = await createClient();
   const {
     data: { user },

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import { sameAnswer } from "@/lib/quiz";
 import { submitQuiz, type QuizAnswer, type QuizResult } from "./actions";
 
 export type QuizQuestion = {
@@ -31,19 +32,63 @@ export function QuizRunner({
   const [error, setError] = useState("");
   const [saving, startSaving] = useTransition();
 
+  // Marked in the browser, used only if the server can't save, so you still see your score.
+  function localResult(all: QuizAnswer[]): QuizResult {
+    const results = all.map((a) => {
+      const q = questions.find((x) => x.vocabId === a.vocabId)!;
+      return {
+        vocabId: a.vocabId,
+        lemma: q.lemma,
+        chosen: a.chosen,
+        correctAnswer: q.answer,
+        correct: sameAnswer(a.chosen, q.answer),
+      };
+    });
+    return { score: results.filter((r) => r.correct).length, total: results.length, results };
+  }
+
   function save(all: QuizAnswer[]) {
     setError("");
     startSaving(async () => {
-      const res = await submitQuiz(songId, all);
-      if ("error" in res) setError(res.error);
-      else setResult(res);
+      try {
+        const res = await submitQuiz(songId, all);
+        if ("error" in res) {
+          setError(res.error);
+          setResult(localResult(all));
+        } else {
+          setResult(res);
+        }
+      } catch {
+        setError("Couldn't reach the server.");
+        setResult(localResult(all));
+      }
     });
+  }
+
+  if (saving) {
+    return (
+      <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-surface p-8 text-center">
+        <p className="text-muted">Saving your results…</p>
+      </div>
+    );
   }
 
   if (result) {
     const pct = Math.round((result.score / result.total) * 100);
     return (
       <div className="flex flex-col gap-6">
+        {error && (
+          <div className="flex flex-col gap-2 rounded-xl border border-danger/40 bg-surface p-4 text-sm">
+            <p className="text-danger">Your score wasn&apos;t saved: {error}</p>
+            <button
+              type="button"
+              onClick={() => save(answers)}
+              className="self-start rounded-full border border-border px-4 py-2 hover:bg-surface-2"
+            >
+              Try saving again
+            </button>
+          </div>
+        )}
         <div className="rounded-xl border border-border bg-surface p-6 text-center">
           <p className="text-sm text-muted">Your score</p>
           <p className="mt-1 text-5xl font-bold text-accent">
@@ -107,27 +152,6 @@ export function QuizRunner({
       setSelected(null);
       setClueOpen(false);
     }
-  }
-
-  if (saving || (error && answers.length === questions.length)) {
-    return (
-      <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-surface p-8 text-center">
-        {error ? (
-          <>
-            <p className="text-danger">{error}</p>
-            <button
-              type="button"
-              onClick={() => save(answers)}
-              className="h-11 rounded-xl bg-accent px-6 font-semibold text-accent-contrast hover:bg-accent-strong"
-            >
-              Try saving again
-            </button>
-          </>
-        ) : (
-          <p className="text-muted">Saving your results…</p>
-        )}
-      </div>
-    );
   }
 
   return (
