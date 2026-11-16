@@ -1,13 +1,30 @@
 "use client";
 
-import { useActionState } from "react";
-import { createSong, type CreateSongState } from "./actions";
+import { useActionState, useState, useTransition } from "react";
+import { createSong, findOnSpotify, type CreateSongState } from "./actions";
+import type { SpotifyMatch } from "@/lib/spotify";
 
 const field =
   "w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none";
 
 export function NewSongForm() {
   const [state, action, pending] = useActionState<CreateSongState, FormData>(createSong, {});
+  const [title, setTitle] = useState("");
+  const [artist, setArtist] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [matches, setMatches] = useState<SpotifyMatch[]>([]);
+  const [spotifyError, setSpotifyError] = useState("");
+  const [searching, startSearch] = useTransition();
+
+  function searchSpotify() {
+    setSpotifyError("");
+    setMatches([]);
+    startSearch(async () => {
+      const result = await findOnSpotify(title, artist);
+      if (result.error) setSpotifyError(result.error);
+      else setMatches(result.matches ?? []);
+    });
+  }
 
   return (
     <form action={action} className="flex flex-col gap-5">
@@ -15,14 +32,14 @@ export function NewSongForm() {
         <label htmlFor="title" className="text-sm text-muted">
           Song title
         </label>
-        <input id="title" name="title" required maxLength={120} className={field} placeholder="e.g. Hallelujah" />
+        <input id="title" name="title" required maxLength={120} className={field} placeholder="e.g. Hallelujah" value={title} onChange={(e) => setTitle(e.target.value)} />
       </div>
 
       <div className="flex flex-col gap-2">
         <label htmlFor="artist" className="text-sm text-muted">
           Artist <span className="text-muted/70">(optional)</span>
         </label>
-        <input id="artist" name="artist" maxLength={120} className={field} />
+        <input id="artist" name="artist" maxLength={120} className={field} value={artist} onChange={(e) => setArtist(e.target.value)} />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -46,7 +63,48 @@ export function NewSongForm() {
         <label htmlFor="media_url" className="text-sm text-muted">
           Spotify or YouTube link <span className="text-muted/70">(optional)</span>
         </label>
-        <input id="media_url" name="media_url" type="url" inputMode="url" className={field} placeholder="https://" />
+        <input
+          id="media_url"
+          name="media_url"
+          type="url"
+          inputMode="url"
+          className={field}
+          placeholder="https://"
+          value={mediaUrl}
+          onChange={(e) => setMediaUrl(e.target.value)}
+        />
+        <button
+          type="button"
+          onClick={searchSpotify}
+          disabled={searching || !title.trim()}
+          className="self-start rounded-full border border-border px-4 py-2 text-sm hover:bg-surface-2 disabled:opacity-50"
+        >
+          {searching ? "Searching…" : "Find on Spotify"}
+        </button>
+        {spotifyError && <p className="text-sm text-danger">{spotifyError}</p>}
+        {matches.length > 0 && (
+          <ul className="flex flex-col gap-2">
+            {matches.map((m) => (
+              <li key={m.url}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMediaUrl(m.url);
+                    setMatches([]);
+                  }}
+                  className="flex w-full items-center gap-3 rounded-xl border border-border bg-surface p-2 text-left hover:bg-surface-2"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {m.image ? <img src={m.image} alt="" width={48} height={48} className="h-12 w-12 rounded-md" /> : <span className="h-12 w-12 rounded-md bg-border" />}
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{m.name}</span>
+                    <span className="block truncate text-sm text-muted">{m.artists}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">

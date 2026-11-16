@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
 import { MAX_LINES, MAX_LYRICS_CHARS, parseLyrics, sectionEnglish } from "@/lib/lyrics";
 import { parseMedia } from "@/lib/media";
+import { findTracks, SpotifyError, type SpotifyMatch } from "@/lib/spotify";
 
 export type CreateSongState = { error?: string };
 
@@ -154,4 +155,29 @@ export async function createSong(
   }
 
   redirect(`/songs/${songId}`);
+}
+
+export type SpotifySearchResult = { matches?: SpotifyMatch[]; error?: string };
+
+// "Find on Spotify": suggest tracks for a title and artist.
+export async function findOnSpotify(title: string, artist: string): Promise<SpotifySearchResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Please sign in again." };
+
+  const t = title.trim().slice(0, 120);
+  const a = artist.trim().slice(0, 120);
+  if (!t) return { error: "Enter the song title first." };
+
+  try {
+    const matches = await findTracks(t, a);
+    if (matches.length === 0) return { error: "No matches found on Spotify. You can paste a link instead." };
+    return { matches };
+  } catch (error) {
+    if (error instanceof SpotifyError) return { error: error.message };
+    console.error("findOnSpotify failed", error);
+    return { error: "Spotify search failed. Please try again." };
+  }
 }
