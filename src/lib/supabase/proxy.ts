@@ -14,6 +14,15 @@ function isPublic(pathname: string) {
 // Refreshes the Supabase session cookie on each request, and sends signed-out
 // visitors to /login when they open a protected page.
 export async function updateSession(request: NextRequest) {
+  // If Supabase sends a magic-link code to the site root (when the redirect URL
+  // isn't on its allow-list it falls back to the Site URL), hand it to the page
+  // that completes the sign-in.
+  if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/confirm";
+    return NextResponse.redirect(url);
+  }
+
   // Without Supabase settings (e.g. a deploy before env vars are added) keep the
   // public pages working instead of crashing.
   if (!supabaseConfigured) return NextResponse.next({ request });
