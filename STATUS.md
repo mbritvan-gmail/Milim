@@ -29,7 +29,8 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 1. Spotify song lookup on the add-lyrics form ("Find on Spotify"). Code needs `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` in Vercel (Secret, Production).
 2. Custom domain `milim.britvan.net` (in progress): Vercel Settings -> Domains -> Add Existing; CNAME in Namecheap (host `milim`, value shown by Vercel);
    then Supabase Site URL = `https://milim.britvan.net` and add `https://milim.britvan.net/**` to Redirect URLs (keep the vercel.app one).
-3. Edit/regenerate translations, tap a word to add key vocab, remove vocab (owner only).
+3. (Delete/archive/remove-from-list is built: private owner -> delete; public owner -> archive; others -> remove from list.)
+   Edit/regenerate translations, tap a word to add key vocab, remove vocab (owner only).
 4. Per-song quiz (cached distractors in `quiz_options`), results + retakes, Leitner flashcards, Master Dictionary page.
 5. Libraries, public library page, edit suggestions + owner approval.
 6. Help page / tips: explain that section names should be put in [brackets] (e.g. [Chorus], [בית 2]) when pasting lyrics; one line per row; public is permanent.

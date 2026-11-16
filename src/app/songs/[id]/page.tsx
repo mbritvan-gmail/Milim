@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { parseMedia } from "@/lib/media";
 import { SongView, type SongLine, type SongWord } from "./song-view";
+import { SongActions } from "./song-actions";
 
 export const metadata = { title: "Song · Milim" };
 
@@ -74,6 +75,8 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       <SongView lines={lines} words={words} initialShowTranslit={profileRes.data?.show_transliteration ?? true} />
+
+      <SongActions songId={song.id} isOwner={song.owner_id === user.id} isPublic={song.visibility === "public"} />
     </>
   );
 }
