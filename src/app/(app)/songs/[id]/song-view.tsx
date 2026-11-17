@@ -183,7 +183,11 @@ export function SongView({
     setLines((ls) => ls.map((l) => (byLine.has(l.id) ? { ...l, vocalized: byLine.get(l.id) ?? null } : l)));
     setWords((ws) => ws.map((w) => (byWord.has(w.id) ? { ...w, vocalized: byWord.get(w.id) ?? null } : w)));
     const parts = [r.lines.length ? `${r.lines.length} ${r.lines.length === 1 ? "line" : "lines"}` : "", r.words.length ? `${r.words.length} ${r.words.length === 1 ? "word" : "words"}` : ""].filter(Boolean);
-    showToast(`Added nikud to ${parts.join(" and ")}`);
+    showToast(
+      r.skipped > 0
+        ? `Added nikud to ${parts.join(" and ")}. ${r.skipped} couldn't be done; tap Add nikud again.`
+        : `Added nikud to ${parts.join(" and ")}`,
+    );
   }
 
   // ---- song details ------------------------------------------------------

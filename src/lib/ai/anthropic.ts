@@ -114,7 +114,7 @@ Use the most common everyday meaning. Do not add or drop words. No commentary.`;
 const WordsSchema = z.object({ words: z.array(ModuleWordSchema) });
 
 const NIKUD_PROMPT = `You add nikud (Hebrew vowel marks) to Hebrew text, for learners.
-For each item, return the same text with full nikud added in standard modern pronunciation (including dagesh and the shin and sin dots). Do not change, add, remove or reorder any letter, space or punctuation mark: only add vowel marks. Items are separate lines or words; return exactly one result per item, in the same order. No commentary.`;
+For each item, return the same text with full nikud added in standard modern pronunciation (including dagesh and the shin and sin dots). Keep the words exactly as given: do not change, add, remove or reorder any word, space or punctuation mark; only add vowel marks. Keep the original letters; if standard pointed spelling needs a vowel letter י or ו added or left out, that is the only change allowed. Items are separate lines or words; return exactly one result per item, in the same order. No commentary.`;
 
 const NikudSchema = z.object({ items: z.array(z.string()) });
 

@@ -65,7 +65,12 @@ export type PendingSuggestion = { id: string; lineId: string; by: string; text: 
 
 export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
-export type NikudResult = { lines: { id: string; vocalized: string }[]; words: { id: string; vocalized: string }[] };
+export type NikudResult = {
+  lines: { id: string; vocalized: string }[];
+  words: { id: string; vocalized: string }[];
+  /** Lines and words Claude's answer was not accepted for (tap Add nikud again to retry them). */
+  skipped: number;
+};
 
 export type EditActions = {
   addNikud(songId: string): Promise<ActionResult<NikudResult>>;

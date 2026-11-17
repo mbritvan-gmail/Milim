@@ -133,7 +133,7 @@ export async function addNikud(songId: string) {
     const texts = [...lines.map((l) => l.hebrew), ...wordEntries.map((w) => w.lemma)];
     const pointed = await getAIProvider().addNikud({ texts });
 
-    const out: NikudResult = { lines: [], words: [] };
+    const out: NikudResult = { lines: [], words: [], skipped: 0 };
     lines.forEach((l, i) => {
       if (isPointedVersion(l.hebrew, pointed[i])) out.lines.push({ id: l.id, vocalized: pointed[i].trim() });
     });
@@ -141,6 +141,7 @@ export async function addNikud(songId: string) {
       const text = pointed[lines.length + i];
       if (isPointedVersion(w.lemma, text)) out.words.push({ id: w.id, vocalized: text.trim() });
     });
+    out.skipped = texts.length - out.lines.length - out.words.length;
     if (out.lines.length === 0 && out.words.length === 0) return fail("Claude's answer didn't match the lyrics, so nothing was changed. Please try again.");
 
     const results = await Promise.all(out.lines.map((l) => ctx.supabase.from("lines").update({ vocalized: l.vocalized }).eq("id", l.id).eq("song_id", songId)));
