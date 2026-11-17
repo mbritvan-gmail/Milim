@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { EditButton, EditModeProvider, useEditMode } from "@/components/edit-mode";
 import { Sheet } from "@/components/sheet";
+import { useOverlay } from "@/components/overlay";
 import { StatusBadge } from "@/components/status-badge";
 import { genderLabel, hebrewText } from "@/lib/modules";
 import type { WordStatus } from "@/lib/study";
@@ -50,6 +51,7 @@ type Sheets = { kind: "remove-word"; word: ModuleRow } | { kind: "rename" } | { 
 
 function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initialPublic, added: initialAdded, archived, by, words: initialWords, showTranslit, showNikud, learnAfter, actions }: Props) {
   const router = useRouter();
+  const inOverlay = useOverlay() !== null;
   const { editing, showToast } = useEditMode();
   const [title, setTitle] = useState(initialTitle);
   const [words, setWords] = useState(initialWords);
@@ -262,7 +264,7 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
       )}
 
       {!editMode && words.length > 0 && (
-        <div className="sticky bottom-24 flex flex-col gap-2 pt-1">
+        <div className={`sticky ${inOverlay ? "bottom-4" : "bottom-24"} flex flex-col gap-2 pt-1`}>
           {added ? (
             <>
               <Link
