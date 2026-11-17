@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StatusBadge } from "@/components/status-badge";
-import { isSectionLabel } from "@/lib/lyrics";
+import { fixLinePunctuation, isSectionLabel } from "@/lib/lyrics";
 import { cleanToken, splitTokens, type EditActions, type PendingSuggestion, type SongDetails, type VocabDraft } from "@/lib/editing";
 import type { WordStatus } from "@/lib/study";
 import { useEditMode } from "@/components/edit-mode";
@@ -213,7 +213,7 @@ export function SongView({
                 <li key={s.id} className="flex flex-col gap-2 rounded-lg border border-border bg-background p-3">
                   {line && (
                     <span lang="he" className="hebrew text-lg">
-                      {line.hebrew}
+                      {fixLinePunctuation(line.hebrew)}
                     </span>
                   )}
                   <span className="text-sm text-muted">Now: {line?.english || "(none)"}</span>
@@ -279,7 +279,7 @@ export function SongView({
                     className="w-full rounded-xl border border-accent/40 bg-surface px-4 py-3 text-left hover:bg-surface-2"
                   >
                     <span lang="he" className="hebrew block text-right text-xl">
-                      {line.hebrew}
+                      {fixLinePunctuation(line.hebrew)}
                     </span>
                     {showTranslit && line.transliteration && <span className="mt-1 block text-sm italic text-muted">{line.transliteration}</span>}
                     <span className="mt-2 block text-base text-accent">{line.english || "(no translation)"}</span>
@@ -292,7 +292,7 @@ export function SongView({
               return (
                 <li key={line.id} className="flex flex-col gap-2 rounded-xl border border-accent/40 bg-surface px-4 py-3">
                   <span lang="he" className="hebrew flex flex-wrap justify-end gap-x-2 text-xl">
-                    {splitTokens(line.hebrew).map((t, i) => {
+                    {splitTokens(fixLinePunctuation(line.hebrew)).map((t, i) => {
                       const known = words.some((w) => t.token && (w.surface_form === t.token || w.lemma === t.token));
                       return t.token ? (
                         <button
@@ -325,7 +325,7 @@ export function SongView({
                   className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-surface-2"
                 >
                   <span lang="he" className="hebrew block text-right text-xl">
-                    {line.hebrew}
+                    {fixLinePunctuation(line.hebrew)}
                   </span>
                   {showTranslit && line.transliteration && (
                     <span className="mt-1 block text-sm italic text-muted">{line.transliteration}</span>

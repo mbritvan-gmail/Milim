@@ -45,13 +45,25 @@ export function sectionEnglish(label: string): string | null {
 
 export type LyricItem = { text: string; section: boolean };
 
+// Lyrics copied from some websites or PDFs arrive with end-of-sentence punctuation at the front of the
+// line ("?למה" instead of "למה?"), which shows up at the wrong edge in right-to-left text. If a line
+// starts with such marks and doesn't already end with any, they move to the end.
+const TERMINAL = /[.,;:!?…]/;
+export function fixLinePunctuation(text: string): string {
+  const match = text.match(/^([.,;:!?…]+)\s*(.+)$/);
+  if (!match) return text;
+  const rest = match[2].trim();
+  if (!rest || TERMINAL.test(rest[rest.length - 1])) return text;
+  return rest + match[1];
+}
+
 // Split pasted lyrics into clean items. Blank lines are dropped. Section labels are kept
 // (and flagged) so they can be shown as headings and skipped by the translator. Other
 // lines with no Hebrew at all are ignored, since milim focuses on the Hebrew.
 export function parseLyrics(raw: string): LyricItem[] {
   const items: LyricItem[] = [];
   for (const line of raw.split(/\r?\n/)) {
-    const text = line.replace(/\s+/g, " ").trim();
+    const text = fixLinePunctuation(line.replace(/\s+/g, " ").trim());
     if (!text) continue;
     if (isSectionLabel(text)) items.push({ text, section: true });
     else if (hasHebrew(text)) items.push({ text, section: false });
