@@ -75,7 +75,15 @@ export function EditModeProvider({ children }: { children: React.ReactNode }) {
 }
 
 // The Edit / Done button in a song's header, with "Remove song" beside Done while editing.
-export function EditButton({ onRemove, visibility }: { onRemove?: () => void; visibility?: { isPublic: boolean; onMakePublic: () => void } }) {
+export function EditButton({
+  onRemove,
+  visibility,
+  removeLabel = "Remove song",
+}: {
+  onRemove?: () => void;
+  visibility?: { isPublic: boolean; onMakePublic: () => void };
+  removeLabel?: string;
+}) {
   const { editing, setEditing } = useEditMode();
   return editing ? (
     <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -97,7 +105,7 @@ export function EditButton({ onRemove, visibility }: { onRemove?: () => void; vi
         <button
           type="button"
           onClick={onRemove}
-          aria-label="Remove song"
+          aria-label={removeLabel}
           className="flex h-10 items-center gap-1.5 rounded-xl border border-danger/50 px-3 text-sm font-semibold text-danger hover:bg-surface"
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

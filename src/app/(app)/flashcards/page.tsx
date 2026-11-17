@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
 import { isStudyFilter, newSessionId, type SessionCard, type StudyFilter } from "@/lib/study";
-import { cardsForFilter, cardsForSong } from "@/lib/study-data";
+import { cardsForFilter, cardsForModule, cardsForSong } from "@/lib/study-data";
 import { StudyRunner } from "./study-runner";
 import { CloseOrLink } from "@/components/overlay";
 
@@ -13,7 +13,7 @@ export const metadata = { title: "Study · milim" };
 // Working out a verb's forms the first time can take a little while.
 export const maxDuration = 60;
 
-type SearchParams = Promise<{ filter?: string; song?: string; scope?: string }>;
+type SearchParams = Promise<{ filter?: string; song?: string; module?: string; scope?: string }>;
 
 export default function StudyPage({ searchParams }: { searchParams: SearchParams }) {
   return (
@@ -34,7 +34,7 @@ const NAMES: Record<StudyFilter, string> = {
 };
 
 async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
-  const { filter: rawFilter, song, scope: rawScope } = await searchParams;
+  const { filter: rawFilter, song, module: moduleId, scope: rawScope } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -42,7 +42,7 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
   if (!user) redirect("/login");
 
   // With nothing chosen yet, this is the Flash Cards home: pick which words to study.
-  if (!rawFilter && !song) return <FlashcardsHub />;
+  if (!rawFilter && !song && !moduleId) return <FlashcardsHub />;
 
   const settings = await loadSettings(supabase, user.id);
 
@@ -51,7 +51,16 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
   let backHref = "/dictionary";
   let backLabel = "Back to the Dictionary";
 
-  if (song) {
+  if (moduleId) {
+    if (!uuid.test(moduleId)) notFound();
+    const scope = rawScope === "learned" ? "learned" : rawScope === "all" ? "all" : "unlearned";
+    const result = await cardsForModule(supabase, moduleId, scope);
+    if (!result) notFound();
+    cards = result.cards;
+    studyName = scope === "learned" ? "this module's learned words" : "this module";
+    backHref = `/vocabulary/${moduleId}`;
+    backLabel = "Back to the module";
+  } else if (song) {
     if (!uuid.test(song)) notFound();
     const scope = rawScope === "learned" ? "learned" : rawScope === "all" ? "all" : "unlearned";
     const result = await cardsForSong(supabase, song, scope);

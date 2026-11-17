@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { makeSongPublic, removeSong } from "./actions";
-import { EditButton } from "./edit-mode";
-import { Sheet } from "./edit-sheets";
+import { EditButton } from "@/components/edit-mode";
+import { Sheet } from "@/components/sheet";
 
 // Edit / Done plus "Remove song" at the top of a song, so nothing needs scrolling to the bottom.
 export function SongHeaderControls({ songId, isOwner, isPublic, canRemove }: { songId: string; isOwner: boolean; isPublic: boolean; canRemove: boolean }) {

@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { isSectionLabel } from "@/lib/lyrics";
 import { cleanToken, splitTokens, type EditActions, type PendingSuggestion, type SongDetails, type VocabDraft } from "@/lib/editing";
 import type { WordStatus } from "@/lib/study";
-import { useEditMode } from "./edit-mode";
+import { useEditMode } from "@/components/edit-mode";
 import { AddWordSheet, DetailsSheet, LineSheet, RemoveWordSheet, SuggestSheet } from "./edit-sheets";
 
 export type SongLine = { id: string; hebrew: string; transliteration: string | null; english: string | null };

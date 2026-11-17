@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
 import type { WordStatus } from "@/lib/study";
+import { genderLabel, hebrewText } from "@/lib/modules";
 
 export type HeardIn = { songTitle: string | null; hebrew: string; transliteration: string | null; href?: string };
 
@@ -24,6 +25,10 @@ export function WordCardBack({
   count,
   learnAfter,
   showStatus = true,
+  vocalized = null,
+  gender = null,
+  plural = null,
+  showNikud = true,
 }: {
   lemma: string;
   transliteration: string | null;
@@ -38,7 +43,13 @@ export function WordCardBack({
   learnAfter: number;
   /** Hide the status line when the surrounding screen shows its own live one. */
   showStatus?: boolean;
+  /** Optional details some words have (vocabulary modules). */
+  vocalized?: string | null;
+  gender?: string | null;
+  plural?: string | null;
+  showNikud?: boolean;
 }) {
+  const hebrew = hebrewText(lemma, vocalized, showNikud);
   const translit = showTranslit && transliteration ? <span className="text-base italic text-muted">{transliteration}</span> : null;
   return (
     <>
@@ -46,20 +57,21 @@ export function WordCardBack({
         <>
           <span className="text-4xl font-semibold leading-tight text-foreground">{english}</span>
           <span lang="he" className="hebrew text-3xl text-accent">
-            {lemma}
+            {hebrew}
           </span>
           {translit}
         </>
       ) : (
         <>
           <span lang="he" className="hebrew text-6xl font-bold text-accent">
-            {lemma}
+            {hebrew}
           </span>
           {translit}
           <span className="text-2xl text-foreground">{english}</span>
         </>
       )}
       {partOfSpeech && <span className="text-sm text-muted">{partOfSpeech}</span>}
+      {genderLabel(gender, plural) && <span className="text-sm text-muted">{genderLabel(gender, plural)}</span>}
 
       {heardIn.map((h, i) => {
         const body = (

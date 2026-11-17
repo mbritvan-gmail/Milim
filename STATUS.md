@@ -3,6 +3,7 @@
 Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-pmh51c`. Live preview: https://milim-seven.vercel.app
 
 ## TO DO FIRST (user)
+- Run `supabase/migrations/20261122000000_vocabulary_modules.sql` too (vocabulary modules: tables, nikud / gender / plural columns, Dictionary view). Run the conjugation one first.
 - Run `supabase/migrations/20261120000000_conjugation.sql` in the Supabase SQL editor (Show nikud setting + saved verb conjugations).
 
 ## Done
@@ -96,6 +97,13 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Noun and adjective cards (flashcard back, Dictionary word page) get a **Forms** button (verbs keep **Conjugation**). Adjectives: four-way grid (masculine / feminine x singular / plural). Nouns: gender tag, singular, plural, and an optional one-line note from the model for irregular plurals. Construct (smichut) forms are deliberately left out.
 - One table, `word_forms` (kind + forms JSON), serves verbs, nouns and adjectives; the SQL script renames the earlier `verb_forms` table if it exists. Code: `src/lib/word-forms.ts`, `src/components/word-forms.tsx`, `src/app/(app)/word-forms/actions.ts` (`getWordForms`), `inflectWord` in `src/lib/ai/anthropic.ts`.
 - Later: pronouns and prepositions (inflected forms like לי, לך, לו).
+
+## Vocabulary modules (built; REQUIRES `supabase/migrations/20261122000000_vocabulary_modules.sql`; not yet live-tested)
+- Home has a fourth icon, **Vocabulary** (`/vocabulary`): list of modules (yours, public ones, ones you added) with Added / Not added and a learned progress bar. The ⋯ menu has **New module**.
+- New module (`/vocabulary/new`): title + pasted Hebrew words (one per line or commas, up to 100) + Public (default) / Private. Claude (`defineWords`) fills in lemma, nikud, pronunciation, English, part of speech, gender and plural; words are saved as shared dictionary words (new nullable columns `vocalized`, `gender`, `plural` on `vocab_entries`; existing words get blanks filled by `fill_word_extras`).
+- Module page (`/vocabulary/[id]`): read-only preview (nikud / pronunciation follow the settings), **Add module** puts its words in the Dictionary (`user_modules`), then **Start flashcards** (`/flashcards?module=ID`, `&scope=all` to review everything). Owners get Edit like songs: rename, remove a word (confirm + Undo), add more words by pasting, Make public (one-way), Remove module (delete private / archive public / remove from list).
+- Same rules as songs: public is permanent, public modules are archived not deleted. Dictionary = songs + added modules (`master_dictionary` view). Not built yet: suggestions from other people, nikud for song words, "N new words" version updates, a "From the X module" line on cards, nikud in the Dictionary list rows.
+- If the SQL hasn't been run, the Vocabulary page says so instead of failing, and everything else keeps working.
 
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.

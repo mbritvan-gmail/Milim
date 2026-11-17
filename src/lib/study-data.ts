@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { loadWordExtras } from "./word-extras";
 import { chunk, matchesFilter, shuffle, type SessionCard, type StudyFilter, type WordStatus } from "./study";
 
 // Loads the cards for a study session. A web address can only hold so many ids, so anything
@@ -15,6 +16,7 @@ function statusOf(row: { learned_at: string | null } | undefined): WordStatus {
 
 // Attach a lyric line (and the song it comes from) to each card, as a reminder of where the word was heard.
 async function withContext(supabase: SupabaseClient, base: BaseCard[]): Promise<SessionCard[]> {
+  const extras = await loadWordExtras(supabase, base.map((c) => c.vocabId));
   const lineByVocab = new Map<string, { lineId: string; songId: string | null }>();
   for (const c of base) if (c.lineId) lineByVocab.set(c.vocabId, { lineId: c.lineId, songId: c.songId });
 
@@ -50,6 +52,7 @@ async function withContext(supabase: SupabaseClient, base: BaseCard[]): Promise<
     const line = found ? lineById.get(found.lineId) : undefined;
     return {
       ...card,
+      ...extras.get(card.vocabId),
       context: line ? { songTitle: found?.songId ? (titleById.get(found.songId) ?? null) : null, ...line } : null,
     };
   });
@@ -124,4 +127,49 @@ export async function cardsForSong(
     })
     .filter((c) => (scope === "all" ? true : scope === "learned" ? c.status === "learned" : c.status !== "learned"));
   return { title: songRes.data.title, cards: await withContext(supabase, shuffle(base)) };
+}
+
+// One vocabulary module's words. `scope` narrows to the words still to learn, or to the learned ones.
+export async function cardsForModule(
+  supabase: SupabaseClient,
+  moduleId: string,
+  scope: "unlearned" | "learned" | "all",
+): Promise<{ title: string; cards: SessionCard[] } | null> {
+  const [moduleRes, wordsRes] = await Promise.all([
+    supabase.from("modules").select("id, title").eq("id", moduleId).maybeSingle(),
+    supabase
+      .from("module_words")
+      .select("position, vocab_entries(id, lemma, transliteration, english, part_of_speech)")
+      .eq("module_id", moduleId),
+  ]);
+  if (!moduleRes.data) return null;
+
+  const entries = (wordsRes.data ?? []).flatMap((row) => {
+    const v = (Array.isArray(row.vocab_entries) ? row.vocab_entries[0] : row.vocab_entries) as VocabRow | undefined;
+    return v ? [v] : [];
+  });
+
+  const progress = new Map<string, { correct_count: number; learned_at: string | null }>();
+  for (const ids of chunk(entries.map((e) => e.id), CHUNK)) {
+    const { data } = await supabase.from("user_words").select("vocab_entry_id, correct_count, learned_at").in("vocab_entry_id", ids);
+    for (const p of data ?? []) progress.set(p.vocab_entry_id, p);
+  }
+
+  const base: BaseCard[] = entries
+    .map((v) => {
+      const p = progress.get(v.id);
+      return {
+        vocabId: v.id,
+        lemma: v.lemma,
+        transliteration: v.transliteration,
+        english: v.english,
+        partOfSpeech: v.part_of_speech,
+        status: statusOf(p),
+        count: p?.correct_count ?? 0,
+        lineId: null,
+        songId: null,
+      };
+    })
+    .filter((c) => (scope === "all" ? true : scope === "learned" ? c.status === "learned" : c.status !== "learned"));
+  return { title: moduleRes.data.title, cards: await withContext(supabase, shuffle(base)) };
 }

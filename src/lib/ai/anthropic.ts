@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { ConjugationSchema, looksComplete } from "../conjugation";
+import { ModuleWordSchema } from "../modules";
 import { AdjectiveSchema, NounSchema, adjectiveLooksComplete, nounLooksComplete, type WordForms } from "../word-forms";
 import {
   AIError,
@@ -14,6 +15,8 @@ import {
   type InflectInput,
   type DefineWordInput,
   type DefineWordResult,
+  type DefineWordsInput,
+  type ModuleWordResult,
   type DistractorInput,
   type LyricsAnalysis,
 } from "./types";
@@ -95,6 +98,19 @@ const ADJECTIVE_PROMPT = `You are a careful Hebrew grammarian helping English sp
 Given a Hebrew adjective (it may be given in any form) and its English meaning, give its four forms: ms (masculine singular), fs (feminine singular), mp (masculine plural), fp (feminine plural).
 ${FORMS_COMMON}
 - "note": one short plain-English sentence only if one of the forms is irregular. Otherwise an empty string.`;
+
+const WORDS_PROMPT = `You help English speakers learn Hebrew vocabulary. You are given a theme (the title of a vocabulary list) and Hebrew words someone pasted for it. For each word, in the same order, return:
+- "input": the word exactly as given.
+- "lemma": the dictionary form in plain letters without nikud. Nouns in the singular; adjectives masculine singular; verbs as the infinitive with ל (לשחק). If the word is a plural or an inflected form, give its base form.
+- "vocalized": the lemma with full nikud.
+- "transliteration": English pronunciation of the lemma using the most standard simple scheme (ח = "ch", כ = "kh", צ = "ts", ש = "sh", ע and א not written, stress not marked), e.g. "kaduregel", "lesachek".
+- "english": a short gloss (one to three words) that fits the theme. Verbs start with "to" (to play). Add a short qualifier in parentheses only if needed to tell it from another word.
+- "part_of_speech": one of noun, verb, adjective, adverb, preposition, pronoun, conjunction, expression.
+- "gender": "m" or "f" for nouns, otherwise an empty string.
+- "plural": the unpointed plural form for nouns that have one, otherwise an empty string.
+Use the most common everyday meaning. Do not add or drop words. No commentary.`;
+
+const WordsSchema = z.object({ words: z.array(ModuleWordSchema) });
 
 const DefineSchema = z.object({
   lemma: z.string(),
@@ -402,6 +418,41 @@ export class AnthropicProvider implements AIProvider {
         throw new AIError("That took too long. Please try again.");
       }
       throw new AIError("The AI service had a problem with that word. Please try again.");
+    }
+  }
+
+  async defineWords({ title, words }: DefineWordsInput): Promise<ModuleWordResult[]> {
+    // Lists are processed in batches, in parallel, so a long list takes about as long as a short one.
+    const BATCH = 25;
+    const batches: string[][] = [];
+    for (let i = 0; i < words.length; i += BATCH) batches.push(words.slice(i, i + BATCH));
+    const signal = AbortSignal.timeout(50_000);
+    try {
+      const results = await Promise.all(
+        batches.map(async (batch) => {
+          const response = await this.client.messages.parse(
+            {
+              model: this.model,
+              max_tokens: 4000,
+              system: WORDS_PROMPT,
+              messages: [{ role: "user", content: `Theme: ${title}\nWords:\n${batch.join("\n")}` }],
+              output_config: { effort: "low", format: zodOutputFormat(WordsSchema) },
+            },
+            { signal },
+          );
+          if (response.stop_reason === "refusal" || !response.parsed_output) {
+            throw new AIError("Claude couldn't read that list.");
+          }
+          return response.parsed_output.words;
+        }),
+      );
+      return results.flat();
+    } catch (error) {
+      if (error instanceof AIError) throw error;
+      if (signal.aborted || error instanceof Anthropic.APIUserAbortError) {
+        throw new AIError("That took too long. Try fewer words, or try again.");
+      }
+      throw new AIError("The AI service had a problem with that list. Please try again.");
     }
   }
 }

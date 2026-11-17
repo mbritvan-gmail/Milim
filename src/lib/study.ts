@@ -58,6 +58,10 @@ export type SessionCard = {
   transliteration: string | null;
   english: string;
   partOfSpeech: string | null;
+  /** Optional details some words have (nikud, gender, plural). */
+  vocalized?: string | null;
+  gender?: string | null;
+  plural?: string | null;
   status: WordStatus;
   /** Correct answers so far (what the database holds). */
   count: number;

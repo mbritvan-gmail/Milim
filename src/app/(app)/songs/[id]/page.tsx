@@ -10,7 +10,7 @@ import { QuizStartButton } from "./quiz-start-button";
 import { AddSongButton } from "./add-song-button";
 import { prepareQuiz } from "./quiz/actions";
 import { decodeSuggestion, type EditActions, type PendingSuggestion } from "@/lib/editing";
-import { EditModeProvider } from "./edit-mode";
+import { EditModeProvider } from "@/components/edit-mode";
 import { SongHeaderControls } from "./song-header-controls";
 import * as editActionModule from "./edit-actions";
 

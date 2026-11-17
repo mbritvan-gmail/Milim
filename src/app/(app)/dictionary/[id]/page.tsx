@@ -7,6 +7,7 @@ import { WordCardBack } from "@/components/word-card-back";
 import { WordActions } from "./word-actions";
 import { FormsButton } from "@/components/word-forms";
 import { formsKind } from "@/lib/word-forms";
+import { loadWordExtras } from "@/lib/word-extras";
 
 export const metadata = { title: "Word · milim" };
 
@@ -59,6 +60,7 @@ async function WordBody({ params }: { params: Promise<{ id: string }> }) {
     return line ? [{ songId: u.song_id as string, title: titleById.get(u.song_id as string) ?? "A song", line }] : [];
   });
 
+  const extras = (await loadWordExtras(supabase, [word.id])).get(word.id);
   const status = progressRes.data ? (progressRes.data.learned_at ? "learned" : "learning") : "new";
 
   return (
@@ -70,6 +72,10 @@ async function WordBody({ params }: { params: Promise<{ id: string }> }) {
           transliteration={word.transliteration}
           english={word.english}
           partOfSpeech={word.part_of_speech}
+          vocalized={extras?.vocalized}
+          gender={extras?.gender}
+          plural={extras?.plural}
+          showNikud={settings.showNikud}
           face="he-en"
           showTranslit={settings.showTranslit}
           heardIn={heard.map((h) => ({

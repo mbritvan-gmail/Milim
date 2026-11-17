@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { makeSongPublic, removeFromList } from "./[id]/actions";
-import { Sheet } from "./[id]/edit-sheets";
+import { Sheet } from "@/components/sheet";
 
 export type ListSong = { id: string; title: string; artist: string | null; visibility: "public" | "private"; isOwner: boolean };
 

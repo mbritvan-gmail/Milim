@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { WordCardBack } from "@/components/word-card-back";
 import { FormsButton } from "@/components/word-forms";
 import { formsKind } from "@/lib/word-forms";
+import { hebrewText } from "@/lib/modules";
 import {
   applyAnswer,
   cardDirection,
@@ -192,7 +193,7 @@ export function StudyRunner({
             <>
               {/* No pronunciation on a Hebrew-first card: reading the word is the point. */}
               <span lang="he" className="hebrew text-6xl font-bold text-accent">
-                {card.lemma}
+                {hebrewText(card.lemma, card.vocalized, showNikud)}
               </span>
               <span className="mt-4 text-xs text-muted">Tap the card to reveal the meaning</span>
             </>
@@ -206,6 +207,10 @@ export function StudyRunner({
         ) : (
           <WordCardBack
             lemma={card.lemma}
+            vocalized={card.vocalized}
+            gender={card.gender}
+            plural={card.plural}
+            showNikud={showNikud}
             transliteration={card.transliteration}
             english={card.english}
             partOfSpeech={card.partOfSpeech}
