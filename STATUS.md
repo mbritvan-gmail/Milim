@@ -69,8 +69,9 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 5. (Edit suggestions are built; see above.)
 6. Help / tips page (section names in [brackets], one line per row, public is permanent, pronunciation setting).
 7. Before sharing widely: report / takedown path for public lyrics and a short terms note, Anthropic spend limit and usage watching, tighten who may add vocab entries.
-8. Later ideas: a small "due" badge on the Dictionary tab, a "words not reviewed in 30 days" nudge for learned words, more dictionary upgrades.
-9. Housekeeping: delete the stray Vercel variable named `default`; lowercase "milim" in the Supabase email template.
+8. Notifications: tell owners when someone suggests an edit (in-app notifications or email); tell suggesters when it is approved or rejected.
+9. Later ideas: a small "due" badge on the Dictionary tab, a "words not reviewed in 30 days" nudge for learned words, more dictionary upgrades.
+10. Housekeeping: delete the stray Vercel variable named `default`; lowercase "milim" in the Supabase email template.
 
 ## Notes
 - Naming: a song's word list is called the **Song Vocabulary** (not "key words"); the **Dictionary** is the words from all of a person's songs.
