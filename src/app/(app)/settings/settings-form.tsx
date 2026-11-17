@@ -172,7 +172,7 @@ export function SettingsForm({
         <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
           <div>
             <p className="font-medium">Show nikud</p>
-            <p className="text-xs text-muted">The vowel marks under Hebrew letters. Off shows plain letters. Used in verb conjugations.</p>
+            <p className="text-xs text-muted">The vowel marks under Hebrew letters. Off shows plain letters. Used in conjugations and word forms.</p>
           </div>
           <button
             type="button"

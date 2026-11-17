@@ -76,7 +76,7 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Songs list: a dropdown (Add song / Edit) next to the title. Edit mode puts a minus on every row (asks first; wording depends on the song) and a "Make public" button on your own private songs. No Private/Public switch anywhere: public is one-way.
 - New songs default to Public; Private must be chosen on purpose. On a song, Edit shows "Make public" (private songs only) next to Remove and Done.
 
-## Verb conjugation (built; REQUIRES the SQL script `supabase/migrations/20261120000000_conjugation.sql`; not yet live-tested with the AI)
+## Verb conjugation and noun / adjective forms (built; REQUIRES the SQL script `supabase/migrations/20261120000000_conjugation.sql`; not yet live-tested with the AI)
 - Verb cards (flashcard back, and a word's page in the Dictionary) get a **Conjugation** button that opens a full-screen view with Present / Past / Future tabs; the last tab opened is remembered on the device.
 - Forms are written by Claude the first time anyone opens a verb (`getConjugation` in `src/app/(app)/conjugation/actions.ts`, prompt in `src/lib/ai/anthropic.ts`) and saved in `verb_forms` for everyone. If it fails the view shows a "Try again" message.
 - Forms are stored as prefix / stem / suffix segments with plain, vowel-marked and pronunciation text (`src/lib/conjugation.ts`), so the toggles only change drawing. Past "you" m/f collapse to one line with a note when nikud is off.
@@ -91,6 +91,11 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Opening the same address directly (refresh, shared link) shows the normal full page. Pages are reused, not copied.
 - Inside a pop-up, "Back to ..." buttons close it (`CloseOrLink`); the study screen's own exit X is hidden there. When a pop-up closes, the page underneath refreshes (`StaleRefresher`).
 - The quiz start (a server action redirect) and the quiz's Retake (now `router.refresh()`) are not yet checked live.
+
+## Forms for nouns and adjectives (built; same SQL script)
+- Noun and adjective cards (flashcard back, Dictionary word page) get a **Forms** button (verbs keep **Conjugation**). Adjectives: four-way grid (masculine / feminine x singular / plural). Nouns: gender tag, singular, plural, and an optional one-line note from the model for irregular plurals. Construct (smichut) forms are deliberately left out.
+- One table, `word_forms` (kind + forms JSON), serves verbs, nouns and adjectives; the SQL script renames the earlier `verb_forms` table if it exists. Code: `src/lib/word-forms.ts`, `src/components/word-forms.tsx`, `src/app/(app)/word-forms/actions.ts` (`getWordForms`), `inflectWord` in `src/lib/ai/anthropic.ts`.
+- Later: pronouns and prepositions (inflected forms like לי, לך, לו).
 
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.

@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { ConjugationSchema, looksComplete } from "../conjugation";
+import { AdjectiveSchema, NounSchema, adjectiveLooksComplete, nounLooksComplete, type WordForms } from "../word-forms";
 import {
   AIError,
   type AIProvider,
@@ -10,6 +11,7 @@ import {
   type AnalyzedWord,
   type ConjugateInput,
   type ConjugationData,
+  type InflectInput,
   type DefineWordInput,
   type DefineWordResult,
   type DistractorInput,
@@ -78,6 +80,21 @@ Rules:
 - Keep the same verb as given. Use standard modern Hebrew. Do not add commentary.
 
 Example (the verb "to write", Pa'al): past I = stem כָּתַבְ + suffix תִּי (katav + ti); past you m = stem כָּתַבְ + suffix תָּ (katav + ta), you f = כָּתַבְ + תְּ (katav + t); past she = stem כָּתְבָ + suffix ה (katv + a); future I = prefix אֶ + stem כְתֹּב (e + khtov), plain stem כתוב; future you f = prefix תִּ + stem כְתְּבִ + suffix י (ti + khtev + i), plain stem כתב; present ms = stem כּוֹתֵב (kotev), fs = stem כּוֹתֶבֶ + suffix ת (kotev + et), mp = כּוֹתְבִ + ים (kotv + im), fp = כּוֹתְב + וֹת (kotv + ot).`;
+
+const FORMS_COMMON = `Every form is split into colored segments so a learner sees the pattern: "stem" (the word itself) and "suffix" (the ending that shows number or gender). Every segment has "plain" (letters only, standard unpointed modern spelling, e.g. שולחנות), "vocalized" (the same letters with full nikud) and "translit" (English pronunciation). Concatenating the plain segments must give the plain word, the vocalized segments the pointed word, and the translit segments must read as the whole word. If the last letter of the stem is a final letter (ן ם ך ף ץ) in the base form but sits in the middle of the longer form, write the regular letter in that form's stem (שולחנ + ות). Use standard modern Hebrew and no commentary.`;
+
+const NOUN_PROMPT = `You are a careful Hebrew grammarian helping English speakers learn vocabulary.
+
+Given a Hebrew noun (it may be given in any form) and its English meaning, give its grammatical gender ("masculine" or "feminine"), its singular and its plural.
+${FORMS_COMMON}
+- "singular" and "plural" are lists of segments. Use the standard plural, including irregular ones (e.g. שולחן / שולחנות, אב / אבות, עיר / ערים).
+- "note": one short plain-English sentence only when the plural is irregular or surprising (for example a masculine noun with the "feminine" plural ending ות, or a stem that changes). Otherwise an empty string.`;
+
+const ADJECTIVE_PROMPT = `You are a careful Hebrew grammarian helping English speakers learn vocabulary.
+
+Given a Hebrew adjective (it may be given in any form) and its English meaning, give its four forms: ms (masculine singular), fs (feminine singular), mp (masculine plural), fp (feminine plural).
+${FORMS_COMMON}
+- "note": one short plain-English sentence only if one of the forms is irregular. Otherwise an empty string.`;
 
 const DefineSchema = z.object({
   lemma: z.string(),
@@ -353,6 +370,38 @@ export class AnthropicProvider implements AIProvider {
         throw new AIError("Conjugating took too long. Please try again.");
       }
       throw new AIError("The AI service had a problem conjugating that verb. Please try again.");
+    }
+  }
+
+  async inflectWord({ lemma, english, kind }: InflectInput): Promise<WordForms> {
+    const signal = AbortSignal.timeout(40_000);
+    try {
+      const noun = kind === "noun";
+      const response = await this.client.messages.parse(
+        {
+          model: this.model,
+          max_tokens: 3000,
+          system: noun ? NOUN_PROMPT : ADJECTIVE_PROMPT,
+          messages: [{ role: "user", content: `Word: ${lemma}\nMeaning: ${english}` }],
+          output_config: { effort: "low", format: zodOutputFormat(noun ? NounSchema : AdjectiveSchema) },
+        },
+        { signal },
+      );
+      if (response.stop_reason === "refusal" || !response.parsed_output) {
+        throw new AIError("Claude couldn't work out the forms of that word.");
+      }
+      const result: WordForms = noun
+        ? { kind: "noun", data: response.parsed_output as z.infer<typeof NounSchema> }
+        : { kind: "adjective", data: response.parsed_output as z.infer<typeof AdjectiveSchema> };
+      const complete = result.kind === "noun" ? nounLooksComplete(result.data) : result.kind === "adjective" ? adjectiveLooksComplete(result.data) : false;
+      if (!complete) throw new AIError("Claude's answer was incomplete. Please try again.");
+      return result;
+    } catch (error) {
+      if (error instanceof AIError) throw error;
+      if (signal.aborted || error instanceof Anthropic.APIUserAbortError) {
+        throw new AIError("That took too long. Please try again.");
+      }
+      throw new AIError("The AI service had a problem with that word. Please try again.");
     }
   }
 }

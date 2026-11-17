@@ -5,8 +5,8 @@ import { loadSettings } from "@/lib/settings";
 import { chunk } from "@/lib/study";
 import { WordCardBack } from "@/components/word-card-back";
 import { WordActions } from "./word-actions";
-import { ConjugationButton } from "@/components/conjugation";
-import { isVerb } from "@/lib/conjugation";
+import { FormsButton } from "@/components/word-forms";
+import { formsKind } from "@/lib/word-forms";
 
 export const metadata = { title: "Word · milim" };
 
@@ -85,8 +85,15 @@ async function WordBody({ params }: { params: Promise<{ id: string }> }) {
         />
       </div>
 
-      {isVerb(word.part_of_speech) && (
-        <ConjugationButton vocabId={word.id} lemma={word.lemma} english={word.english} showTranslit={settings.showTranslit} showNikud={settings.showNikud} />
+      {formsKind(word.part_of_speech) && (
+        <FormsButton
+          vocabId={word.id}
+          kind={formsKind(word.part_of_speech)!}
+          lemma={word.lemma}
+          english={word.english}
+          showTranslit={settings.showTranslit}
+          showNikud={settings.showNikud}
+        />
       )}
 
       <WordActions

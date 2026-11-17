@@ -38,6 +38,9 @@ export type DefineWordResult = { lemma: string; transliteration: string; english
 import type { ConjugationData } from "../conjugation";
 export type ConjugateInput = { lemma: string; english: string };
 export type { ConjugationData };
+import type { WordForms } from "../word-forms";
+export type InflectInput = { lemma: string; english: string; kind: "noun" | "adjective" };
+export type { WordForms };
 
 export type DistractorInput = { lemma: string; english: string; part_of_speech?: string | null };
 
@@ -47,6 +50,8 @@ export interface AIProvider {
   defineWord(input: DefineWordInput): Promise<DefineWordResult>;
   /** All present, past and future forms of a verb, split into prefix / stem / suffix segments. */
   conjugateVerb(input: ConjugateInput): Promise<ConjugationData>;
+  /** Singular / plural of a noun, or the four forms of an adjective, split into stem and ending. */
+  inflectWord(input: InflectInput): Promise<WordForms>;
   /** Wrong-but-plausible English answers for quiz questions, aligned with the input. */
   generateDistractors(words: DistractorInput[]): Promise<string[][]>;
 }

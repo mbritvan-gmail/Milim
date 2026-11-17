@@ -3,8 +3,8 @@
 import { CloseOrLink } from "@/components/overlay";
 import { useRef, useState } from "react";
 import { WordCardBack } from "@/components/word-card-back";
-import { ConjugationButton } from "@/components/conjugation";
-import { isVerb } from "@/lib/conjugation";
+import { FormsButton } from "@/components/word-forms";
+import { formsKind } from "@/lib/word-forms";
 import {
   applyAnswer,
   cardDirection,
@@ -221,8 +221,16 @@ export function StudyRunner({
 
       {flipped && (
         <>
-          {isVerb(card.partOfSpeech) && (
-            <ConjugationButton key={card.vocabId} vocabId={card.vocabId} lemma={card.lemma} english={card.english} showTranslit={showTranslit} showNikud={showNikud} />
+          {formsKind(card.partOfSpeech) && (
+            <FormsButton
+              key={card.vocabId}
+              vocabId={card.vocabId}
+              kind={formsKind(card.partOfSpeech)!}
+              lemma={card.lemma}
+              english={card.english}
+              showTranslit={showTranslit}
+              showNikud={showNikud}
+            />
           )}
           <div className="flex gap-2">
             <button
