@@ -20,11 +20,20 @@ export function NewSongForm() {
   function searchMedia(kind: "spotify" | "youtube") {
     setSearchError("");
     setMatches([]);
+    if (!title.trim()) {
+      setSearchError("Type the song title above first, then tap Find.");
+      return;
+    }
     setSearchingKind(kind);
     startSearch(async () => {
-      const result = kind === "spotify" ? await findOnSpotify(title, artist) : await findOnYouTube(title, artist);
-      if (result.error) setSearchError(result.error);
-      else setMatches(result.matches ?? []);
+      try {
+        const result = kind === "spotify" ? await findOnSpotify(title, artist) : await findOnYouTube(title, artist);
+        if (result.error) setSearchError(result.error);
+        else setMatches(result.matches ?? []);
+      } catch {
+        // The request itself failed (for example a dropped connection or a stale page).
+        setSearchError("Couldn't reach the server. Reload the page and try again.");
+      }
     });
   }
 
@@ -79,7 +88,7 @@ export function NewSongForm() {
           <button
             type="button"
             onClick={() => searchMedia("spotify")}
-            disabled={searching || !title.trim()}
+            disabled={searching}
             className="rounded-full border border-border px-4 py-2 text-sm hover:bg-surface-2 disabled:opacity-50"
           >
             {searching && searchingKind === "spotify" ? "Searching…" : "Find on Spotify"}
@@ -87,7 +96,7 @@ export function NewSongForm() {
           <button
             type="button"
             onClick={() => searchMedia("youtube")}
-            disabled={searching || !title.trim()}
+            disabled={searching}
             className="rounded-full border border-border px-4 py-2 text-sm hover:bg-surface-2 disabled:opacity-50"
           >
             {searching && searchingKind === "youtube" ? "Searching…" : "Find on YouTube"}

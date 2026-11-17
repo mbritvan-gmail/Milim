@@ -178,51 +178,49 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
 }
 
 export type SpotifySearchResult = { matches?: SpotifyMatch[]; error?: string };
+export type YouTubeSearchResult = { matches?: YouTubeMatch[]; error?: string };
 
-// "Find on Spotify": suggest tracks for a title and artist.
-export async function findOnSpotify(title: string, artist: string): Promise<SpotifySearchResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Please sign in again." };
+// A short, safe hint about an unexpected failure, so a problem can be diagnosed from the screen.
+function hint(error: unknown) {
+  return error instanceof Error && error.message ? ` (${error.message.slice(0, 120)})` : "";
+}
 
-  const t = title.trim().slice(0, 120);
-  const a = artist.trim().slice(0, 120);
-  if (!t) return { error: "Enter the song title first." };
-
+// Both "Find on ..." buttons share these steps. Nothing in here is allowed to throw: any
+// failure becomes a message in the form instead of crashing the page.
+async function searchAs<T>(
+  label: string,
+  title: string,
+  artist: string,
+  search: (title: string, artist: string) => Promise<T[]>,
+  isKnownError: (error: unknown) => boolean,
+): Promise<{ matches?: T[]; error?: string }> {
   try {
-    const matches = await findTracks(t, a);
-    if (matches.length === 0) return { error: "No matches found on Spotify. You can paste a link instead." };
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { error: "Please sign in again." };
+
+    const t = title.trim().slice(0, 120);
+    const a = artist.trim().slice(0, 120);
+    if (!t) return { error: "Enter the song title first." };
+
+    const matches = await search(t, a);
+    if (matches.length === 0) return { error: `No matches found on ${label}. You can paste a link instead.` };
     return { matches };
   } catch (error) {
-    if (error instanceof SpotifyError) return { error: error.message };
-    console.error("findOnSpotify failed", error);
-    return { error: "Spotify search failed. Please try again." };
+    if (isKnownError(error)) return { error: (error as Error).message };
+    console.error(`findOn${label} failed`, error);
+    return { error: `${label} search failed. Please try again.${hint(error)}` };
   }
 }
 
-export type YouTubeSearchResult = { matches?: YouTubeMatch[]; error?: string };
+// "Find on Spotify": suggest tracks for a title and artist.
+export async function findOnSpotify(title: string, artist: string): Promise<SpotifySearchResult> {
+  return searchAs("Spotify", title, artist, findTracks, (e) => e instanceof SpotifyError);
+}
 
 // "Find on YouTube": suggest videos for a title and artist.
 export async function findOnYouTube(title: string, artist: string): Promise<YouTubeSearchResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Please sign in again." };
-
-  const t = title.trim().slice(0, 120);
-  const a = artist.trim().slice(0, 120);
-  if (!t) return { error: "Enter the song title first." };
-
-  try {
-    const matches = await findVideos(t, a);
-    if (matches.length === 0) return { error: "No matches found on YouTube. You can paste a link instead." };
-    return { matches };
-  } catch (error) {
-    if (error instanceof YouTubeError) return { error: error.message };
-    console.error("findOnYouTube failed", error);
-    return { error: "YouTube search failed. Please try again." };
-  }
+  return searchAs("YouTube", title, artist, findVideos, (e) => e instanceof YouTubeError);
 }
