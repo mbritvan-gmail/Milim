@@ -25,6 +25,7 @@ export function SongView({
 }) {
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [showTranslit, setShowTranslit] = useState(initialShowTranslit);
+  const [wordsOpen, setWordsOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   // Section labels (Verse, Chorus...) are headings, not tappable lines.
@@ -117,29 +118,42 @@ export function SongView({
       </section>
 
       <section aria-label="Key words" className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Key words ({words.length})</h2>
-        {words.length === 0 ? (
-          <p className="text-sm text-muted">No key words were found for this song.</p>
-        ) : (
-          <ul className="grid gap-2">
-            {words.map((w) => (
-              <li key={w.id} className="flex items-baseline justify-between gap-4 rounded-xl border border-border bg-surface px-4 py-3">
-                <div>
-                  <span lang="he" className="hebrew text-xl">
-                    {w.lemma}
-                  </span>
-                  {showTranslit && w.transliteration && (
-                    <span className="ml-2 text-sm italic text-muted">{w.transliteration}</span>
-                  )}
-                </div>
-                <div className="text-right">
-                  <span className="block">{w.english}</span>
-                  {w.part_of_speech && <span className="block text-xs text-muted">{w.part_of_speech}</span>}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+        <button
+          type="button"
+          onClick={() => setWordsOpen((o) => !o)}
+          aria-expanded={wordsOpen}
+          aria-controls="key-words-list"
+          className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 text-left hover:bg-surface-2"
+        >
+          <span className="text-lg font-semibold">Key words ({words.length})</span>
+          <span aria-hidden className="text-2xl leading-none text-accent">
+            {wordsOpen ? "−" : "+"}
+          </span>
+        </button>
+        {wordsOpen &&
+          (words.length === 0 ? (
+            <p className="text-sm text-muted">No key words were found for this song.</p>
+          ) : (
+            <ul id="key-words-list" className="grid gap-2">
+              {words.map((w) => (
+                <li key={w.id} className="flex items-center justify-between gap-4 rounded-xl border border-border bg-surface px-4 py-3">
+                  {/* English on the left, Hebrew on the right. */}
+                  <div className="min-w-0 text-left">
+                    <span className="block">{w.english}</span>
+                    {w.part_of_speech && <span className="block text-xs text-muted">{w.part_of_speech}</span>}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span lang="he" className="hebrew block text-xl">
+                      {w.lemma}
+                    </span>
+                    {showTranslit && w.transliteration && (
+                      <span className="block text-sm italic text-muted">{w.transliteration}</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ))}
       </section>
     </div>
   );
