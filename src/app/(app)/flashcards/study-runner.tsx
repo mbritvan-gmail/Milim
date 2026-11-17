@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { CloseOrLink } from "@/components/overlay";
 import { useRef, useState } from "react";
 import { WordCardBack } from "@/components/word-card-back";
 import { ConjugationButton } from "@/components/conjugation";
@@ -96,13 +96,14 @@ export function StudyRunner({
   const header = (
     <div className="flex items-center justify-between gap-2">
       <div className="flex gap-2">
-        <Link
+        <CloseOrLink
           href={backHref}
-          aria-label="Exit"
+          ariaLabel="Exit"
+          hideInOverlay
           className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-lg text-muted hover:bg-surface hover:text-foreground"
         >
           ✕
-        </Link>
+        </CloseOrLink>
         <button
           type="button"
           onClick={undo}
@@ -166,9 +167,9 @@ export function StudyRunner({
           </div>
         </div>
         {problem}
-        <Link href={backHref} className="flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong">
+        <CloseOrLink href={backHref} className="flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong">
           {backLabel}
-        </Link>
+        </CloseOrLink>
       </div>
     );
   }

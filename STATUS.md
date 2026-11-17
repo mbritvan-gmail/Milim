@@ -86,6 +86,12 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Decision: no Hebrew-speaker review step; we rely on the model. Possible later: a "report a mistake" button, an edit mode on the Dictionary, other tenses, testing steps.
 - Old songs' verbs may still be stored as sung forms (not infinitive) until re-added; a one-off cleanup could normalize them.
 
+## Pop-up screens (built)
+- Settings, a Dictionary word, a study session / the Flash Cards start screen and a quiz open as full-screen pop-ups over the page you were on, with an X (also Escape and the browser Back button). Built with Next.js intercepting + parallel routes: `src/app/(app)/@modal/(.)settings`, `(.)flashcards`, `(.)dictionary/[id]`, `(.)songs/[id]/quiz`, the shared `src/components/overlay.tsx`, and the `modal` slot in `src/app/(app)/layout.tsx`.
+- Opening the same address directly (refresh, shared link) shows the normal full page. Pages are reused, not copied.
+- Inside a pop-up, "Back to ..." buttons close it (`CloseOrLink`); the study screen's own exit X is hidden there. When a pop-up closes, the page underneath refreshes (`StaleRefresher`).
+- The quiz start (a server action redirect) and the quiz's Retake (now `router.refresh()`) are not yet checked live.
+
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.
 2. Close sign-ups to invited people only (Supabase: turn off new sign-ups, invite friends/family), or add an allowed-email list.

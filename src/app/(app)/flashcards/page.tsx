@@ -6,6 +6,7 @@ import { loadSettings } from "@/lib/settings";
 import { isStudyFilter, newSessionId, type SessionCard, type StudyFilter } from "@/lib/study";
 import { cardsForFilter, cardsForSong } from "@/lib/study-data";
 import { StudyRunner } from "./study-runner";
+import { CloseOrLink } from "@/components/overlay";
 
 export const metadata = { title: "Study · milim" };
 
@@ -69,9 +70,9 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
     return (
       <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-6 text-center">
         <p className="text-lg font-medium">Nothing left in {studyName}.</p>
-        <Link href={backHref} className="flex h-11 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong">
+        <CloseOrLink href={backHref} className="flex h-11 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong">
           {backLabel}
-        </Link>
+        </CloseOrLink>
       </div>
     );
   }
@@ -121,6 +122,7 @@ async function FlashcardsHub() {
               {g.count > 0 ? (
                 <Link
                   href={`/flashcards?filter=${g.filter}`}
+                  replace
                   className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-4 hover:bg-surface-2"
                 >
                   <span className="font-medium">{g.label}</span>

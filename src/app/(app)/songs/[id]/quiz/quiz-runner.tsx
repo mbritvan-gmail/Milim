@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CloseOrLink } from "@/components/overlay";
 import { useState, useTransition } from "react";
 import { sameAnswer } from "@/lib/quiz";
 import { submitQuiz, type QuizAnswer, type QuizResult } from "./actions";
@@ -24,6 +25,7 @@ export function QuizRunner({
   questions: QuizQuestion[];
   showTranslit: boolean;
 }) {
+  const router = useRouter();
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [clueOpen, setClueOpen] = useState(false);
@@ -117,17 +119,17 @@ export function QuizRunner({
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={() => router.refresh()}
             className="h-12 flex-1 rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong"
           >
             Retake quiz
           </button>
-          <Link
+          <CloseOrLink
             href={`/songs/${songId}`}
             className="flex h-12 flex-1 items-center justify-center rounded-xl border border-border hover:bg-surface-2"
           >
             Back to song
-          </Link>
+          </CloseOrLink>
         </div>
       </div>
     );
