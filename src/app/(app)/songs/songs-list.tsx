@@ -87,16 +87,11 @@ export function SongsList({ songs: serverSongs, tabs }: { songs: ListSong[]; tab
               aria-haspopup="menu"
               aria-expanded={menuOpen}
               aria-label="Song options"
-              className="flex h-11 items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 hover:bg-surface-2"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface hover:bg-surface-2"
             >
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-                <circle cx="5" cy="12" r="1.8" />
-                <circle cx="12" cy="12" r="1.8" />
-                <circle cx="19" cy="12" r="1.8" />
-              </svg>
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M6 9l6 6 6-6" />
-              </svg>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
             </button>
             {menuOpen && (
               <div role="menu" className="absolute right-0 top-12 z-20 flex w-48 flex-col rounded-2xl border border-border bg-surface-2 p-1.5 shadow-xl">

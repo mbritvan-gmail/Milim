@@ -243,7 +243,7 @@ export function SongView({
             <>
               <p className="text-sm text-muted">Tap a Hebrew word to add it to the Song Vocabulary.</p>
               <button type="button" onClick={() => setSheet({ kind: "details" })} className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-surface-2">
-                Song details
+                Title, artist &amp; link
               </button>
             </>
           ) : (
