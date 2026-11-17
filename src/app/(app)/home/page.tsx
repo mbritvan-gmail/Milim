@@ -54,22 +54,19 @@ export default function HomePage() {
   return (
     <div className="relative -mb-24 flex flex-1 flex-col pb-24">
       <RotatingBackground creditClass="bottom-28" />
-      <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-3 px-4 py-8">
-        <h1 className="hebrew mb-1 text-center text-4xl font-bold text-accent">
-          מילים
-        </h1>
-        {MODULES.map((m) => (
-          <Link
-            key={m.href}
-            href={m.href}
-            className="flex h-16 items-center gap-3 rounded-xl border border-border/70 bg-surface/70 px-4 backdrop-blur-md text-base font-semibold transition-colors hover:bg-surface-2"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent [&_svg]:h-6 [&_svg]:w-6">
-              {m.svg}
-            </span>
-            {m.label}
-          </Link>
-        ))}
+      <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-8 px-4 py-8">
+        <h1 className="hebrew text-center text-4xl font-bold text-accent">מילים</h1>
+        {/* Like app icons on a phone's home screen: an icon with its name underneath. */}
+        <div className="grid grid-cols-3 gap-4">
+          {MODULES.map((m) => (
+            <Link key={m.href} href={m.href} className="group flex flex-col items-center gap-2">
+              <span className="flex h-[72px] w-[72px] items-center justify-center rounded-[1.4rem] border border-border bg-surface text-accent shadow-lg transition-transform group-active:scale-95 [&_svg]:h-9 [&_svg]:w-9">
+                {m.svg}
+              </span>
+              <span className="rounded-md bg-background/40 px-2 py-0.5 text-center text-sm font-medium backdrop-blur-sm">{m.label}</span>
+            </Link>
+          ))}
+        </div>
       </main>
     </div>
   );
