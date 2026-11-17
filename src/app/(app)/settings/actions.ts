@@ -37,6 +37,9 @@ export async function saveSettings(change: SettingsChange): Promise<string | nul
       const { error } = await supabase.from("profiles").update(profile).eq("id", user.id);
       if (error) {
         console.error("profile update failed", error);
+        if (change.showNikud !== undefined && /show_nikud/i.test(error.message)) {
+          return "Couldn't save that yet. The latest database update (the conjugation script) hasn't been run.";
+        }
         return "Couldn't save that. Please try again.";
       }
     }
