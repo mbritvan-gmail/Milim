@@ -109,9 +109,17 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
                 ? `Test yourself on ${words.length} key words.`
                 : `Best score ${best!.score}/${best!.total} · ${attempts.length} ${attempts.length === 1 ? "attempt" : "attempts"}`}
             </p>
-            <form action={prepareQuiz.bind(null, song.id)}>
-              <QuizStartButton label={attempts.length === 0 ? "Take the quiz" : "Take the quiz again"} />
-            </form>
+            <div className="flex flex-wrap items-center gap-2">
+              <form action={prepareQuiz.bind(null, song.id)}>
+                <QuizStartButton label={attempts.length === 0 ? "Take the quiz" : "Take the quiz again"} />
+              </form>
+              <Link
+                href={`/flashcards?song=${song.id}`}
+                className="flex h-11 items-center rounded-xl border border-border px-5 font-semibold hover:bg-surface-2"
+              >
+                Flashcards
+              </Link>
+            </div>
           </>
         )}
       </section>

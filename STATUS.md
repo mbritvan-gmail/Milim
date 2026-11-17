@@ -26,14 +26,19 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - No server-side refusal fallback is configured (lyrics are benign); refusals show a friendly error.
 
 ## Built since (awaiting live test)
-- Per-song quiz at `/songs/[id]/quiz`: up to 15 words (unlearned first), 4 choices, Clue button (shows the lyric line), instant feedback,
-  server-graded results saved to `quiz_attempts`/`quiz_answers`, Leitner updates via `record_answer`, retakes, best score on the song page.
-  Wrong answers are written once by the AI (`generateDistractors`), cached in `quiz_options`, topped up from other words if needed.
+- Per-song quiz at `/songs/[id]/quiz` (verified by the user): up to 15 words (unlearned first), 4 choices, Clue button, server-graded results saved,
+  Leitner updates via `record_answer`, retakes, best score on the song page. Wrong answers come from the AI once, cached in `quiz_options`.
 - "Find on YouTube" on the add-lyrics form. Needs `YOUTUBE_API_KEY` in Vercel (Google Cloud -> YouTube Data API v3 key; about 100 searches/day free).
+- Bottom tab bar (Songs / Cards / Dictionary). Signed-in pages live in the `src/app/(app)` route group (URLs unchanged).
+- Flashcards `/flashcards`: Leitner review of due words across all songs (+ up to 10 new words per 20-card session); `?mode=all` practices anything;
+  `?song=ID` studies one song's words. Missed cards come back once at the end ("second look"); only the first answer counts toward progress.
+- Master Dictionary `/dictionary`: every word from the user's songs with search (Hebrew/English/pronunciation), status filters, "I know this" (`mark_word_known`),
+  pronunciation switch, and shortcuts to review/practice.
+- Browser-tested with fake data (flip, requeue, summary, filters, search, failure handling); the real database path is not yet exercised live.
 
 ## Next steps, in order
-1. Live test the quiz on a real song; fix whatever shows up. Set up `YOUTUBE_API_KEY` and test YouTube search.
-2. Leitner flashcards (due words across songs) and the Master Dictionary page (browse/practice all words, mark as known via `mark_word_known`).
+1. Live test flashcards + dictionary on real songs; set up `YOUTUBE_API_KEY` and test YouTube search.
+2. Close sign-ups to invited people only (Supabase: turn off new sign-ups, invite friends/family), or add an allowed-email list.
 3. Edit/regenerate translations, tap a word to add key vocab, remove vocab (owner only).
 4. Libraries, public library page, edit suggestions + owner approval.
 5. Help page / tips: section names in [brackets], one line per row, public is permanent.
