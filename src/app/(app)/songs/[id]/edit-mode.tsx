@@ -75,10 +75,26 @@ export function EditModeProvider({ children }: { children: React.ReactNode }) {
 }
 
 // The Edit / Done button in a song's header, with "Remove song" beside Done while editing.
-export function EditButton({ onRemove }: { onRemove?: () => void }) {
+export function EditButton({ onRemove, visibility }: { onRemove?: () => void; visibility?: { isPublic: boolean; onMakePublic: () => void } }) {
   const { editing, setEditing } = useEditMode();
   return editing ? (
-    <div className="flex shrink-0 items-center gap-2">
+    <div className="ml-auto flex shrink-0 items-center gap-2">
+      {visibility && (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={visibility.isPublic}
+          aria-label={visibility.isPublic ? "Public (can't be made private again)" : "Private. Switch to make public"}
+          disabled={visibility.isPublic}
+          onClick={visibility.onMakePublic}
+          className="flex h-10 items-center gap-2 rounded-xl border border-border px-3 text-sm disabled:opacity-80"
+        >
+          <span className={`flex h-5 w-9 shrink-0 rounded-full p-0.5 transition-colors ${visibility.isPublic ? "bg-accent" : "bg-border"}`}>
+            <span className={`block h-4 w-4 rounded-full bg-background transition-transform ${visibility.isPublic ? "translate-x-4" : ""}`} />
+          </span>
+          {visibility.isPublic ? "Public" : "Private"}
+        </button>
+      )}
       {onRemove && (
         <button
           type="button"

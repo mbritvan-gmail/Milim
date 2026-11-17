@@ -6,7 +6,6 @@ import { parseMedia } from "@/lib/media";
 import { loadSettings } from "@/lib/settings";
 import { chunk, fingerprint } from "@/lib/study";
 import { SongView, type SongLine, type SongWord } from "./song-view";
-import { SongActions } from "./song-actions";
 import { QuizStartButton } from "./quiz-start-button";
 import { AddSongButton } from "./add-song-button";
 import { prepareQuiz } from "./quiz/actions";
@@ -131,8 +130,8 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   return (
     <EditModeProvider>
       <header className="flex flex-col gap-1">
-        <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold">{song.title}</h1>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="min-w-[8rem] flex-1 text-2xl font-semibold">{song.title}</h1>
           {(isOwner || song.visibility === "public") && (
             <SongHeaderControls songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} canRemove={isOwner || inMyList} />
           )}
@@ -221,7 +220,6 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
         learnAfter={settings.learnAfter}
       />
 
-      <SongActions songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} />
     </EditModeProvider>
   );
 }
