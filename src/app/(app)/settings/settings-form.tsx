@@ -38,6 +38,11 @@ function Segment<T extends string | number>({
   );
 }
 
+// Says which parts of the app a section affects.
+function AppliesTo({ children }: { children: React.ReactNode }) {
+  return <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-normal normal-case tracking-normal text-muted">{children}</span>;
+}
+
 export function SettingsForm({
   initialLearnAfter,
   initialDirection,
@@ -68,8 +73,30 @@ export function SettingsForm({
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="flex flex-col gap-5 rounded-xl border border-border bg-surface p-4">
-        <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Learning</h2>
+      <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+        <h2 className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted">
+          Flashcards <AppliesTo>Flashcards only</AppliesTo>
+        </h2>
+        <div className="flex flex-col gap-2">
+          <p className="font-medium">Study direction</p>
+          <Segment
+            label="Study direction"
+            options={DIRECTIONS}
+            value={direction}
+            onChange={(d) => {
+              const before = direction;
+              setDirection(d);
+              void change({ direction: d }, () => setDirection(before));
+            }}
+          />
+          <p className="text-xs text-muted">Which side a flashcard starts on. You can still switch it during a session.</p>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+        <h2 className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted">
+          Learning <AppliesTo>Flashcards and quizzes</AppliesTo>
+        </h2>
         <div className="flex flex-col gap-2">
           <p className="font-medium">Correct answers to learn a word</p>
           <Segment
@@ -83,33 +110,21 @@ export function SettingsForm({
             }}
           />
           <p className="text-xs text-muted">
-            Quiz and flashcard answers both count. A word you miss after learning it goes back to Learning.
+            Answers from flashcards and quizzes both count. A word you miss after learning it goes back to Learning.
           </p>
-        </div>
-        <div className="flex flex-col gap-2">
-          <p className="font-medium">Study direction</p>
-          <Segment
-            label="Study direction"
-            options={DIRECTIONS}
-            value={direction}
-            onChange={(d) => {
-              const before = direction;
-              setDirection(d);
-              void change({ direction: d }, () => setDirection(before));
-            }}
-          />
-          <p className="text-xs text-muted">You can still switch it during a session.</p>
         </div>
       </section>
 
       <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
-        <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Display</h2>
+        <h2 className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted">
+          Display <AppliesTo>Whole app</AppliesTo>
+        </h2>
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="font-medium">Show pronunciation</p>
             <p className="text-xs text-muted">
-              The English spelling of Hebrew words, shown on song pages, in lists and on the back of cards. It never shows on
-              the front of a Hebrew card.
+              The English spelling of Hebrew words, on song pages, in lists and on the back of flashcards. It never shows on
+              the front of a Hebrew flashcard.
             </p>
           </div>
           <button
