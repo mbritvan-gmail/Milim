@@ -79,20 +79,18 @@ export function EditButton({ onRemove, visibility }: { onRemove?: () => void; vi
   const { editing, setEditing } = useEditMode();
   return editing ? (
     <div className="ml-auto flex shrink-0 items-center gap-2">
-      {visibility && (
+      {visibility && !visibility.isPublic && (
         <button
           type="button"
-          role="switch"
-          aria-checked={visibility.isPublic}
-          aria-label={visibility.isPublic ? "Public (can't be made private again)" : "Private. Switch to make public"}
-          disabled={visibility.isPublic}
           onClick={visibility.onMakePublic}
-          className="flex h-10 items-center gap-2 rounded-xl border border-border px-3 text-sm disabled:opacity-80"
+          className="flex h-10 items-center gap-1.5 rounded-xl border border-border px-3 text-sm font-semibold hover:bg-surface"
         >
-          <span className={`flex h-5 w-9 shrink-0 rounded-full p-0.5 transition-colors ${visibility.isPublic ? "bg-accent" : "bg-border"}`}>
-            <span className={`block h-4 w-4 rounded-full bg-background transition-transform ${visibility.isPublic ? "translate-x-4" : ""}`} />
-          </span>
-          {visibility.isPublic ? "Public" : "Private"}
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18" />
+            <path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z" />
+          </svg>
+          Make public
         </button>
       )}
       {onRemove && (

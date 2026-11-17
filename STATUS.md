@@ -70,7 +70,8 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - The "back to songs / library / dictionary / song" links at the top of pages are gone (the bottom bar's Back covers it). Study / quiz end-of-session buttons stay.
 - Remove song (delete / archive / remove from my list, with the same warnings) now appears only while editing a song. Share in the public library stays visible to owners.
 - Changing a setting refreshes pages already visited, so Back shows the new setting without a reload (revalidatePath in `saveSettings`, plus settings in the song and Dictionary view keys).
-- Idea pending a decision: removing songs from the My songs list.
+- Songs list: a dropdown (Add song / Edit) next to the title. Edit mode puts a minus on every row (asks first; wording depends on the song) and a "Make public" button on your own private songs. No Private/Public switch anywhere: public is one-way.
+- New songs default to Public; Private must be chosen on purpose. On a song, Edit shows "Make public" (private songs only) next to Remove and Done.
 
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.

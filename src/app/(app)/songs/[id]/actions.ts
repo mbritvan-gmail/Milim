@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -8,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 //  - their own public song: archived (kept for people who already added it, hidden from
 //    the public library) and removed from their list; public songs are never hard-deleted
 //  - someone else's song: just removed from their list
-export async function removeSong(songId: string) {
+async function performRemove(songId: string) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -39,8 +40,25 @@ export async function removeSong(songId: string) {
       .eq("song_id", songId);
     if (error) throw new Error(`remove from list: ${error.message}`);
   }
+  revalidatePath("/", "layout");
+}
 
+// From a song's own page: remove it, then go back to the list.
+export async function removeSong(songId: string) {
+  await performRemove(songId);
   redirect("/songs");
+}
+
+// From the song list: remove it and stay on the list. Returns an error message, or null.
+export async function removeFromList(songId: string): Promise<string | null> {
+  try {
+    await performRemove(songId);
+    return null;
+  } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+    console.error("removeFromList failed", error);
+    return "Couldn't remove that song. Please try again.";
+  }
 }
 
 // Add someone's public song to the signed-in user's own list.
@@ -84,6 +102,7 @@ export async function makeSongPublic(songId: string): Promise<boolean> {
       console.error("makeSongPublic failed", error);
       return false;
     }
+    revalidatePath("/", "layout");
     return true;
   } catch (error) {
     console.error("makeSongPublic crashed", error);

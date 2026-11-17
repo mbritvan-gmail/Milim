@@ -132,19 +132,19 @@ export function NewSongForm() {
       <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
         <legend className="px-1 text-sm text-muted">Who can see this song?</legend>
         <label className="flex items-start gap-3">
-          <input type="radio" name="visibility" value="private" defaultChecked className="mt-1 accent-[var(--accent)]" />
-          <span>
-            <span className="font-medium">Private</span>
-            <span className="block text-sm text-muted">Only you.</span>
-          </span>
-        </label>
-        <label className="flex items-start gap-3">
-          <input type="radio" name="visibility" value="public" className="mt-1 accent-[var(--accent)]" />
+          <input type="radio" name="visibility" value="public" defaultChecked className="mt-1 accent-[var(--accent)]" />
           <span>
             <span className="font-medium">Public</span>
             <span className="block text-sm text-muted">
-              Added to the shared library for everyone. <strong className="text-foreground">This can&apos;t be undone.</strong>
+              Added to the shared library for everyone. <strong className="text-foreground">A public song stays public.</strong>
             </span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3">
+          <input type="radio" name="visibility" value="private" className="mt-1 accent-[var(--accent)]" />
+          <span>
+            <span className="font-medium">Private</span>
+            <span className="block text-sm text-muted">Only you. You can make it public later, but not the other way around.</span>
           </span>
         </label>
       </fieldset>

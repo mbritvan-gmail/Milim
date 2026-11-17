@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SongsTabs } from "@/components/songs-tabs";
+import { SongsList, type ListSong } from "./songs-list";
 
 export const metadata = { title: "Songs · milim" };
 
@@ -27,48 +27,17 @@ async function SongsBody() {
 
   const { data: rows } = await supabase
     .from("user_songs")
-    .select("added_at, songs(id, title, artist, visibility)")
+    .select("added_at, songs(id, title, artist, visibility, owner_id)")
     .order("added_at", { ascending: false });
 
-  const songs = (rows ?? []).flatMap((row) => {
+  const songs: ListSong[] = (rows ?? []).flatMap((row) => {
     const song = Array.isArray(row.songs) ? row.songs[0] : row.songs;
-    return song ? [song] : [];
+    return song
+      ? [{ id: song.id, title: song.title, artist: song.artist, visibility: song.visibility === "public" ? ("public" as const) : ("private" as const), isOwner: song.owner_id === user.id }]
+      : [];
   });
 
   return (
-    <>
-      <h1 className="text-2xl font-semibold">Songs</h1>
-      <SongsTabs active="mine" />
-
-      <Link
-        href="/songs/new"
-        className="flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast transition-colors hover:bg-accent-strong"
-      >
-        + Add lyrics
-      </Link>
-
-      {songs.length === 0 ? (
-        <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">
-          No songs yet. Add your first song to start learning.
-        </p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {songs.map((song) => (
-            <li key={song.id}>
-              <Link
-                href={`/songs/${song.id}`}
-                className="flex flex-col rounded-xl border border-border bg-surface px-4 py-3 transition-colors hover:bg-surface-2"
-              >
-                <span className="font-medium">{song.title}</span>
-                <span className="text-sm text-muted">
-                  {[song.artist, song.visibility === "public" ? "Public" : "Private"].filter(Boolean).join(" · ")}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
-    </>
+    <SongsList songs={songs} tabs={<SongsTabs active="mine" />} />
   );
 }
