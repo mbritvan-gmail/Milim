@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 // The "⋯ ▾" button beside a screen's title, opening a small menu of links.
-export function MenuButton({ label, items }: { label: string; items: { href: string; label: string; icon: React.ReactNode }[] }) {
+type MenuItem = { label: string; icon: React.ReactNode } & ({ href: string; onSelect?: never } | { onSelect: () => void; href?: never });
+
+export function MenuButton({ label, items }: { label: string; items: MenuItem[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -37,12 +39,28 @@ export function MenuButton({ label, items }: { label: string; items: { href: str
       </button>
       {open && (
         <div role="menu" className="absolute right-0 top-12 z-20 flex w-52 flex-col rounded-2xl border border-border bg-surface-2 p-1.5 shadow-xl">
-          {items.map((i) => (
-            <Link key={i.href} role="menuitem" href={i.href} className="flex h-11 items-center gap-3 rounded-xl px-3 font-semibold hover:bg-surface">
-              {i.icon}
-              {i.label}
-            </Link>
-          ))}
+          {items.map((i) =>
+            i.href ? (
+              <Link key={i.label} role="menuitem" href={i.href} className="flex h-11 items-center gap-3 rounded-xl px-3 font-semibold hover:bg-surface">
+                {i.icon}
+                {i.label}
+              </Link>
+            ) : (
+              <button
+                key={i.label}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  i.onSelect?.();
+                }}
+                className="flex h-11 items-center gap-3 rounded-xl px-3 text-left font-semibold hover:bg-surface"
+              >
+                {i.icon}
+                {i.label}
+              </button>
+            ),
+          )}
         </div>
       )}
     </div>

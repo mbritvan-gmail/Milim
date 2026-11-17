@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { EditButton, EditModeProvider, useEditMode } from "@/components/edit-mode";
 import { Sheet } from "@/components/sheet";
-import { useOverlay } from "@/components/overlay";
+import { CloseButton, useOverlay } from "@/components/overlay";
 import { StatusBadge } from "@/components/status-badge";
 import { genderLabel, hebrewText } from "@/lib/modules";
 import type { WordStatus } from "@/lib/study";
@@ -155,6 +155,7 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
             {archived ? " · Archived" : ""}
           </p>
         </div>
+        <div className="ml-auto flex items-center gap-2">
         {(isOwner || added) && (
           <EditButton
             removeLabel="Remove module"
@@ -165,6 +166,8 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
             visibility={isOwner ? { isPublic, onMakePublic: () => { setProblem(""); setSheet({ kind: "public" }); } } : undefined}
           />
         )}
+        <CloseButton />
+        </div>
       </header>
 
       {editMode && (

@@ -216,8 +216,8 @@ export async function makeModulePublic(moduleId: string): Promise<boolean> {
 }
 
 // Remove a module from the person's account: delete their own private module, archive their own
-// public one, or just take someone else's off their list. Then go back to the list.
-export async function removeModule(moduleId: string) {
+// public one, or just take someone else's off their list.
+async function performRemoveModule(moduleId: string) {
   const supabase = await createClient();
   const user = await signedInUser(supabase);
   if (!user) redirect("/login");
@@ -235,7 +235,24 @@ export async function removeModule(moduleId: string) {
     if (error) throw new Error(`remove from list: ${error.message}`);
   }
   revalidatePath("/", "layout");
+}
+
+// From a module's own page: remove it, then go back to the list.
+export async function removeModule(moduleId: string) {
+  await performRemoveModule(moduleId);
   redirect("/vocabulary");
+}
+
+// From the module list: remove it and stay on the list. Returns an error message, or null.
+export async function removeModuleFromList(moduleId: string): Promise<string | null> {
+  try {
+    await performRemoveModule(moduleId);
+    return null;
+  } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+    console.error("removeModuleFromList failed", error);
+    return "Couldn't remove that module. Please try again.";
+  }
 }
 
 async function ownedModule(supabase: SupabaseClient, moduleId: string) {

@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MenuButton } from "@/components/menu-button";
+import { ModulesList, type ListModule } from "./modules-list";
 import { chunk } from "@/lib/study";
 
 export const metadata = { title: "Vocabulary · milim" };
@@ -95,46 +95,20 @@ async function VocabularyBody() {
   const { data: owners } = ownerIds.length ? await supabase.from("profiles").select("id, display_name").in("id", ownerIds) : { data: [] };
   const nameById = new Map((owners ?? []).map((o) => [o.id as string, o.display_name as string | null]));
 
-  return (
-    <>
-      {header}
-      <p className="text-sm text-muted">Themed word lists. Add one to put its words in your Dictionary.</p>
-      {modules.length === 0 ? (
-        <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">No modules yet. Use the menu to make your first one.</p>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {modules.map((m) => {
-            const words = wordsByModule.get(m.id) ?? [];
-            const added = mine.has(m.id);
-            const done = words.filter((w) => learned.has(w)).length;
-            const by = m.owner_id === user.id ? (m.visibility === "public" ? "Shared by you" : "Private") : `Shared by ${nameById.get(m.owner_id) ?? "someone"}`;
-            return (
-              <li key={m.id}>
-                <Link href={`/vocabulary/${m.id}`} className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-4 transition-colors hover:bg-surface-2">
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="text-lg font-semibold">{m.title}</span>
-                    <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${added ? "border-success/50 bg-success/15 text-success" : "border-border text-muted"}`}>
-                      {added ? "Added" : "Not added"}
-                    </span>
-                  </span>
-                  <span className="text-sm text-muted">
-                    {words.length} {words.length === 1 ? "word" : "words"} · {by}
-                    {m.archived_at ? " · Archived" : ""}
-                  </span>
-                  {added && words.length > 0 && (
-                    <span className="flex items-center gap-2 text-xs text-muted">
-                      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
-                        <span className="block h-full bg-success" style={{ width: `${Math.round((done / words.length) * 100)}%` }} />
-                      </span>
-                      {done} of {words.length} learned
-                    </span>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </>
-  );
+  const list: ListModule[] = modules.map((m) => {
+    const words = wordsByModule.get(m.id) ?? [];
+    return {
+      id: m.id as string,
+      title: m.title as string,
+      visibility: m.visibility === "public" ? "public" : "private",
+      isOwner: m.owner_id === user.id,
+      added: mine.has(m.id),
+      archived: Boolean(m.archived_at),
+      words: words.length,
+      learned: words.filter((w) => learned.has(w)).length,
+      by: m.owner_id === user.id ? (m.visibility === "public" ? "Shared by you" : "Private") : `Shared by ${nameById.get(m.owner_id) ?? "someone"}`,
+    };
+  });
+
+  return <ModulesList modules={list} />;
 }

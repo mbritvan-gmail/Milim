@@ -6,7 +6,7 @@ export const maxDuration = 60;
 
 export default function ModuleOverlay(props: Parameters<typeof ModulePage>[0]) {
   return (
-    <Overlay>
+    <Overlay bar={false}>
       <ModulePage {...props} />
     </Overlay>
   );

@@ -17,7 +17,9 @@ export function useOverlay() {
   return useContext(OverlayContext);
 }
 
-export function Overlay({ children }: { children: React.ReactNode }) {
+// `bar={false}` leaves out the top bar with the X; the screen then puts its own <CloseButton /> where it fits
+// (for example beside its Edit button) to save space.
+export function Overlay({ children, bar = true }: { children: React.ReactNode; bar?: boolean }) {
   const router = useRouter();
   const close = useCallback(() => router.back(), [router]);
 
@@ -37,20 +39,31 @@ export function Overlay({ children }: { children: React.ReactNode }) {
     <OverlayContext.Provider value={{ close }}>
       <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 overflow-y-auto bg-background">
         <div className="flex min-h-full flex-col">
-          <div className="sticky top-0 z-10 flex justify-end bg-background/90 px-3 py-2 backdrop-blur-md">
-            <button
-              type="button"
-              onClick={close}
-              aria-label="Close"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-xl text-muted transition-colors hover:bg-surface hover:text-foreground"
-            >
-              ×
-            </button>
-          </div>
+          {bar && (
+            <div className="sticky top-0 z-10 flex justify-end bg-background/90 px-3 py-2 backdrop-blur-md">
+              <CloseButton />
+            </div>
+          )}
           {children}
         </div>
       </div>
     </OverlayContext.Provider>
+  );
+}
+
+// The round X that closes the pop-up it is in (renders nothing outside a pop-up).
+export function CloseButton() {
+  const overlay = useOverlay();
+  if (!overlay) return null;
+  return (
+    <button
+      type="button"
+      onClick={overlay.close}
+      aria-label="Close"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-xl text-muted transition-colors hover:bg-surface hover:text-foreground"
+    >
+      ×
+    </button>
   );
 }
 
