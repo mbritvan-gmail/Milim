@@ -32,10 +32,15 @@ export type AnalyzeLyricsInput = {
   lines: string[];
 };
 
+export type DefineWordInput = { word: string; line: string; title?: string };
+export type DefineWordResult = { lemma: string; transliteration: string; english: string; part_of_speech: string };
+
 export type DistractorInput = { lemma: string; english: string; part_of_speech?: string | null };
 
 export interface AIProvider {
   analyzeLyrics(input: AnalyzeLyricsInput): Promise<LyricsAnalysis>;
+  /** How a tapped word should be entered in a song's vocabulary (dictionary form, meaning, ...). */
+  defineWord(input: DefineWordInput): Promise<DefineWordResult>;
   /** Wrong-but-plausible English answers for quiz questions, aligned with the input. */
   generateDistractors(words: DistractorInput[]): Promise<string[][]>;
 }

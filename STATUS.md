@@ -55,20 +55,25 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - New songs store verbs as Hebrew infinitives with English "to ..." (e.g. לאהוב / to love). Songs added earlier keep the old past-tense forms until re-added
   (or until the planned "regenerate key words" feature).
 
+## Song editing (built; no new SQL needed)
+- Owners get an Edit / Done button on their song: edit a line (English, pronunciation, Hebrew typos), tap a Hebrew word to add it (Claude fills in lemma, pronunciation, meaning, part of speech),
+  remove a word from the Song Vocabulary with an x (removed words stay out of the Dictionary unless another song has them), edit song details (title, artist, Spotify/YouTube link + Find buttons). Undo toast after each edit.
+- Other people on a public song see "Suggest a change" under a line's English; the owner reviews them in a Suggestions box at the top of the song (Approve / Reject, with Undo). Notes are stored as JSON in `edit_suggestions.proposed_value`.
+- "Key words" is now **Song Vocabulary** everywhere. Needs a live test with two accounts.
+
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.
 2. Close sign-ups to invited people only (Supabase: turn off new sign-ups, invite friends/family), or add an allowed-email list.
-3. Editing (owner only): edit a line's translation, regenerate a line or the whole song, tap a word to add it to the key words, remove key words,
-   and regenerate key words (also refreshes old songs: infinitive verbs, pronouns kept).
+3. (Editing is built; see above.)
 4. User-created libraries (named collections, e.g. by genre or difficulty; tables `libraries` / `library_songs` already exist).
-5. Edit suggestions on public songs, with owner approval (table `edit_suggestions` and its rules already exist).
+5. (Edit suggestions are built; see above.)
 6. Help / tips page (section names in [brackets], one line per row, public is permanent, pronunciation setting).
 7. Before sharing widely: report / takedown path for public lyrics and a short terms note, Anthropic spend limit and usage watching, tighten who may add vocab entries.
 8. Later ideas: a small "due" badge on the Dictionary tab, a "words not reviewed in 30 days" nudge for learned words, more dictionary upgrades.
 9. Housekeeping: delete the stray Vercel variable named `default`; lowercase "milim" in the Supabase email template.
 
 ## Notes
-- Naming: a song's word list is called the **Song vocabulary** (not "key words"); the **Dictionary** is the words from all of a person's songs.
+- Naming: a song's word list is called the **Song Vocabulary** (not "key words"); the **Dictionary** is the words from all of a person's songs.
 - Editing plan (mockup approved in outline, see the "milim editing mockups" artifact): owners get an Edit button on their songs (edit a line's English / pronunciation / Hebrew,
   remove a word from the song vocabulary with an x, add one by tapping a Hebrew word, edit song details, Undo after each edit). Other users can suggest a change to a line's English;
   the owner reviews them in an inbox (approve / reject). "Regenerate" was dropped. Open question: keep words a person has studied in the Dictionary even after they are removed from every song.

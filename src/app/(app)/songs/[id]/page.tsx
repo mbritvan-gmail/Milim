@@ -10,6 +10,22 @@ import { SongActions } from "./song-actions";
 import { QuizStartButton } from "./quiz-start-button";
 import { AddSongButton } from "./add-song-button";
 import { prepareQuiz } from "./quiz/actions";
+import { decodeSuggestion, type EditActions, type PendingSuggestion } from "@/lib/editing";
+import { EditButton, EditModeProvider } from "./edit-mode";
+import * as editActionModule from "./edit-actions";
+
+// Server actions handed to the screen as a plain object (so tests can swap in stand-ins).
+const editActions: EditActions = {
+  updateLine: editActionModule.updateLine,
+  suggestWord: editActionModule.suggestWord,
+  addVocabulary: editActionModule.addVocabulary,
+  removeVocabulary: editActionModule.removeVocabulary,
+  restoreVocabulary: editActionModule.restoreVocabulary,
+  updateSongDetails: editActionModule.updateSongDetails,
+  suggestLineChange: editActionModule.suggestLineChange,
+  resolveSuggestion: editActionModule.resolveSuggestion,
+  reopenSuggestion: editActionModule.reopenSuggestion,
+};
 
 export const metadata = { title: "Song · milim" };
 
@@ -44,7 +60,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
     supabase.from("lines").select("id, hebrew, transliteration, english").eq("song_id", id).order("position"),
     supabase
       .from("song_words")
-      .select("surface_form, vocab_entries(id, lemma, transliteration, english, part_of_speech)")
+      .select("surface_form, line_id, source, vocab_entries(id, lemma, transliteration, english, part_of_speech)")
       .eq("song_id", id),
     loadSettings(supabase, user.id),
     supabase.from("quiz_attempts").select("score, total").eq("song_id", id).order("taken_at", { ascending: false }).limit(50),
@@ -59,7 +75,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   const lines: SongLine[] = linesRes.data ?? [];
   const entries = (wordsRes.data ?? []).flatMap((row) => {
     const entry = Array.isArray(row.vocab_entries) ? row.vocab_entries[0] : row.vocab_entries;
-    return entry ? [{ ...entry, surface_form: row.surface_form }] : [];
+    return entry ? [{ ...entry, surface_form: row.surface_form, line_id: row.line_id as string | null, source: (row.source as string | null) ?? "ai" }] : [];
   });
 
   // Where the person stands with each of this song's words (New / Learning / Learned).
@@ -83,6 +99,28 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
     const { data: owner } = await supabase.from("profiles").select("display_name").eq("id", song.owner_id).maybeSingle();
     if (owner?.display_name) sharedBy = `Shared by ${owner.display_name}`;
   }
+  // Waiting suggestions are only loaded for the owner, who reviews them on this page.
+  let pending: PendingSuggestion[] = [];
+  if (isOwner) {
+    const { data: rows } = await supabase
+      .from("edit_suggestions")
+      .select("id, line_id, suggested_by, proposed_value")
+      .eq("song_id", id)
+      .eq("kind", "line_translation")
+      .eq("status", "pending")
+      .order("created_at");
+    const byIds = [...new Set((rows ?? []).map((r) => r.suggested_by as string))];
+    const names = new Map<string, string>();
+    if (byIds.length) {
+      const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", byIds);
+      for (const p of profs ?? []) if (p.display_name) names.set(p.id, p.display_name);
+    }
+    pending = (rows ?? []).flatMap((r) => {
+      if (!r.line_id) return [];
+      const { text, note } = decodeSuggestion(r.proposed_value);
+      return [{ id: r.id as string, lineId: r.line_id as string, by: names.get(r.suggested_by as string) ?? "a listener", text, note }];
+    });
+  }
   const attempts = attemptsRes.data ?? [];
   const best = attempts.reduce<{ score: number; total: number } | null>(
     (b, a) => (!b || a.score / a.total > b.score / b.total ? a : b),
@@ -90,12 +128,15 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   );
 
   return (
-    <>
+    <EditModeProvider>
       <header className="flex flex-col gap-1">
         <Link href={inMyList ? "/songs" : "/library"} className="text-sm text-muted underline underline-offset-4">
           {inMyList ? "← My songs" : "← Library"}
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">{song.title}</h1>
+        <div className="mt-2 flex items-start justify-between gap-3">
+          <h1 className="text-2xl font-semibold">{song.title}</h1>
+          {isOwner && <EditButton />}
+        </div>
         <p className="text-sm text-muted">
           {[song.artist, song.visibility === "public" ? "Public" : "Private", sharedBy].filter(Boolean).join(" · ")}
         </p>
@@ -167,7 +208,13 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       <SongView
-        key={fingerprint(words.flatMap((w) => [w.id, w.status, w.count]))}
+        key={fingerprint([...words.flatMap((w) => [w.id, w.status, w.count]), ...lines.flatMap((l) => [l.id, l.hebrew, l.english ?? "", l.transliteration ?? ""]), ...pending.map((p) => p.id), song.title, song.artist ?? "", song.media_url ?? ""])}
+        songId={song.id}
+        isOwner={isOwner}
+        canSuggest={!isOwner && song.visibility === "public"}
+        details={{ title: song.title, artist: song.artist ?? "", mediaUrl: song.media_url ?? "" }}
+        pending={pending}
+        actions={editActions}
         lines={lines}
         words={words}
         showTranslit={settings.showTranslit}
@@ -175,6 +222,6 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       />
 
       <SongActions songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} inMyList={inMyList} />
-    </>
+    </EditModeProvider>
   );
 }

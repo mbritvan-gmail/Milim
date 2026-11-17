@@ -7,6 +7,8 @@ import {
   type AnalyzeLyricsInput,
   type AnalyzedLine,
   type AnalyzedWord,
+  type DefineWordInput,
+  type DefineWordResult,
   type DistractorInput,
   type LyricsAnalysis,
 } from "./types";
@@ -56,6 +58,21 @@ You receive numbered Hebrew words with their correct English meaning. For each w
 - Clearly wrong: never a synonym or near-synonym of the correct answer, and never the correct answer itself.
 - No two alike. Short glosses (one to three words), lower case unless a proper noun.
 - Ideally real words a learner could confuse with it (similar meaning area, or a similar-sounding Hebrew word), but not so close that two answers could both be correct.`;
+
+const DefineSchema = z.object({
+  lemma: z.string(),
+  transliteration: z.string(),
+  english: z.string(),
+  part_of_speech: z.string(),
+});
+
+const DEFINE_PROMPT = `You help English speakers learn Hebrew through song lyrics.
+
+You receive one Hebrew word exactly as it appears in a lyric line, and the whole line. Say how the word should be entered in a vocabulary list:
+- "lemma": the dictionary form in Hebrew letters without vowel marks (nikud). Verbs in the infinitive (for example "לאהוב"), nouns in the singular, adjectives in the masculine singular. If the word has a one-letter prefix attached (such as the ל in לסרט, meaning "to the movie"), give the base word (סרט).
+- "transliteration": an easy-to-read Latin-letter pronunciation of the lemma.
+- "english": a short gloss (one to three words) that fits the meaning in this line. For verbs write the English infinitive with "to" (for example "to love").
+- "part_of_speech": one of noun, verb, adjective, adverb, preposition, pronoun, conjunction, expression.`;
 
 const DISTRACTOR_CHUNK = 30;
 
@@ -251,5 +268,42 @@ export class AnthropicProvider implements AIProvider {
     }
     await Promise.all(jobs);
     return out;
+  }
+
+  async defineWord({ word, line, title }: DefineWordInput): Promise<DefineWordResult> {
+    const signal = AbortSignal.timeout(30_000);
+    try {
+      const response = await this.client.messages.parse(
+        {
+          model: this.model,
+          max_tokens: 600,
+          system: DEFINE_PROMPT,
+          messages: [
+            {
+              role: "user",
+              content: `${title ? `Song title: ${title}\n` : ""}Word: ${word}\nLine: ${line}`,
+            },
+          ],
+          output_config: { effort: "low", format: zodOutputFormat(DefineSchema) },
+        },
+        { signal },
+      );
+      if (response.stop_reason === "refusal" || !response.parsed_output) {
+        throw new AIError("Claude couldn't look that word up.");
+      }
+      const r = response.parsed_output;
+      return {
+        lemma: r.lemma.trim(),
+        transliteration: r.transliteration.trim(),
+        english: r.english.trim(),
+        part_of_speech: r.part_of_speech.trim(),
+      };
+    } catch (error) {
+      if (error instanceof AIError) throw error;
+      if (signal.aborted || error instanceof Anthropic.APIUserAbortError) {
+        throw new AIError("Looking up that word took too long. Please try again.");
+      }
+      throw new AIError("The AI service had a problem looking up that word. Please try again.");
+    }
   }
 }
