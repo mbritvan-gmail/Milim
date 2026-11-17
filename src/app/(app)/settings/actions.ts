@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isDirection } from "@/lib/study";
 
-export type SettingsChange = { learnAfter?: number; direction?: string; showTranslit?: boolean };
+export type SettingsChange = { learnAfter?: number; direction?: string; showTranslit?: boolean; showNikud?: boolean };
 
 // Save one or more settings. Returns an error message, or null when everything was saved.
 export async function saveSettings(change: SettingsChange): Promise<string | null> {
@@ -32,6 +32,7 @@ export async function saveSettings(change: SettingsChange): Promise<string | nul
       profile.study_direction = change.direction;
     }
     if (change.showTranslit !== undefined) profile.show_transliteration = Boolean(change.showTranslit);
+    if (change.showNikud !== undefined) profile.show_nikud = Boolean(change.showNikud);
     if (Object.keys(profile).length > 0) {
       const { error } = await supabase.from("profiles").update(profile).eq("id", user.id);
       if (error) {

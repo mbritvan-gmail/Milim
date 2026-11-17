@@ -5,8 +5,13 @@ import { loadSettings } from "@/lib/settings";
 import { chunk } from "@/lib/study";
 import { WordCardBack } from "@/components/word-card-back";
 import { WordActions } from "./word-actions";
+import { ConjugationButton } from "@/components/conjugation";
+import { isVerb } from "@/lib/conjugation";
 
 export const metadata = { title: "Word · milim" };
+
+// Working out a verb's forms the first time can take a little while.
+export const maxDuration = 60;
 
 export default function WordPage({ params }: { params: Promise<{ id: string }> }) {
   return (
@@ -79,6 +84,10 @@ async function WordBody({ params }: { params: Promise<{ id: string }> }) {
           showStatus={false}
         />
       </div>
+
+      {isVerb(word.part_of_speech) && (
+        <ConjugationButton vocabId={word.id} lemma={word.lemma} english={word.english} showTranslit={settings.showTranslit} showNikud={settings.showNikud} />
+      )}
 
       <WordActions
         key={`${word.id}-${status}-${progressRes.data?.correct_count ?? 0}-${settings.learnAfter}`}

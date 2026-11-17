@@ -73,6 +73,16 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Songs list: a dropdown (Add song / Edit) next to the title. Edit mode puts a minus on every row (asks first; wording depends on the song) and a "Make public" button on your own private songs. No Private/Public switch anywhere: public is one-way.
 - New songs default to Public; Private must be chosen on purpose. On a song, Edit shows "Make public" (private songs only) next to Remove and Done.
 
+## Verb conjugation (built; REQUIRES the SQL script `supabase/migrations/20261120000000_conjugation.sql`; not yet live-tested with the AI)
+- Verb cards (flashcard back, and a word's page in the Dictionary) get a **Conjugation** button that opens a full-screen view with Present / Past / Future tabs; the last tab opened is remembered on the device.
+- Forms are written by Claude the first time anyone opens a verb (`getConjugation` in `src/app/(app)/conjugation/actions.ts`, prompt in `src/lib/ai/anthropic.ts`) and saved in `verb_forms` for everyone. If it fails the view shows a "Try again" message.
+- Forms are stored as prefix / stem / suffix segments with plain, vowel-marked and pronunciation text (`src/lib/conjugation.ts`), so the toggles only change drawing. Past "you" m/f collapse to one line with a note when nikud is off.
+- Settings: new "Show nikud" switch (Display, whole app; `profiles.show_nikud`); the existing "Show pronunciation" switch also drives conjugations.
+- Colors are theme tokens `--seg-prefix / --seg-stem / --seg-suffix`.
+- Song Vocabulary shows the dictionary form (verbs: infinitive) with a small "in the song: ..." line when the sung form differs.
+- Decision: no Hebrew-speaker review step; we rely on the model. Possible later: a "report a mistake" button, an edit mode on the Dictionary, other tenses, testing steps.
+- Old songs' verbs may still be stored as sung forms (not infinitive) until re-added; a one-off cleanup could normalize them.
+
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.
 2. Close sign-ups to invited people only (Supabase: turn off new sign-ups, invite friends/family), or add an allowed-email list.

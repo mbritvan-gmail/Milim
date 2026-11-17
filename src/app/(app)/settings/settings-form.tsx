@@ -59,16 +59,19 @@ export function SettingsForm({
   initialLearnAfter,
   initialDirection,
   initialShowTranslit,
+  initialShowNikud,
   email,
 }: {
   initialLearnAfter: number;
   initialDirection: Direction;
   initialShowTranslit: boolean;
+  initialShowNikud: boolean;
   email: string;
 }) {
   const [learnAfter, setLearnAfter] = useState(initialLearnAfter);
   const [direction, setDirection] = useState<Direction>(initialDirection);
   const [showTranslit, setShowTranslit] = useState(initialShowTranslit);
+  const [showNikud, setShowNikud] = useState(initialShowNikud);
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "dark" as ThemeChoice);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
@@ -164,6 +167,26 @@ export function SettingsForm({
             className={`h-7 w-12 shrink-0 rounded-full p-0.5 transition-colors ${showTranslit ? "bg-accent" : "bg-border"}`}
           >
             <span className={`block h-6 w-6 rounded-full bg-background transition-transform ${showTranslit ? "translate-x-5" : ""}`} />
+          </button>
+        </div>
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+          <div>
+            <p className="font-medium">Show nikud</p>
+            <p className="text-xs text-muted">The vowel marks under Hebrew letters. Off shows plain letters. Used in verb conjugations.</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showNikud}
+            aria-label="Show nikud"
+            onClick={() => {
+              const next = !showNikud;
+              setShowNikud(next);
+              void change({ showNikud: next }, () => setShowNikud(!next));
+            }}
+            className={`h-7 w-12 shrink-0 rounded-full p-0.5 transition-colors ${showNikud ? "bg-accent" : "bg-border"}`}
+          >
+            <span className={`block h-6 w-6 rounded-full bg-background transition-transform ${showNikud ? "translate-x-5" : ""}`} />
           </button>
         </div>
       </section>

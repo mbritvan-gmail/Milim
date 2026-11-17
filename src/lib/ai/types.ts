@@ -35,12 +35,18 @@ export type AnalyzeLyricsInput = {
 export type DefineWordInput = { word: string; line: string; title?: string };
 export type DefineWordResult = { lemma: string; transliteration: string; english: string; part_of_speech: string };
 
+import type { ConjugationData } from "../conjugation";
+export type ConjugateInput = { lemma: string; english: string };
+export type { ConjugationData };
+
 export type DistractorInput = { lemma: string; english: string; part_of_speech?: string | null };
 
 export interface AIProvider {
   analyzeLyrics(input: AnalyzeLyricsInput): Promise<LyricsAnalysis>;
   /** How a tapped word should be entered in a song's vocabulary (dictionary form, meaning, ...). */
   defineWord(input: DefineWordInput): Promise<DefineWordResult>;
+  /** All present, past and future forms of a verb, split into prefix / stem / suffix segments. */
+  conjugateVerb(input: ConjugateInput): Promise<ConjugationData>;
   /** Wrong-but-plausible English answers for quiz questions, aligned with the input. */
   generateDistractors(words: DistractorInput[]): Promise<string[][]>;
 }

@@ -9,6 +9,9 @@ import { StudyRunner } from "./study-runner";
 
 export const metadata = { title: "Study · milim" };
 
+// Working out a verb's forms the first time can take a little while.
+export const maxDuration = 60;
+
 type SearchParams = Promise<{ filter?: string; song?: string; scope?: string }>;
 
 export default function StudyPage({ searchParams }: { searchParams: SearchParams }) {
@@ -80,6 +83,7 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
       learnAfter={settings.learnAfter}
       defaultDirection={settings.direction}
       showTranslit={settings.showTranslit}
+      showNikud={settings.showNikud}
       backHref={backHref}
       backLabel={backLabel}
       studyName={studyName}

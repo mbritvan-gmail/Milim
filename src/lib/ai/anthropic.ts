@@ -1,12 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
+import { ConjugationSchema, looksComplete } from "../conjugation";
 import {
   AIError,
   type AIProvider,
   type AnalyzeLyricsInput,
   type AnalyzedLine,
   type AnalyzedWord,
+  type ConjugateInput,
+  type ConjugationData,
   type DefineWordInput,
   type DefineWordResult,
   type DistractorInput,
@@ -58,6 +61,23 @@ You receive numbered Hebrew words with their correct English meaning. For each w
 - Clearly wrong: never a synonym or near-synonym of the correct answer, and never the correct answer itself.
 - No two alike. Short glosses (one to three words), lower case unless a proper noun.
 - Ideally real words a learner could confuse with it (similar meaning area, or a similar-sounding Hebrew word), but not so close that two answers could both be correct.`;
+
+const CONJUGATE_PROMPT = `You are a careful Hebrew grammarian helping English speakers learn verb conjugation.
+
+Given a Hebrew verb (any form) and its English meaning, work out its root and binyan, then give every present, past and future form of the same verb. Each form is split into colored segments so a learner sees the pattern:
+- "prefix": the part that says who (future only: א, ת, י, נ).
+- "stem": the verb itself.
+- "suffix": the part that says number or gender (past endings like תי, ת, נו, תם, ה, ו; future endings like י and ו; present endings like ת, ים, ות).
+Every segment has "plain" (letters only, standard unpointed spelling as in modern Hebrew with matres lectionis, e.g. כותב and יכתוב), "vocalized" (the same letters with full nikud) and "translit" (English pronunciation, e.g. "khtov", "katav"). Concatenating the plain segments must give the plain word; concatenating the vocalized segments must give the pointed word; the translit segments must read as the whole word when joined.
+Rules:
+- A shva on the last letter of the stem belongs to the stem segment, not to the suffix.
+- Where the stem changes shape (katav / katv / ktav), keep the changed stem in the stem segment.
+- "infinitive": the infinitive with ל (e.g. לכתוב).
+- present: exactly four forms: ms (masculine singular), fs (feminine singular), mp (masculine plural), fp (feminine plural), each with a gender of m or f.
+- past and future: seven persons: i, you, he, she, we, you_pl, they. Each is a list of forms. If masculine and feminine differ, give two forms (gender "m" and "f"); where they match give one form with gender "mf". For "i", "we", "you_pl" and "they" give one form with gender "mf" (use the masculine plural for "you_pl" and "they"; leave out formal feminine plural forms). For "you" give m and f (they differ in nikud in the past even when spelled the same). "he" has gender "m" and "she" gender "f".
+- Keep the same verb as given. Use standard modern Hebrew. Do not add commentary.
+
+Example (the verb "to write", Pa'al): past I = stem כָּתַבְ + suffix תִּי (katav + ti); past you m = stem כָּתַבְ + suffix תָּ (katav + ta), you f = כָּתַבְ + תְּ (katav + t); past she = stem כָּתְבָ + suffix ה (katv + a); future I = prefix אֶ + stem כְתֹּב (e + khtov), plain stem כתוב; future you f = prefix תִּ + stem כְתְּבִ + suffix י (ti + khtev + i), plain stem כתב; present ms = stem כּוֹתֵב (kotev), fs = stem כּוֹתֶבֶ + suffix ת (kotev + et), mp = כּוֹתְבִ + ים (kotv + im), fp = כּוֹתְב + וֹת (kotv + ot).`;
 
 const DefineSchema = z.object({
   lemma: z.string(),
@@ -304,6 +324,35 @@ export class AnthropicProvider implements AIProvider {
         throw new AIError("Looking up that word took too long. Please try again.");
       }
       throw new AIError("The AI service had a problem looking up that word. Please try again.");
+    }
+  }
+
+  async conjugateVerb({ lemma, english }: ConjugateInput): Promise<ConjugationData> {
+    const signal = AbortSignal.timeout(50_000);
+    try {
+      const response = await this.client.messages.parse(
+        {
+          model: this.model,
+          max_tokens: 8000,
+          system: CONJUGATE_PROMPT,
+          messages: [{ role: "user", content: `Verb: ${lemma}\nMeaning: ${english}` }],
+          output_config: { effort: "medium", format: zodOutputFormat(ConjugationSchema) },
+        },
+        { signal },
+      );
+      if (response.stop_reason === "refusal" || !response.parsed_output) {
+        throw new AIError("Claude couldn't conjugate that verb.");
+      }
+      if (!looksComplete(response.parsed_output)) {
+        throw new AIError("Claude's answer was incomplete. Please try again.");
+      }
+      return response.parsed_output;
+    } catch (error) {
+      if (error instanceof AIError) throw error;
+      if (signal.aborted || error instanceof Anthropic.APIUserAbortError) {
+        throw new AIError("Conjugating took too long. Please try again.");
+      }
+      throw new AIError("The AI service had a problem conjugating that verb. Please try again.");
     }
   }
 }

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { WordCardBack } from "@/components/word-card-back";
+import { ConjugationButton } from "@/components/conjugation";
+import { isVerb } from "@/lib/conjugation";
 import {
   applyAnswer,
   cardDirection,
@@ -37,6 +39,7 @@ export function StudyRunner({
   learnAfter,
   defaultDirection,
   showTranslit,
+  showNikud,
   backHref,
   backLabel,
   studyName,
@@ -45,6 +48,7 @@ export function StudyRunner({
   learnAfter: number;
   defaultDirection: Direction;
   showTranslit: boolean;
+  showNikud: boolean;
   backHref: string;
   backLabel: string;
   studyName: string;
@@ -216,6 +220,9 @@ export function StudyRunner({
 
       {flipped && (
         <>
+          {isVerb(card.partOfSpeech) && (
+            <ConjugationButton key={card.vocabId} vocabId={card.vocabId} lemma={card.lemma} english={card.english} showTranslit={showTranslit} showNikud={showNikud} />
+          )}
           <div className="flex gap-2">
             <button
               type="button"

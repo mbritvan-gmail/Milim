@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StatusBadge } from "@/components/status-badge";
 import { isSectionLabel } from "@/lib/lyrics";
-import { splitTokens, type EditActions, type PendingSuggestion, type SongDetails, type VocabDraft } from "@/lib/editing";
+import { cleanToken, splitTokens, type EditActions, type PendingSuggestion, type SongDetails, type VocabDraft } from "@/lib/editing";
 import type { WordStatus } from "@/lib/study";
 import { useEditMode } from "./edit-mode";
 import { AddWordSheet, DetailsSheet, LineSheet, RemoveWordSheet, SuggestSheet } from "./edit-sheets";
@@ -32,6 +32,9 @@ type Sheet =
   | { kind: "details" }
   | { kind: "suggest"; id: string }
   | null;
+
+// Compares Hebrew words ignoring vowel marks and punctuation.
+const bareHebrew = (text: string) => cleanToken(text).replace(/[\u0591-\u05C7]/g, "");
 
 export function SongView({
   songId,
@@ -387,6 +390,11 @@ export function SongView({
                         {w.lemma}
                       </span>
                       {showTranslit && w.transliteration && <span className="block text-sm italic text-muted">{w.transliteration}</span>}
+                      {w.surface_form && bareHebrew(w.surface_form) !== bareHebrew(w.lemma) && (
+                        <span className="mt-0.5 block text-xs text-muted">
+                          in the song: <span lang="he" className="hebrew">{w.surface_form}</span>
+                        </span>
+                      )}
                     </div>
                   </Link>
                 </li>

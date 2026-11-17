@@ -14,6 +14,9 @@
   --success: #5fd3a0;
   --danger: #ff7a8a;
   --warn: #f2c14e;
+  --seg-prefix: #ff9f6b;
+  --seg-stem: #7aa8ff;
+  --seg-suffix: #c792ea;
   color-scheme: dark;
 }
 
@@ -31,6 +34,9 @@
   --success: #1c8a5c;
   --danger: #c8283d;
   --warn: #9a6a00;
+  --seg-prefix: #b9531a;
+  --seg-stem: #2f6fe4;
+  --seg-suffix: #8a3fc0;
   color-scheme: light;
 }
 @media (prefers-color-scheme: light) {
@@ -47,6 +53,9 @@
     --success: #1c8a5c;
     --danger: #c8283d;
     --warn: #9a6a00;
+    --seg-prefix: #b9531a;
+    --seg-stem: #2f6fe4;
+    --seg-suffix: #8a3fc0;
     color-scheme: light;
   }
 }
@@ -64,6 +73,9 @@
   --success: #5fd3a0;
   --danger: #ff7a8a;
   --warn: #f2c14e;
+  --seg-prefix: #ff9f6b;
+  --seg-stem: #7aa8ff;
+  --seg-suffix: #c792ea;
   color-scheme: dark;
   background: var(--background);
   color: var(--foreground);
@@ -82,6 +94,9 @@
   --color-success: var(--success);
   --color-danger: var(--danger);
   --color-warn: var(--warn);
+  --color-seg-prefix: var(--seg-prefix);
+  --color-seg-stem: var(--seg-stem);
+  --color-seg-suffix: var(--seg-suffix);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-hebrew: var(--font-hebrew-face), "Arial Hebrew", sans-serif;
 }
