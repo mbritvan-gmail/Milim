@@ -36,9 +36,9 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
   (N = a per-person setting, 1 to 3, default 2; quiz and flashcard answers both count). One miss on a Learned word
   puts it back to Learning with progress cleared. No calendar / spaced-repetition boxes any more.
 - Dictionary `/dictionary`: filter chips (All / New / Learning / Learned) both filter the list and choose what to study; the Study button sits right under
-  the chips. English left, Hebrew right (blue). Tapping a word opens its card `/dictionary/[id]` (I know this / Reset to Learning / Practice this word).
-- Study `/flashcards` (not in the tab bar): `?filter=new|learning|learned|all`, `?song=ID&scope=unlearned|learned`, `?word=ID`. Tap the card to reveal.
-  Still learning (yellow) / Got it / I know this (not shown for Learned words). Missed or not-yet-learned cards return after 3 cards; the session ends when
+  the chips. English left, Hebrew right (blue). Tapping a word opens its card `/dictionary/[id]` (I know this / Reset to Learning).
+- Study `/flashcards` (not in the tab bar): `?filter=new|learning|learned|all`, `?song=ID&scope=unlearned|learned`. Tap the card to reveal.
+  Still learning (yellow) / Got it / I know this (not shown for Learned words). Within a session a missed card returns after 6 other cards and a correct-but-not-yet-learned one after 10 (or goes to the end of a short queue); the session ends when
   everything is learned or the person leaves with the X. Undo (circle, top) restores the card, the queue and the database row. Direction pill: Hebrew to English,
   English to Hebrew, Mixed. No pronunciation on the front of a Hebrew-first card. Summary counts each word once (first answer).
 - Settings `/settings` (gear on the Songs page): correct answers to learn (1 to 3), default study direction, show pronunciation (one switch for the whole app), Sign out.

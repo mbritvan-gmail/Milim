@@ -125,27 +125,3 @@ export async function cardsForSong(
     .filter((c) => (scope === "all" ? true : scope === "learned" ? c.status === "learned" : c.status !== "learned"));
   return { title: songRes.data.title, cards: await withContext(supabase, shuffle(base)) };
 }
-
-// A single word.
-export async function cardForWord(supabase: SupabaseClient, vocabId: string): Promise<SessionCard | null> {
-  const [vocabRes, progressRes] = await Promise.all([
-    supabase.from("vocab_entries").select("id, lemma, transliteration, english, part_of_speech").eq("id", vocabId).maybeSingle(),
-    supabase.from("user_words").select("correct_count, learned_at").eq("vocab_entry_id", vocabId).maybeSingle(),
-  ]);
-  const v = vocabRes.data as VocabRow | null;
-  if (!v) return null;
-  const [card] = await withContext(supabase, [
-    {
-      vocabId: v.id,
-      lemma: v.lemma,
-      transliteration: v.transliteration,
-      english: v.english,
-      partOfSpeech: v.part_of_speech,
-      status: statusOf(progressRes.data ?? undefined),
-      count: progressRes.data?.correct_count ?? 0,
-      lineId: null,
-      songId: null,
-    },
-  ]);
-  return card;
-}

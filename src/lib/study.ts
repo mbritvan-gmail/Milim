@@ -84,7 +84,11 @@ type HistoryEntry = {
   seen: Session["seen"];
 };
 
-export const REQUEUE_GAP = 3;
+// How many other cards come before a card that isn't learned yet shows up again. A miss comes back
+// sooner than a correct answer, but never straight away (seeing it again at once only tests short-term
+// memory). When fewer cards than that are left, it simply goes to the end.
+export const GAP_AFTER_MISS = 6;
+export const GAP_AFTER_CORRECT = 10;
 
 export function startSession(cards: SessionCard[]): Session {
   return {
@@ -131,7 +135,10 @@ export function applyAnswer(session: Session, kind: AnswerKind, learnAfter: numb
   const after = nextState(before, kind, learnAfter);
 
   const queue = session.queue.slice(1);
-  if (after.status !== "learned") queue.splice(Math.min(REQUEUE_GAP, queue.length), 0, id);
+  if (after.status !== "learned") {
+    const gap = kind === "again" ? GAP_AFTER_MISS : GAP_AFTER_CORRECT;
+    queue.splice(Math.min(gap, queue.length), 0, id);
+  }
 
   const stats = { ...session.stats };
   if (!session.seen[id]) {

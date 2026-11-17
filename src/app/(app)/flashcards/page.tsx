@@ -4,12 +4,12 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
 import { isStudyFilter, newSessionId, type SessionCard, type StudyFilter } from "@/lib/study";
-import { cardForWord, cardsForFilter, cardsForSong } from "@/lib/study-data";
+import { cardsForFilter, cardsForSong } from "@/lib/study-data";
 import { StudyRunner } from "./study-runner";
 
 export const metadata = { title: "Study · milim" };
 
-type SearchParams = Promise<{ filter?: string; song?: string; scope?: string; word?: string }>;
+type SearchParams = Promise<{ filter?: string; song?: string; scope?: string }>;
 
 export default function StudyPage({ searchParams }: { searchParams: SearchParams }) {
   return (
@@ -30,7 +30,7 @@ const NAMES: Record<StudyFilter, string> = {
 };
 
 async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
-  const { filter: rawFilter, song, scope: rawScope, word } = await searchParams;
+  const { filter: rawFilter, song, scope: rawScope } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -44,15 +44,7 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
   let backHref = "/dictionary";
   let backLabel = "Back to the Dictionary";
 
-  if (word) {
-    if (!uuid.test(word)) notFound();
-    const card = await cardForWord(supabase, word);
-    if (!card) notFound();
-    cards = [card];
-    studyName = "this word";
-    backHref = `/dictionary/${word}`;
-    backLabel = "Back to the word";
-  } else if (song) {
+  if (song) {
     if (!uuid.test(song)) notFound();
     const scope = rawScope === "learned" ? "learned" : rawScope === "all" ? "all" : "unlearned";
     const result = await cardsForSong(supabase, song, scope);

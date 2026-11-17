@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { markWordKnown, resetWord } from "../actions";
 import { StatusBadge } from "@/components/status-badge";
 import type { WordStatus } from "@/lib/study";
 
-// Buttons on a word's card: mark it known, reset it, or practice just this word.
+// Buttons on a word's page: mark it known, or reset it.
 export function WordActions({
   vocabId,
   initialStatus,
@@ -63,12 +62,6 @@ export function WordActions({
           I know this
         </button>
       )}
-      <Link
-        href={`/flashcards?word=${vocabId}`}
-        className="flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong"
-      >
-        Practice this word
-      </Link>
       {problem && <p className="text-center text-sm text-danger">{problem}</p>}
     </div>
   );
