@@ -24,6 +24,17 @@ const TABS = [
     ),
   },
   {
+    href: "/library",
+    label: "Library",
+    svg: (
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden {...icon}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18" />
+        <path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z" />
+      </svg>
+    ),
+  },
+  {
     href: "/flashcards",
     label: "Cards",
     svg: (

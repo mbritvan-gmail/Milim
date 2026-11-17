@@ -101,7 +101,7 @@ export function FlashcardRunner({ cards, showTranslit }: { cards: Flashcard[]; s
       >
         {!flipped ? (
           <>
-            <span lang="he" className="hebrew text-6xl font-bold">
+            <span lang="he" className="hebrew text-6xl font-bold text-accent">
               {card.lemma}
             </span>
             {showTranslit && card.transliteration && <span className="text-lg italic text-muted">{card.transliteration}</span>}
@@ -109,8 +109,8 @@ export function FlashcardRunner({ cards, showTranslit }: { cards: Flashcard[]; s
           </>
         ) : (
           <>
-            <span className="text-3xl font-semibold text-accent">{card.english}</span>
-            <span lang="he" className="hebrew text-2xl">
+            <span className="text-3xl font-semibold text-foreground">{card.english}</span>
+            <span lang="he" className="hebrew text-2xl text-accent">
               {card.lemma}
             </span>
             {card.partOfSpeech && <span className="text-sm text-muted">{card.partOfSpeech}</span>}

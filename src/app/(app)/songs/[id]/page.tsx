@@ -6,6 +6,7 @@ import { parseMedia } from "@/lib/media";
 import { SongView, type SongLine, type SongWord } from "./song-view";
 import { SongActions } from "./song-actions";
 import { QuizStartButton } from "./quiz-start-button";
+import { AddSongButton } from "./add-song-button";
 import { prepareQuiz } from "./quiz/actions";
 
 export const metadata = { title: "Song · milim" };
@@ -36,8 +37,8 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
 
   // Row-level security decides what this user may see; a song they can't see is
   // simply "not found".
-  const [songRes, linesRes, wordsRes, profileRes, attemptsRes] = await Promise.all([
-    supabase.from("songs").select("id, title, artist, media_url, visibility, owner_id").eq("id", id).maybeSingle(),
+  const [songRes, linesRes, wordsRes, profileRes, attemptsRes, mineRes] = await Promise.all([
+    supabase.from("songs").select("id, title, artist, media_url, visibility, owner_id, profiles(display_name)").eq("id", id).maybeSingle(),
     supabase.from("lines").select("id, hebrew, transliteration, english").eq("song_id", id).order("position"),
     supabase
       .from("song_words")
@@ -45,6 +46,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       .eq("song_id", id),
     supabase.from("profiles").select("show_transliteration").eq("id", user.id).maybeSingle(),
     supabase.from("quiz_attempts").select("score, total").eq("song_id", id).order("taken_at", { ascending: false }).limit(50),
+    supabase.from("user_songs").select("song_id").eq("song_id", id).maybeSingle(),
   ]);
 
   const song = songRes.data;
@@ -56,6 +58,10 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
     return entry ? [{ ...entry, surface_form: row.surface_form }] : [];
   });
   const media = parseMedia(song.media_url);
+  const isOwner = song.owner_id === user.id;
+  const inMyList = Boolean(mineRes.data);
+  const ownerProfile = (Array.isArray(song.profiles) ? song.profiles[0] : song.profiles) as { display_name: string | null } | null;
+  const sharedBy = !isOwner && ownerProfile?.display_name ? `Shared by ${ownerProfile.display_name}` : null;
   const attempts = attemptsRes.data ?? [];
   const best = attempts.reduce<{ score: number; total: number } | null>(
     (b, a) => (!b || a.score / a.total > b.score / b.total ? a : b),
@@ -65,14 +71,16 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <header className="flex flex-col gap-1">
-        <Link href="/songs" className="text-sm text-muted underline underline-offset-4">
-          ← My songs
+        <Link href={inMyList ? "/songs" : "/library"} className="text-sm text-muted underline underline-offset-4">
+          {inMyList ? "← My songs" : "← Library"}
         </Link>
         <h1 className="mt-2 text-2xl font-semibold">{song.title}</h1>
         <p className="text-sm text-muted">
-          {[song.artist, song.visibility === "public" ? "Public" : "Private"].filter(Boolean).join(" · ")}
+          {[song.artist, song.visibility === "public" ? "Public" : "Private", sharedBy].filter(Boolean).join(" · ")}
         </p>
       </header>
+
+      {!inMyList && <AddSongButton songId={song.id} />}
 
       {media && (
         <iframe
@@ -98,6 +106,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
         </p>
       )}
 
+      {inMyList && (
       <section aria-label="Quiz" className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
         <h2 className="text-lg font-semibold">Practice</h2>
         {words.length === 0 ? (
@@ -123,10 +132,11 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
           </>
         )}
       </section>
+      )}
 
       <SongView lines={lines} words={words} initialShowTranslit={profileRes.data?.show_transliteration ?? true} />
 
-      <SongActions songId={song.id} isOwner={song.owner_id === user.id} isPublic={song.visibility === "public"} />
+      <SongActions songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} inMyList={inMyList} />
     </>
   );
 }

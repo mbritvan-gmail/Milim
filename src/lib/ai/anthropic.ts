@@ -60,9 +60,9 @@ You receive numbered Hebrew lyric lines. For each line produce:
 Also choose the key vocabulary a learner needs to understand the song:
 - Pick words that carry meaning (nouns, verbs, adjectives, adverbs, useful expressions). Skip words that are pure grammar (such as the object marker את, or של) unless they are essential to understanding the line.
 - Choose as many or as few as the song genuinely needs; do not pad. Do not list the same word twice.
-- "lemma": dictionary form in Hebrew letters without vowel marks (nikud). Verbs in the past-tense third-person masculine singular, nouns in the singular, adjectives in the masculine singular.
+- "lemma": dictionary form in Hebrew letters without vowel marks (nikud). Verbs always in the infinitive (for example "לאהוב", never "אהב" or "אוהב"), nouns in the singular, adjectives in the masculine singular.
 - "surface_form": the word exactly as it appears in the lyric, in Hebrew letters.
-- "english": a short gloss (one to three words) that fits the meaning in this song.
+- "english": a short gloss (one to three words) that fits the meaning in this song. For verbs write the English infinitive with "to" (for example "to love", "to miss").
 - "transliteration": pronunciation of the lemma.
 - "part_of_speech": one of noun, verb, adjective, adverb, preposition, pronoun, conjunction, expression.
 - "line_n": the number of the line where the word appears.

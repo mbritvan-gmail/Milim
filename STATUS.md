@@ -36,13 +36,27 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
   pronunciation switch, and shortcuts to review/practice.
 - Browser-tested with fake data (flip, requeue, summary, filters, search, failure handling); the real database path is not yet exercised live.
 
-## Next steps, in order
-1. Live test flashcards + dictionary on real songs; set up `YOUTUBE_API_KEY` and test YouTube search.
+## Public library (built; needs a live test with two accounts)
+- `/library` lists every public, non-archived song with who shared it; "Add" puts it in your list (a reference, not a copy). Songs you haven't added show an
+  "Add to my songs" banner. Owners of private songs can "Share in the public library" (one-way, confirmed). Public songs can be archived, never deleted.
+- Database sharing rules checked against a real Postgres: others see public songs only, can add them, can't edit or share someone else's song, can't add private ones.
+
+## Verbs
+- New songs store verbs as Hebrew infinitives with English "to ..." (e.g. לאהוב / to love). Songs added earlier keep the old past-tense forms until re-added
+  (or until the planned "regenerate key words" feature).
+
+## Remaining work, in order
+1. Live-test flashcards, dictionary and the public library with two real accounts. Set up `YOUTUBE_API_KEY` and test YouTube search.
 2. Close sign-ups to invited people only (Supabase: turn off new sign-ups, invite friends/family), or add an allowed-email list.
-3. Edit/regenerate translations, tap a word to add key vocab, remove vocab (owner only).
-4. Libraries, public library page, edit suggestions + owner approval.
-5. Help page / tips: section names in [brackets], one line per row, public is permanent.
-6. Housekeeping: delete the stray Vercel variable named `default` if still present.
+3. Editing (owner only): edit a line's translation, regenerate a line or the whole song, tap a word to add it to the key words, remove key words,
+   and regenerate key words (also refreshes old verbs to infinitives).
+4. Dictionary upgrade (flagged by the user as needing work; scope to be defined: e.g. layout, sorting, grouping by song, word detail view).
+5. User-created libraries (named collections, e.g. by genre or difficulty; tables `libraries` / `library_songs` already exist) and filing songs into them.
+6. Edit suggestions on public songs, with owner approval (table `edit_suggestions` and its rules already exist).
+7. Help / tips page (section names in [brackets], one line per row, public is permanent, pronunciation switch).
+8. Before sharing widely: report / takedown path for public lyrics and a short terms note, Anthropic spend limit and usage watching, tighten who may add vocab entries.
+9. Housekeeping: delete the stray Vercel variable named `default`; lowercase "milim" in the Supabase email template.
+Later / not v1: edit lock, search across all songs, leaderboards, nikud, Spotify full playback inside the app (Web Playback SDK, Premium only).
 
 ## Notes
 - The sign-in screen (also the landing page: `/` redirects to `/login` or `/songs`) rotates taglines (`src/components/rotating-tagline.tsx`)
