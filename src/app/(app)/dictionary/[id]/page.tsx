@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
@@ -59,10 +58,6 @@ async function WordBody({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
-      <Link href="/dictionary" className="text-sm text-muted underline underline-offset-4">
-        ← Dictionary
-      </Link>
-
       {/* The same card as the back of a flashcard; its status and buttons live just below. */}
       <div className="flex flex-col items-center gap-2.5 rounded-2xl border border-border bg-surface p-5 text-center">
         <WordCardBack

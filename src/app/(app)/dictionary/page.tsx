@@ -62,7 +62,7 @@ async function DictionaryBody() {
         </div>
       </header>
       <DictionaryList
-        key={fingerprint(words.flatMap((w) => [w.vocabId, w.status, w.count]))}
+        key={fingerprint([settings.showTranslit, settings.learnAfter, ...words.flatMap((w) => [w.vocabId, w.status, w.count])])}
         initialWords={words}
         showTranslit={settings.showTranslit}
         learnAfter={settings.learnAfter}

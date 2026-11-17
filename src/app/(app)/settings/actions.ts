@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isDirection } from "@/lib/study";
 
@@ -38,6 +39,8 @@ export async function saveSettings(change: SettingsChange): Promise<string | nul
         return "Couldn't save that. Please try again.";
       }
     }
+    // Pages already visited keep their old copy; tell them settings changed so Back shows the new setting.
+    revalidatePath("/", "layout");
     return null;
   } catch (error) {
     console.error("saveSettings crashed", error);

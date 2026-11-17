@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buildOptions, pickQuizWords } from "@/lib/quiz";
@@ -83,10 +82,7 @@ async function QuizBody({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <header className="flex flex-col gap-1">
-        <Link href={`/songs/${id}`} className="text-sm text-muted underline underline-offset-4">
-          ← Back to song
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Quiz: {song.title}</h1>
+        <h1 className="text-2xl font-semibold">Quiz: {song.title}</h1>
       </header>
       {questions.length === 0 ? (
         <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">

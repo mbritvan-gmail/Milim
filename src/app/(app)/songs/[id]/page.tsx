@@ -130,10 +130,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   return (
     <EditModeProvider>
       <header className="flex flex-col gap-1">
-        <Link href={inMyList ? "/songs" : "/library"} className="text-sm text-muted underline underline-offset-4">
-          {inMyList ? "← My songs" : "← Library"}
-        </Link>
-        <div className="mt-2 flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold">{song.title}</h1>
           {(isOwner || song.visibility === "public") && <EditButton />}
         </div>
@@ -208,7 +205,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       <SongView
-        key={fingerprint([...words.flatMap((w) => [w.id, w.status, w.count]), ...lines.flatMap((l) => [l.id, l.hebrew, l.english ?? "", l.transliteration ?? ""]), ...pending.map((p) => p.id), song.title, song.artist ?? "", song.media_url ?? ""])}
+        key={fingerprint([...words.flatMap((w) => [w.id, w.status, w.count]), ...lines.flatMap((l) => [l.id, l.hebrew, l.english ?? "", l.transliteration ?? ""]), ...pending.map((p) => p.id), song.title, song.artist ?? "", song.media_url ?? "", settings.showTranslit, settings.learnAfter])}
         songId={song.id}
         isOwner={isOwner}
         canSuggest={!isOwner && song.visibility === "public"}

@@ -3,11 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { makeSongPublic, removeSong } from "./actions";
+import { useEditMode } from "./edit-mode";
 
 type Props = { songId: string; isOwner: boolean; isPublic: boolean; inMyList: boolean };
 
 export function SongActions({ songId, isOwner, isPublic, inMyList }: Props) {
   const router = useRouter();
+  const { editing } = useEditMode();
   const [confirming, setConfirming] = useState(false);
   const [confirmingPublic, setConfirmingPublic] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -16,6 +18,8 @@ export function SongActions({ songId, isOwner, isPublic, inMyList }: Props) {
 
   // A song that isn't in your list has nothing to remove (the "Add" button covers it).
   if (!isOwner && !inMyList) return null;
+  // Sharing is always available to the owner; removing a song only appears while editing.
+  if (!editing && !(isOwner && !isPublic)) return null;
 
   async function publish() {
     setPublishing(true);
@@ -29,20 +33,17 @@ export function SongActions({ songId, isOwner, isPublic, inMyList }: Props) {
     }
   }
 
-  let label: string;
+  const label = "Remove song";
   let warning: string;
   let confirmLabel: string;
   if (isOwner && !isPublic) {
-    label = "Delete song";
     confirmLabel = "Delete forever";
     warning = "This permanently deletes the song, its translations and its vocabulary.";
   } else if (isOwner) {
-    label = "Archive song";
     confirmLabel = "Archive";
     warning =
       "Public songs can't be deleted. Archiving hides it from the public library and removes it from your list, but people who already added it keep it.";
   } else {
-    label = "Remove from my songs";
     confirmLabel = "Remove";
     warning = "This only removes it from your list. The song itself isn't deleted.";
   }
@@ -87,7 +88,7 @@ export function SongActions({ songId, isOwner, isPublic, inMyList }: Props) {
           {problem && <p className="text-sm text-danger">{problem}</p>}
         </div>
       )}
-      {confirming ? (
+      {!editing ? null : confirming ? (
         <div className="flex flex-col gap-3 rounded-xl border border-danger/40 bg-surface p-4">
           <p className="text-sm">{warning}</p>
           <div className="flex gap-2">
@@ -113,7 +114,7 @@ export function SongActions({ songId, isOwner, isPublic, inMyList }: Props) {
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="self-start text-sm text-muted underline underline-offset-4 hover:text-danger"
+          className="h-11 rounded-xl border border-danger/50 text-sm font-semibold text-danger hover:bg-surface-2"
         >
           {label}
         </button>

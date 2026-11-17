@@ -66,6 +66,12 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Songs has two views, **My songs** and **Public library** (`/songs`, `/library`). `/flashcards` with nothing chosen is the Flash Cards home (New / Still learning / Learned / All, with counts).
 - Light / dark theme: Settings > Appearance (System / Light / Dark, default Dark). Stored per device in localStorage (key `milim-theme`) and applied by a head script before paint. The sign-in screen stays dark. To make it follow the person across devices, add a profile column later.
 
+## Songs cleanup (built)
+- The "back to songs / library / dictionary / song" links at the top of pages are gone (the bottom bar's Back covers it). Study / quiz end-of-session buttons stay.
+- Remove song (delete / archive / remove from my list, with the same warnings) now appears only while editing a song. Share in the public library stays visible to owners.
+- Changing a setting refreshes pages already visited, so Back shows the new setting without a reload (revalidatePath in `saveSettings`, plus settings in the song and Dictionary view keys).
+- Idea pending a decision: removing songs from the My songs list.
+
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.
 2. Close sign-ups to invited people only (Supabase: turn off new sign-ups, invite friends/family), or add an allowed-email list.
