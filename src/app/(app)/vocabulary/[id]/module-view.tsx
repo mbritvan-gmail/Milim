@@ -166,7 +166,7 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
             visibility={isOwner ? { isPublic, onMakePublic: () => { setProblem(""); setSheet({ kind: "public" }); } } : undefined}
           />
         )}
-        <CloseButton />
+        <CloseButton fallbackHref="/vocabulary" />
         </div>
       </header>
 

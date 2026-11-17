@@ -51,19 +51,25 @@ export function Overlay({ children, bar = true }: { children: React.ReactNode; b
   );
 }
 
-// The round X that closes the pop-up it is in (renders nothing outside a pop-up).
-export function CloseButton() {
+// The round X that closes the pop-up it is in. On the normal full-page version of the same screen (a
+// refreshed page, a link, or right after creating something) it goes to `fallbackHref` instead, or
+// renders nothing if none is given.
+const closeClass =
+  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-xl text-muted transition-colors hover:bg-surface hover:text-foreground";
+export function CloseButton({ fallbackHref }: { fallbackHref?: string }) {
   const overlay = useOverlay();
-  if (!overlay) return null;
+  if (overlay) {
+    return (
+      <button type="button" onClick={overlay.close} aria-label="Close" className={closeClass}>
+        ×
+      </button>
+    );
+  }
+  if (!fallbackHref) return null;
   return (
-    <button
-      type="button"
-      onClick={overlay.close}
-      aria-label="Close"
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-xl text-muted transition-colors hover:bg-surface hover:text-foreground"
-    >
+    <Link href={fallbackHref} aria-label="Close" className={closeClass}>
       ×
-    </button>
+    </Link>
   );
 }
 
