@@ -58,7 +58,7 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 ## Song editing (built; no new SQL needed)
 - Owners get an Edit / Done button on their song: edit a line (English, pronunciation, Hebrew typos), tap a Hebrew word to add it (Claude fills in lemma, pronunciation, meaning, part of speech),
   remove a word from the Song Vocabulary with an x (removed words stay out of the Dictionary unless another song has them), edit song details (title, artist, Spotify/YouTube link + Find buttons). Undo toast after each edit.
-- Other people on a public song see "Suggest a change" under a line's English; the owner reviews them in a Suggestions box at the top of the song (Approve / Reject, with Undo). Notes are stored as JSON in `edit_suggestions.proposed_value`.
+- Other people on a public song get the same Edit button; in it each line is tappable to suggest better English; the owner reviews them in a Suggestions box at the top of the song (Approve / Reject, with Undo). Notes are stored as JSON in `edit_suggestions.proposed_value`.
 - "Key words" is now **Song Vocabulary** everywhere. Needs a live test with two accounts.
 
 ## Remaining work, in order

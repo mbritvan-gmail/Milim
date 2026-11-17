@@ -135,7 +135,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
         </Link>
         <div className="mt-2 flex items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold">{song.title}</h1>
-          {isOwner && <EditButton />}
+          {(isOwner || song.visibility === "public") && <EditButton />}
         </div>
         <p className="text-sm text-muted">
           {[song.artist, song.visibility === "public" ? "Public" : "Private", sharedBy].filter(Boolean).join(" · ")}

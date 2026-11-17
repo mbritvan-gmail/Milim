@@ -67,6 +67,7 @@ export function SongView({
   const [wordsOpen, setWordsOpen] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
   const editMode = isOwner && editing;
+  const suggestMode = canSuggest && !isOwner && editing;
   const vocabOpen = wordsOpen || editMode;
 
   // Section labels (Verse, Chorus...) are headings, not tappable lines.
@@ -233,7 +234,9 @@ export function SongView({
 
       <section aria-label="Lyrics" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          {editMode ? (
+          {suggestMode ? (
+            <p className="text-sm text-muted">Tap a line to suggest better English. The song&apos;s owner reviews it before anything changes.</p>
+          ) : editMode ? (
             <>
               <p className="text-sm text-muted">Tap a Hebrew word to add it to the Song Vocabulary.</p>
               <button type="button" onClick={() => setSheet({ kind: "details" })} className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-surface-2">
@@ -264,6 +267,24 @@ export function SongView({
               );
             }
             const open = revealed.has(line.id);
+            if (suggestMode) {
+              return (
+                <li key={line.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSheet({ kind: "suggest", id: line.id })}
+                    className="w-full rounded-xl border border-accent/40 bg-surface px-4 py-3 text-left hover:bg-surface-2"
+                  >
+                    <span lang="he" className="hebrew block text-right text-xl">
+                      {line.hebrew}
+                    </span>
+                    {showTranslit && line.transliteration && <span className="mt-1 block text-sm italic text-muted">{line.transliteration}</span>}
+                    <span className="mt-2 block text-base text-accent">{line.english || "(no translation)"}</span>
+                    <span className="mt-2 block text-xs text-muted">✎ Tap to suggest a change</span>
+                  </button>
+                </li>
+              );
+            }
             if (editMode) {
               return (
                 <li key={line.id} className="flex flex-col gap-2 rounded-xl border border-accent/40 bg-surface px-4 py-3">
@@ -312,15 +333,6 @@ export function SongView({
                     <span className="mt-2 block text-xs text-muted">Tap to reveal English</span>
                   )}
                 </button>
-                {open && canSuggest && !isOwner && (
-                  <button
-                    type="button"
-                    onClick={() => setSheet({ kind: "suggest", id: line.id })}
-                    className="mt-1 px-2 text-xs text-muted underline underline-offset-2 hover:text-foreground"
-                  >
-                    Suggest a change
-                  </button>
-                )}
               </li>
             );
           })}
