@@ -54,17 +54,17 @@ export default function HomePage() {
   return (
     <div className="relative -mb-24 flex flex-1 flex-col pb-24">
       <RotatingBackground creditClass="bottom-28" />
-      <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-4 px-4 py-8">
-        <h1 className="hebrew mb-2 text-center text-5xl font-bold text-accent">
+      <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-3 px-4 py-8">
+        <h1 className="hebrew mb-1 text-center text-4xl font-bold text-accent">
           מילים
         </h1>
         {MODULES.map((m) => (
           <Link
             key={m.href}
             href={m.href}
-            className="flex h-28 items-center gap-5 rounded-2xl border border-border/70 bg-surface/80 px-6 backdrop-blur-md text-xl font-semibold transition-colors hover:bg-surface-2"
+            className="flex h-16 items-center gap-3 rounded-xl border border-border/70 bg-surface/70 px-4 backdrop-blur-md text-base font-semibold transition-colors hover:bg-surface-2"
           >
-            <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-surface-2 text-accent">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 text-accent [&_svg]:h-6 [&_svg]:w-6">
               {m.svg}
             </span>
             {m.label}
