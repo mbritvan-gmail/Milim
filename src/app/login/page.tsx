@@ -14,7 +14,7 @@ export default function LoginPage({
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   return (
-    <div className="relative flex flex-1 flex-col">
+    <div className="force-dark relative flex flex-1 flex-col">
       <RotatingBackground />
       <main className="relative z-10 mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-5 px-4 py-10">
         <div className="text-center">

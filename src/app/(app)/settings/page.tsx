@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
@@ -29,10 +28,7 @@ async function SettingsBody() {
   return (
     <>
       <header className="flex flex-col gap-1">
-        <Link href="/songs" className="text-sm text-muted underline underline-offset-4">
-          ← My songs
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Settings</h1>
+        <h1 className="text-2xl font-semibold">Settings</h1>
       </header>
       <SettingsForm
         key={fingerprint([settings.learnAfter, settings.direction, settings.showTranslit])}

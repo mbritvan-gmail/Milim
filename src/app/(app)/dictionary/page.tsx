@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
 import { fingerprint, type WordStatus } from "@/lib/study";
-import { SettingsLink } from "@/components/settings-link";
 import { DictionaryList, type DictionaryWord } from "./dictionary-list";
 
 export const metadata = { title: "Dictionary · milim" };
@@ -52,7 +51,7 @@ async function DictionaryBody() {
 
   return (
     <>
-      <header className="flex items-start justify-between gap-3">
+      <header>
         <div>
           <h1 className="text-2xl font-semibold">Dictionary</h1>
           <p className="text-sm text-muted">
@@ -61,7 +60,6 @@ async function DictionaryBody() {
               : `${words.length} ${words.length === 1 ? "word" : "words"} from your songs`}
           </p>
         </div>
-        <SettingsLink />
       </header>
       <DictionaryList
         key={fingerprint(words.flatMap((w) => [w.vocabId, w.status, w.count]))}

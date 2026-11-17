@@ -37,6 +37,9 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // With nothing chosen yet, this is the Flash Cards home: pick which words to study.
+  if (!rawFilter && !song) return <FlashcardsHub />;
+
   const settings = await loadSettings(supabase, user.id);
 
   let cards: SessionCard[] = [];
@@ -81,5 +84,54 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
       backLabel={backLabel}
       studyName={studyName}
     />
+  );
+}
+
+// Counts how many words are in each group and links to a study session for it.
+async function FlashcardsHub() {
+  const supabase = await createClient();
+  const { data } = await supabase.from("master_dictionary").select("status").limit(3000);
+  const counts = { new: 0, learning: 0, learned: 0 };
+  for (const r of data ?? []) {
+    const k = r.status as keyof typeof counts;
+    if (k in counts) counts[k] += 1;
+  }
+  const total = counts.new + counts.learning + counts.learned;
+  const groups: { filter: StudyFilter; label: string; count: number }[] = [
+    { filter: "new", label: "New words", count: counts.new },
+    { filter: "learning", label: "Still learning", count: counts.learning },
+    { filter: "learned", label: "Learned words", count: counts.learned },
+    { filter: "all", label: "All words", count: total },
+  ];
+  return (
+    <>
+      <h1 className="text-2xl font-semibold">Flash Cards</h1>
+      {total === 0 ? (
+        <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">
+          No words yet. Add a song and its vocabulary shows up here.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {groups.map((g) => (
+            <li key={g.filter}>
+              {g.count > 0 ? (
+                <Link
+                  href={`/flashcards?filter=${g.filter}`}
+                  className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-4 hover:bg-surface-2"
+                >
+                  <span className="font-medium">{g.label}</span>
+                  <span className="text-muted">{g.count}</span>
+                </Link>
+              ) : (
+                <div className="flex items-center justify-between rounded-xl border border-border px-4 py-4 text-muted">
+                  <span>{g.label}</span>
+                  <span>0</span>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }

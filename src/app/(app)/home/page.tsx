@@ -1,0 +1,58 @@
+import Link from "next/link";
+
+export const metadata = { title: "Home · milim" };
+
+const icon = { width: 30, height: 30, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+
+const MODULES = [
+  {
+    href: "/songs",
+    label: "Songs",
+    svg: (
+      <svg {...icon}>
+        <path d="M9 18V5l11-2v13" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="17" cy="16" r="3" />
+      </svg>
+    ),
+  },
+  {
+    href: "/flashcards",
+    label: "Flash Cards",
+    svg: (
+      <svg {...icon}>
+        <rect x="3" y="6" width="14" height="12" rx="2" />
+        <path d="M7 3h12a2 2 0 0 1 2 2v10" />
+      </svg>
+    ),
+  },
+  {
+    href: "/dictionary",
+    label: "Dictionary",
+    svg: (
+      <svg {...icon}>
+        <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" />
+        <path d="M4 19V5" />
+        <path d="M9 8h6" />
+      </svg>
+    ),
+  },
+];
+
+export default function HomePage() {
+  return (
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-4 px-4 py-8">
+      <h1 className="hebrew mb-2 text-center text-5xl font-bold text-accent">מילים</h1>
+      {MODULES.map((m) => (
+        <Link
+          key={m.href}
+          href={m.href}
+          className="flex h-28 items-center gap-5 rounded-2xl border border-border bg-surface px-6 text-xl font-semibold transition-colors hover:bg-surface-2"
+        >
+          <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-surface-2 text-accent">{m.svg}</span>
+          {m.label}
+        </Link>
+      ))}
+    </main>
+  );
+}

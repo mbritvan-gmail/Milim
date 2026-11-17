@@ -61,6 +61,11 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Other people on a public song get the same Edit button; in it each line is tappable to suggest better English; the owner reviews them in a Suggestions box at the top of the song (Approve / Reject, with Undo). Notes are stored as JSON in `edit_suggestions.proposed_value`.
 - "Key words" is now **Song Vocabulary** everywhere. Needs a live test with two accounts.
 
+## Home screen and modules (built)
+- Signed-in landing is `/home`: three tiles, Songs / Flash Cards / Dictionary, no extra text. The bottom bar on every signed-in screen is Back / Home / Settings (the per-page gear and the old Songs / Library / Dictionary tabs are gone).
+- Songs has two views, **My songs** and **Public library** (`/songs`, `/library`). `/flashcards` with nothing chosen is the Flash Cards home (New / Still learning / Learned / All, with counts).
+- Light / dark theme: Settings > Appearance (System / Light / Dark, default Dark). Stored per device in localStorage (key `milim-theme`) and applied by a head script before paint. The sign-in screen stays dark. To make it follow the person across devices, add a profile column later.
+
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.
 2. Close sign-ups to invited people only (Supabase: turn off new sign-ups, invite friends/family), or add an allowed-email list.

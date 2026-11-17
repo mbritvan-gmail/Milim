@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { applyTheme, readTheme, THEME_EVENT, type ThemeChoice } from "@/lib/theme";
 import { saveSettings, type SettingsChange } from "./actions";
 import type { Direction } from "@/lib/study";
 
@@ -43,6 +44,17 @@ function AppliesTo({ children }: { children: React.ReactNode }) {
   return <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-normal normal-case tracking-normal text-muted">{children}</span>;
 }
 
+const THEMES: { id: ThemeChoice; label: string }[] = [
+  { id: "system", label: "System" },
+  { id: "light", label: "Light" },
+  { id: "dark", label: "Dark" },
+];
+
+function subscribeTheme(callback: () => void) {
+  window.addEventListener(THEME_EVENT, callback);
+  return () => window.removeEventListener(THEME_EVENT, callback);
+}
+
 export function SettingsForm({
   initialLearnAfter,
   initialDirection,
@@ -57,6 +69,7 @@ export function SettingsForm({
   const [learnAfter, setLearnAfter] = useState(initialLearnAfter);
   const [direction, setDirection] = useState<Direction>(initialDirection);
   const [showTranslit, setShowTranslit] = useState(initialShowTranslit);
+  const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "dark" as ThemeChoice);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
   // Each change saves straight away; if saving fails the control goes back to what it was.
@@ -75,7 +88,18 @@ export function SettingsForm({
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
         <h2 className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted">
-          Flashcards <AppliesTo>Flashcards only</AppliesTo>
+          Appearance <AppliesTo>Whole app</AppliesTo>
+        </h2>
+        <div className="flex flex-col gap-2">
+          <p className="font-medium">Theme</p>
+          <Segment label="Theme" options={THEMES} value={theme} onChange={applyTheme} />
+          <p className="text-xs text-muted">System follows your phone&apos;s light or dark setting. Saved on this device.</p>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+        <h2 className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted">
+          Flash Cards <AppliesTo>Flash Cards only</AppliesTo>
         </h2>
         <div className="flex flex-col gap-2">
           <p className="font-medium">Study direction</p>
@@ -95,7 +119,7 @@ export function SettingsForm({
 
       <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
         <h2 className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted">
-          Learning <AppliesTo>Flashcards and quizzes</AppliesTo>
+          Learning <AppliesTo>Flash Cards and quizzes</AppliesTo>
         </h2>
         <div className="flex flex-col gap-2">
           <p className="font-medium">Correct answers to learn a word</p>

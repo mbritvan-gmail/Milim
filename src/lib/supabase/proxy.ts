@@ -63,14 +63,14 @@ export async function updateSession(request: NextRequest) {
 
   // The sign-in screen is the landing page.
   if (pathname === "/") {
-    return redirectTo(user ? "/songs" : "/login");
+    return redirectTo(user ? "/home" : "/login");
   }
 
   if (!user && !isPublic(pathname)) {
     return redirectTo("/login", `?next=${encodeURIComponent(pathname)}`);
   }
   if (user && pathname === "/login") {
-    return redirectTo("/songs");
+    return redirectTo("/home");
   }
 
   return response;

@@ -17,6 +17,58 @@
   color-scheme: dark;
 }
 
+/* Light theme. Picked in Settings; the choice is stored on the device and applied before the page paints. */
+:root[data-theme="light"] {
+  --background: #f6f8fc;
+  --surface: #ffffff;
+  --surface-2: #eef2f8;
+  --border: #d9e0ec;
+  --foreground: #141b2b;
+  --muted: #5b6880;
+  --accent: #2f6fe4;
+  --accent-strong: #2559c0;
+  --accent-contrast: #ffffff;
+  --success: #1c8a5c;
+  --danger: #c8283d;
+  --warn: #9a6a00;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+  :root[data-theme="system"] {
+    --background: #f6f8fc;
+    --surface: #ffffff;
+    --surface-2: #eef2f8;
+    --border: #d9e0ec;
+    --foreground: #141b2b;
+    --muted: #5b6880;
+    --accent: #2f6fe4;
+    --accent-strong: #2559c0;
+    --accent-contrast: #ffffff;
+    --success: #1c8a5c;
+    --danger: #c8283d;
+    --warn: #9a6a00;
+    color-scheme: light;
+  }
+}
+/* The sign-in screen sits on photos, so it stays dark whatever the theme. */
+.force-dark {
+  --background: #0b0f17;
+  --surface: #131a26;
+  --surface-2: #1b2433;
+  --border: #263145;
+  --foreground: #e8edf5;
+  --muted: #8b98ad;
+  --accent: #7aa8ff;
+  --accent-strong: #5b8def;
+  --accent-contrast: #0b0f17;
+  --success: #5fd3a0;
+  --danger: #ff7a8a;
+  --warn: #f2c14e;
+  color-scheme: dark;
+  background: var(--background);
+  color: var(--foreground);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);

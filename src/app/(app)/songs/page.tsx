@@ -2,9 +2,9 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { SettingsLink } from "@/components/settings-link";
+import { SongsTabs } from "@/components/songs-tabs";
 
-export const metadata = { title: "My songs · milim" };
+export const metadata = { title: "Songs · milim" };
 
 export default function SongsPage() {
   return (
@@ -37,13 +37,8 @@ async function SongsBody() {
 
   return (
     <>
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">My songs</h1>
-          <p className="text-sm text-muted">Signed in as {user.email}</p>
-        </div>
-        <SettingsLink />
-      </header>
+      <h1 className="text-2xl font-semibold">Songs</h1>
+      <SongsTabs active="mine" />
 
       <Link
         href="/songs/new"

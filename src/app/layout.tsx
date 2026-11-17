@@ -20,12 +20,18 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0b0f17",
-  colorScheme: "dark",
+  colorScheme: "dark light",
 };
+
+// Sets the saved theme (System / Light / Dark; dark by default) before the first paint so there is no flash.
+const THEME_SCRIPT = `try{var t=localStorage.getItem("milim-theme");document.documentElement.dataset.theme=t==="light"||t==="system"?t:"dark"}catch(e){document.documentElement.dataset.theme="dark"}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${inter.variable} ${hebrewFont.variable} h-full antialiased`}>
+    <html lang="en" data-theme="dark" suppressHydrationWarning className={`${inter.variable} ${hebrewFont.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
