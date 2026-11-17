@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
@@ -116,7 +116,8 @@ export async function createModule(_prev: CreateModuleState, formData: FormData)
     return { error: "Something went wrong while saving your module. Please try again." };
   }
   if (outcome.signedOut) redirect("/login");
-  if (outcome.moduleId) redirect(`/vocabulary/${outcome.moduleId}`);
+  // Replace the form in the history, so closing the new module returns to the list, not the empty form.
+  if (outcome.moduleId) redirect(`/vocabulary/${outcome.moduleId}`, RedirectType.replace);
   return { error: outcome.error };
 }
 
