@@ -311,6 +311,27 @@ export async function restoreModuleWord(moduleId: string, vocabId: string, posit
   }
 }
 
+// Saves a new order for the module's words. The list must be exactly the words already in the module.
+export async function reorderModuleWords(moduleId: string, orderedIds: string[]): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    if (!(await ownedModule(supabase, moduleId))) return { ok: false, error: "Only the person who made this module can change it." };
+    const { data: current } = await supabase.from("module_words").select("vocab_entry_id").eq("module_id", moduleId);
+    const have = new Set((current ?? []).map((r) => r.vocab_entry_id as string));
+    if (orderedIds.length !== have.size || new Set(orderedIds).size !== have.size || !orderedIds.every((id) => have.has(id))) {
+      return { ok: false, error: "The word list changed. Please reload and try again." };
+    }
+    const { error } = await supabase
+      .from("module_words")
+      .upsert(orderedIds.map((id, i) => ({ module_id: moduleId, vocab_entry_id: id, position: i })), { onConflict: "module_id,vocab_entry_id" });
+    if (error) return { ok: false, error: "Couldn't save the new order. Please try again." };
+    return { ok: true };
+  } catch (error) {
+    console.error("reorderModuleWords crashed", error);
+    return { ok: false, error: "Couldn't save the new order. Please try again." };
+  }
+}
+
 // Add more words to a module: paste Hebrew words and the AI fills in the rest.
 export async function addModuleWords(moduleId: string, text: string): Promise<ActionResult<{ words: ModuleWord[] }>> {
   try {

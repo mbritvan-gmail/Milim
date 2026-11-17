@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
 import { chunk, fingerprint } from "@/lib/study";
 import { ModuleView, type ModuleActions, type ModuleRow } from "./module-view";
-import { addModule, addModuleWords, makeModulePublic, removeModule, removeModuleWord, renameModule, restoreModuleWord } from "../actions";
+import { addModule, addModuleWords, makeModulePublic, removeModule, removeModuleWord, renameModule, reorderModuleWords, restoreModuleWord } from "../actions";
 
 export const metadata = { title: "Module · milim" };
 
@@ -12,7 +12,7 @@ export const metadata = { title: "Module · milim" };
 export const maxDuration = 60;
 
 // Server actions handed to the screen as a plain object (so tests can swap in stand-ins).
-const actions: ModuleActions = { addModule, makeModulePublic, removeModule, renameModule, removeModuleWord, restoreModuleWord, addModuleWords };
+const actions: ModuleActions = { reorderModuleWords, addModule, makeModulePublic, removeModule, renameModule, removeModuleWord, restoreModuleWord, addModuleWords };
 
 export default function ModulePage({ params }: { params: Promise<{ id: string }> }) {
   return (

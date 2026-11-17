@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { EditButton, EditModeProvider, useEditMode } from "@/components/edit-mode";
 import { Sheet } from "@/components/sheet";
 import { CloseButton, useOverlay } from "@/components/overlay";
@@ -15,6 +15,7 @@ export type ModuleRow = ModuleWord & { status: WordStatus; count: number };
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 export type ModuleActions = {
+  reorderModuleWords(moduleId: string, orderedIds: string[]): Promise<Result>;
   addModule(moduleId: string): Promise<boolean>;
   makeModulePublic(moduleId: string): Promise<boolean>;
   removeModule(moduleId: string): Promise<void>;
@@ -64,6 +65,107 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
   const [pasting, setPasting] = useState("");
   const [pending, startTransition] = useTransition();
   const editMode = isOwner && editing;
+
+  // ---- reorder (drag the handle, or use the arrow keys on it) ------------
+  const itemRefs = useRef(new Map<string, HTMLLIElement>());
+  const [dragId, setDragId] = useState<string | null>(null);
+  const startOrder = useRef<string[]>([]);
+  const wordsRef = useRef(words);
+  useEffect(() => {
+    wordsRef.current = words;
+  });
+
+  async function saveOrder(before: string[]) {
+    const ids = wordsRef.current.map((w) => w.id);
+    if (ids.join() === before.join()) return;
+    const r = await actions.reorderModuleWords(moduleId, ids).catch((): Result => ({ ok: false, error: "Couldn't save the new order. Please try again." }));
+    if (r.ok) {
+      showToast("Order saved");
+    } else {
+      // Put the list back the way it was.
+      setWords((ws) => before.map((id) => ws.find((w) => w.id === id)).filter((w): w is ModuleRow => Boolean(w)));
+      showToast(r.error);
+    }
+  }
+
+  function moveTo(id: string, target: number) {
+    setWords((ws) => {
+      const from = ws.findIndex((w) => w.id === id);
+      if (from < 0 || from === target) return ws;
+      const next = [...ws];
+      const [item] = next.splice(from, 1);
+      next.splice(target, 0, item);
+      return next;
+    });
+  }
+
+  // Dragging listens on the window, not the handle: moving a row in the list can make the browser
+  // drop its hold on the pointer.
+  const dragRef = useRef<string | null>(null);
+
+  function dragMove(y: number) {
+    const id = dragRef.current;
+    if (!id) return;
+    // Where the pointer is among the rows (using each row's middle) decides the new place.
+    const others = wordsRef.current.filter((w) => w.id !== id);
+    let target = others.length;
+    for (let i = 0; i < others.length; i++) {
+      const el = itemRefs.current.get(others[i].id);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (y < r.top + r.height / 2) {
+        target = i;
+        break;
+      }
+    }
+    moveTo(id, target);
+    // Scroll when the pointer is near the top or bottom edge of the screen.
+    const edge = 90;
+    const step = y < edge ? -14 : y > window.innerHeight - edge ? 14 : 0;
+    if (step) {
+      window.scrollBy(0, step);
+      itemRefs.current.get(id)?.closest<HTMLElement>("[role=dialog]")?.scrollBy(0, step);
+    }
+  }
+
+  function onHandleDown(e: React.PointerEvent<HTMLButtonElement>, id: string) {
+    e.preventDefault();
+    startOrder.current = wordsRef.current.map((w) => w.id);
+    dragRef.current = id;
+    setDragId(id);
+    const move = (ev: PointerEvent) => dragMove(ev.clientY);
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      dragRef.current = null;
+      setDragId(null);
+      void saveOrder(startOrder.current);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
+
+  function onHandleKey(e: React.KeyboardEvent<HTMLButtonElement>, id: string) {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    const before = wordsRef.current.map((w) => w.id);
+    const from = before.indexOf(id);
+    const target = e.key === "ArrowUp" ? Math.max(0, from - 1) : Math.min(before.length - 1, from + 1);
+    if (target === from) return;
+    moveTo(id, target);
+    // Saved once the keys stop (a short pause after the last press).
+    if (!keyBase.current) keyBase.current = before;
+    if (keyTimer.current) clearTimeout(keyTimer.current);
+    keyTimer.current = setTimeout(() => {
+      const base = keyBase.current ?? before;
+      keyBase.current = null;
+      void saveOrder(base);
+    }, 700);
+  }
+  const keyBase = useRef<string[] | null>(null);
+  const keyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const learned = words.filter((w) => w.status === "learned").length;
   const toLearn = words.length - learned;
@@ -239,7 +341,14 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
             );
             const box = "flex min-w-0 flex-1 items-center justify-between gap-4 rounded-xl border border-border bg-surface px-4 py-3";
             return (
-              <li key={w.id} className="flex items-stretch gap-2">
+              <li
+                key={w.id}
+                ref={(el) => {
+                  if (el) itemRefs.current.set(w.id, el);
+                  else itemRefs.current.delete(w.id);
+                }}
+                className={`flex items-stretch gap-2 ${dragId === w.id ? "relative z-10 rounded-xl ring-2 ring-accent" : ""}`}
+              >
                 {editMode && (
                   <button
                     type="button"
@@ -259,6 +368,24 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
                   </Link>
                 ) : (
                   <div className={box}>{body}</div>
+                )}
+                {editMode && (
+                  <button
+                    type="button"
+                    aria-label={`Move ${w.lemma}. Drag, or use the up and down arrow keys`}
+                    onPointerDown={(e) => onHandleDown(e, w.id)}
+                    onKeyDown={(e) => onHandleKey(e, w.id)}
+                    className="flex w-10 shrink-0 cursor-grab touch-none items-center justify-center rounded-xl border border-border text-muted hover:bg-surface-2 active:cursor-grabbing"
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+                      <circle cx="9" cy="6" r="1.6" />
+                      <circle cx="15" cy="6" r="1.6" />
+                      <circle cx="9" cy="12" r="1.6" />
+                      <circle cx="15" cy="12" r="1.6" />
+                      <circle cx="9" cy="18" r="1.6" />
+                      <circle cx="15" cy="18" r="1.6" />
+                    </svg>
+                  </button>
                 )}
               </li>
             );
