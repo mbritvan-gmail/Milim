@@ -1,8 +1,8 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { safeNext } from "@/lib/safe-next";
 
+const HOME = "/home";
 const OTP_TYPES: EmailOtpType[] = ["email", "magiclink", "signup", "recovery", "invite", "email_change"];
 
 function failure(origin: string) {
@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type");
   const code = searchParams.get("code");
-  const next = safeNext(searchParams.get("next"));
+  // After signing in, everyone lands on Home (a "next" address in an older link is ignored).
+  const next = HOME;
 
   if (tokenHash && type && OTP_TYPES.includes(type as EmailOtpType)) {
     const html = `<!doctype html>
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
     const form = await request.formData();
     const tokenHash = String(form.get("token_hash") ?? "");
     const type = String(form.get("type") ?? "");
-    const next = safeNext(String(form.get("next") ?? ""));
+    const next = HOME;
     if (!tokenHash || !OTP_TYPES.includes(type as EmailOtpType)) return failure(origin);
 
     const supabase = await createClient();

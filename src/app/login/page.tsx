@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { LoginForm } from "./login-form";
 import { RotatingBackground } from "@/components/rotating-background";
 import { RotatingTagline } from "@/components/rotating-tagline";
-import { safeNext } from "@/lib/safe-next";
 
 export const metadata = { title: "Sign in · milim" };
 
@@ -38,7 +37,8 @@ async function LoginBody({
 }: {
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const { next, error } = await searchParams;
+  const { error } = await searchParams;
 
-  return <LoginForm next={safeNext(next)} linkError={Boolean(error)} />;
+  // Whatever page was asked for, signing in lands on Home.
+  return <LoginForm next="/home" linkError={Boolean(error)} />;
 }
