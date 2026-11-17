@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { NewSongForm } from "./new-song-form";
 
-export const metadata = { title: "Add lyrics · Milim" };
+export const metadata = { title: "Add lyrics · milim" };
 
 // Translating a full song can take a while.
 export const maxDuration = 60;

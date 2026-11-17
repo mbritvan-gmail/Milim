@@ -1,4 +1,4 @@
-# Milim
+# milim
 
 Learn Hebrew through song lyrics. Mobile-first, dark mode, Next.js (App Router) + Supabase + Claude.
 

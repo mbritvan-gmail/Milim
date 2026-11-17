@@ -47,7 +47,7 @@ export type LyricItem = { text: string; section: boolean };
 
 // Split pasted lyrics into clean items. Blank lines are dropped. Section labels are kept
 // (and flagged) so they can be shown as headings and skipped by the translator. Other
-// lines with no Hebrew at all are ignored, since Milim focuses on the Hebrew.
+// lines with no Hebrew at all are ignored, since milim focuses on the Hebrew.
 export function parseLyrics(raw: string): LyricItem[] {
   const items: LyricItem[] = [];
   for (const line of raw.split(/\r?\n/)) {

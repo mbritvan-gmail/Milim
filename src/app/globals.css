@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Milim design tokens: dark by default, soft blue accent. */
+/* milim design tokens: dark by default, soft blue accent. */
 :root {
   --background: #0b0f17;
   --surface: #131a26;
@@ -42,6 +42,25 @@ body {
 .hebrew {
   font-family: var(--font-hebrew);
   direction: rtl;
-  text-align: right;
   line-height: 1.7;
+}
+
+/* Gentle fade-in for each new tagline on the sign-in screen. */
+@keyframes tagline-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.tagline-in {
+  animation: tagline-in 0.7s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tagline-in {
+    animation: none;
+  }
 }

@@ -98,7 +98,7 @@ export function SongView({
                   aria-expanded={open}
                   className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-surface-2"
                 >
-                  <span lang="he" className="hebrew block text-xl">
+                  <span lang="he" className="hebrew block text-right text-xl">
                     {line.hebrew}
                   </span>
                   {showTranslit && line.transliteration && (

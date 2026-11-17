@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildOptions, pickQuizWords } from "@/lib/quiz";
 import { QuizRunner, type QuizQuestion } from "./quiz-runner";
 
-export const metadata = { title: "Quiz · Milim" };
+export const metadata = { title: "Quiz · milim" };
 
 // Preparing wrong answers with the AI can take a little while the first time.
 export const maxDuration = 60;

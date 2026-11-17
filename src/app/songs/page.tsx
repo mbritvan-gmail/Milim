@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata = { title: "My songs · Milim" };
+export const metadata = { title: "My songs · milim" };
 
 export default function SongsPage() {
   return (

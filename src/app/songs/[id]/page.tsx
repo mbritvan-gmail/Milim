@@ -8,7 +8,7 @@ import { SongActions } from "./song-actions";
 import { QuizStartButton } from "./quiz-start-button";
 import { prepareQuiz } from "./quiz/actions";
 
-export const metadata = { title: "Song · Milim" };
+export const metadata = { title: "Song · milim" };
 
 // Preparing quiz answers with the AI the first time can take a little while.
 export const maxDuration = 60;

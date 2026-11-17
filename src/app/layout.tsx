@@ -14,7 +14,7 @@ const hebrewFont = Assistant({
 });
 
 export const metadata: Metadata = {
-  title: "Milim",
+  title: "milim",
   description: "Learn Hebrew through the songs you love.",
 };
 
