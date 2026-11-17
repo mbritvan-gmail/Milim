@@ -11,7 +11,8 @@ import { QuizStartButton } from "./quiz-start-button";
 import { AddSongButton } from "./add-song-button";
 import { prepareQuiz } from "./quiz/actions";
 import { decodeSuggestion, type EditActions, type PendingSuggestion } from "@/lib/editing";
-import { EditButton, EditModeProvider } from "./edit-mode";
+import { EditModeProvider } from "./edit-mode";
+import { SongHeaderControls } from "./song-header-controls";
 import * as editActionModule from "./edit-actions";
 
 // Server actions handed to the screen as a plain object (so tests can swap in stand-ins).
@@ -132,7 +133,9 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       <header className="flex flex-col gap-1">
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold">{song.title}</h1>
-          {(isOwner || song.visibility === "public") && <EditButton />}
+          {(isOwner || song.visibility === "public") && (
+            <SongHeaderControls songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} canRemove={isOwner || inMyList} />
+          )}
         </div>
         <p className="text-sm text-muted">
           {[song.artist, song.visibility === "public" ? "Public" : "Private", sharedBy].filter(Boolean).join(" · ")}
@@ -218,7 +221,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
         learnAfter={settings.learnAfter}
       />
 
-      <SongActions songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} inMyList={inMyList} />
+      <SongActions songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} />
     </EditModeProvider>
   );
 }

@@ -1,25 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { makeSongPublic, removeSong } from "./actions";
-import { useEditMode } from "./edit-mode";
+import { useState } from "react";
+import { makeSongPublic } from "./actions";
 
-type Props = { songId: string; isOwner: boolean; isPublic: boolean; inMyList: boolean };
+type Props = { songId: string; isOwner: boolean; isPublic: boolean };
 
-export function SongActions({ songId, isOwner, isPublic, inMyList }: Props) {
+export function SongActions({ songId, isOwner, isPublic }: Props) {
   const router = useRouter();
-  const { editing } = useEditMode();
-  const [confirming, setConfirming] = useState(false);
   const [confirmingPublic, setConfirmingPublic] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [problem, setProblem] = useState("");
-  const [pending, startTransition] = useTransition();
 
-  // A song that isn't in your list has nothing to remove (the "Add" button covers it).
-  if (!isOwner && !inMyList) return null;
-  // Sharing is always available to the owner; removing a song only appears while editing.
-  if (!editing && !(isOwner && !isPublic)) return null;
+  // Only the owner of a private song has anything here: sharing it publicly.
+  if (!(isOwner && !isPublic)) return null;
 
   async function publish() {
     setPublishing(true);
@@ -31,21 +25,6 @@ export function SongActions({ songId, isOwner, isPublic, inMyList }: Props) {
       setPublishing(false);
       setProblem("Couldn't make this song public. Please try again.");
     }
-  }
-
-  const label = "Remove song";
-  let warning: string;
-  let confirmLabel: string;
-  if (isOwner && !isPublic) {
-    confirmLabel = "Delete forever";
-    warning = "This permanently deletes the song, its translations and its vocabulary.";
-  } else if (isOwner) {
-    confirmLabel = "Archive";
-    warning =
-      "Public songs can't be deleted. Archiving hides it from the public library and removes it from your list, but people who already added it keep it.";
-  } else {
-    confirmLabel = "Remove";
-    warning = "This only removes it from your list. The song itself isn't deleted.";
   }
 
   return (
@@ -87,37 +66,6 @@ export function SongActions({ songId, isOwner, isPublic, inMyList }: Props) {
           )}
           {problem && <p className="text-sm text-danger">{problem}</p>}
         </div>
-      )}
-      {!editing ? null : confirming ? (
-        <div className="flex flex-col gap-3 rounded-xl border border-danger/40 bg-surface p-4">
-          <p className="text-sm">{warning}</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => startTransition(() => removeSong(songId))}
-              className="h-10 flex-1 rounded-xl bg-danger font-semibold text-accent-contrast disabled:opacity-60"
-            >
-              {pending ? "Working…" : confirmLabel}
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => setConfirming(false)}
-              className="h-10 flex-1 rounded-xl border border-border hover:bg-surface-2"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setConfirming(true)}
-          className="h-11 rounded-xl border border-danger/50 text-sm font-semibold text-danger hover:bg-surface-2"
-        >
-          {label}
-        </button>
       )}
     </section>
   );

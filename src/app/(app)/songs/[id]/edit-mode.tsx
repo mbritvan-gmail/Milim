@@ -74,17 +74,32 @@ export function EditModeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// The Edit / Done button in a song's header. Only shown for the person who owns the song.
-export function EditButton() {
+// The Edit / Done button in a song's header, with "Remove song" beside Done while editing.
+export function EditButton({ onRemove }: { onRemove?: () => void }) {
   const { editing, setEditing } = useEditMode();
   return editing ? (
-    <button
-      type="button"
-      onClick={() => setEditing(false)}
-      className="h-10 shrink-0 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-contrast hover:bg-accent-strong"
-    >
-      Done
-    </button>
+    <div className="flex shrink-0 items-center gap-2">
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Remove song"
+          className="flex h-10 items-center gap-1.5 rounded-xl border border-danger/50 px-3 text-sm font-semibold text-danger hover:bg-surface"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+          </svg>
+          Remove
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => setEditing(false)}
+        className="h-10 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-contrast hover:bg-accent-strong"
+      >
+        Done
+      </button>
+    </div>
   ) : (
     <button
       type="button"
