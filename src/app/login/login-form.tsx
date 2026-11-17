@@ -4,15 +4,24 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({ next, linkError = false }: { next: string; linkError?: boolean }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [showLinkError, setShowLinkError] = useState(linkError);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("sending");
     setMessage("");
+    // The "link didn't work" notice is about the old link; drop it (and ?error=link) once
+    // the person asks for a new one.
+    setShowLinkError(false);
+    const here = new URL(window.location.href);
+    if (here.searchParams.has("error")) {
+      here.searchParams.delete("error");
+      window.history.replaceState(null, "", here.pathname + here.search);
+    }
 
     if (!supabaseConfigured) {
       setStatus("error");
@@ -64,6 +73,11 @@ export function LoginForm({ next }: { next: string }) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      {showLinkError && (
+        <p role="alert" className="rounded-xl border border-danger/40 bg-surface p-3 text-center text-sm text-danger">
+          That sign-in link didn&apos;t work. Links can be used once and expire after an hour, so please request a new one.
+        </p>
+      )}
       <label htmlFor="email" className="text-sm text-muted">
         Email address
       </label>

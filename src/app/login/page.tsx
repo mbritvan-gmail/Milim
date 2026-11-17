@@ -40,14 +40,5 @@ async function LoginBody({
 }) {
   const { next, error } = await searchParams;
 
-  return (
-    <div className="flex flex-col gap-4">
-      {error && (
-        <p className="rounded-xl border border-danger/40 bg-surface p-3 text-center text-sm text-danger">
-          That sign-in link didn&apos;t work or has expired. Please request a new one.
-        </p>
-      )}
-      <LoginForm next={safeNext(next)} />
-    </div>
-  );
+  return <LoginForm next={safeNext(next)} linkError={Boolean(error)} />;
 }
