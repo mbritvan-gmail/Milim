@@ -60,10 +60,10 @@ export default function HomePage() {
         <div className="grid grid-cols-3 gap-4">
           {MODULES.map((m) => (
             <Link key={m.href} href={m.href} className="group flex flex-col items-center gap-2">
-              <span className="flex h-[72px] w-[72px] items-center justify-center rounded-[1.4rem] border border-border bg-surface text-accent shadow-lg transition-transform group-active:scale-95 [&_svg]:h-9 [&_svg]:w-9">
+              <span className="flex h-[72px] w-[72px] items-center justify-center rounded-[1.4rem] border border-white/40 bg-white/15 text-white shadow-[0_8px_20px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.5)] backdrop-blur-xl transition-transform group-active:scale-95 [&_svg]:h-9 [&_svg]:w-9 [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
                 {m.svg}
               </span>
-              <span className="rounded-md bg-background/40 px-2 py-0.5 text-center text-sm font-medium backdrop-blur-sm">{m.label}</span>
+              <span className="rounded-md bg-black/35 px-2 py-0.5 text-center text-sm font-medium text-white backdrop-blur-sm">{m.label}</span>
             </Link>
           ))}
         </div>
