@@ -65,7 +65,10 @@ export type PendingSuggestion = { id: string; lineId: string; by: string; text: 
 
 export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
+export type NikudResult = { lines: { id: string; vocalized: string }[]; words: { id: string; vocalized: string }[] };
+
 export type EditActions = {
+  addNikud(songId: string): Promise<ActionResult<NikudResult>>;
   updateLine(songId: string, lineId: string, fields: LineFields): Promise<ActionResult<{ previous: LineFields }>>;
   suggestWord(songId: string, lineId: string, token: string): Promise<ActionResult<{ draft: VocabDraft }>>;
   addVocabulary(songId: string, lineId: string, token: string, draft: VocabDraft): Promise<ActionResult<{ word: AddedWord }>>;

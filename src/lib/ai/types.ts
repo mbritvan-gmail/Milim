@@ -42,6 +42,7 @@ import type { WordForms } from "../word-forms";
 export type InflectInput = { lemma: string; english: string; kind: "noun" | "adjective" };
 export type { WordForms };
 import type { ModuleWordResult } from "../modules";
+export type AddNikudInput = { texts: string[] };
 export type DefineWordsInput = { title: string; words: string[] };
 export type { ModuleWordResult };
 
@@ -53,6 +54,8 @@ export interface AIProvider {
   defineWord(input: DefineWordInput): Promise<DefineWordResult>;
   /** All present, past and future forms of a verb, split into prefix / stem / suffix segments. */
   conjugateVerb(input: ConjugateInput): Promise<ConjugationData>;
+  /** Each Hebrew text with nikud (vowel marks) added, in the same order. */
+  addNikud(input: AddNikudInput): Promise<string[]>;
   /** Meaning, pronunciation, nikud, gender and plural for each word of a pasted vocabulary list. */
   defineWords(input: DefineWordsInput): Promise<ModuleWordResult[]>;
   /** Singular / plural of a noun, or the four forms of an adjective, split into stem and ending. */

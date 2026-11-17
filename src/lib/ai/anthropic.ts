@@ -15,6 +15,7 @@ import {
   type InflectInput,
   type DefineWordInput,
   type DefineWordResult,
+  type AddNikudInput,
   type DefineWordsInput,
   type ModuleWordResult,
   type DistractorInput,
@@ -111,6 +112,11 @@ const WORDS_PROMPT = `You help English speakers learn Hebrew vocabulary. You are
 Use the most common everyday meaning. Do not add or drop words. No commentary.`;
 
 const WordsSchema = z.object({ words: z.array(ModuleWordSchema) });
+
+const NIKUD_PROMPT = `You add nikud (Hebrew vowel marks) to Hebrew text, for learners.
+For each item, return the same text with full nikud added in standard modern pronunciation (including dagesh and the shin and sin dots). Do not change, add, remove or reorder any letter, space or punctuation mark: only add vowel marks. Items are separate lines or words; return exactly one result per item, in the same order. No commentary.`;
+
+const NikudSchema = z.object({ items: z.array(z.string()) });
 
 const DefineSchema = z.object({
   lemma: z.string(),
@@ -453,6 +459,41 @@ export class AnthropicProvider implements AIProvider {
         throw new AIError("That took too long. Try fewer words, or try again.");
       }
       throw new AIError("The AI service had a problem with that list. Please try again.");
+    }
+  }
+
+  async addNikud({ texts }: AddNikudInput): Promise<string[]> {
+    const BATCH = 20;
+    const batches: string[][] = [];
+    for (let i = 0; i < texts.length; i += BATCH) batches.push(texts.slice(i, i + BATCH));
+    const signal = AbortSignal.timeout(50_000);
+    try {
+      const results = await Promise.all(
+        batches.map(async (batch) => {
+          const response = await this.client.messages.parse(
+            {
+              model: this.model,
+              max_tokens: 4000,
+              system: NIKUD_PROMPT,
+              messages: [{ role: "user", content: batch.map((t, i) => `${i + 1}. ${t}`).join("\n") }],
+              output_config: { effort: "low", format: zodOutputFormat(NikudSchema) },
+            },
+            { signal },
+          );
+          const items = response.parsed_output?.items;
+          if (response.stop_reason === "refusal" || !items || items.length !== batch.length) {
+            throw new AIError("Claude couldn't add nikud to that.");
+          }
+          return items;
+        }),
+      );
+      return results.flat();
+    } catch (error) {
+      if (error instanceof AIError) throw error;
+      if (signal.aborted || error instanceof Anthropic.APIUserAbortError) {
+        throw new AIError("That took too long. Please try again.");
+      }
+      throw new AIError("The AI service had a problem adding nikud. Please try again.");
     }
   }
 }

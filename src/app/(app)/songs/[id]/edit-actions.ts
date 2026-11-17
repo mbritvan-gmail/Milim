@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
-import { hasHebrew } from "@/lib/lyrics";
+import { hasHebrew, isSectionLabel } from "@/lib/lyrics";
+import { isPointedVersion } from "@/lib/nikud";
 import { parseMedia } from "@/lib/media";
 import {
   MAX_ENGLISH,
@@ -17,6 +18,7 @@ import {
   type AddedWord,
   type EditActions,
   type LineFields,
+  type NikudResult,
   type SongDetails,
   type VocabDraft,
   type VocabRestore,
@@ -92,10 +94,65 @@ export async function updateLine(songId: string, lineId: string, fields: LineFie
       console.error("updateLine failed", error);
       return fail(GENERIC);
     }
+    // The saved nikud no longer matches if the Hebrew changed (ignored if that column isn't there yet).
+    if (before.hebrew !== hebrew) {
+      await ctx.supabase.from("lines").update({ vocalized: null }).eq("id", lineId).eq("song_id", songId);
+    }
     return {
       ok: true,
       previous: { english: before.english ?? "", transliteration: before.transliteration ?? "", hebrew: before.hebrew },
     };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Nikud
+// ---------------------------------------------------------------------------
+// Adds nikud to every lyric line and vocabulary word of the song that doesn't have it yet.
+export async function addNikud(songId: string) {
+  return guarded<NikudResult>(async () => {
+    const ctx = await ownerContext(songId);
+    if ("error" in ctx) return fail(ctx.error);
+
+    const linesRes = await ctx.supabase.from("lines").select("id, hebrew, vocalized").eq("song_id", songId).order("position");
+    if (linesRes.error) {
+      if (/vocalized/.test(linesRes.error.message)) return fail("Nikud for songs needs the latest database update, which hasn't been run yet.");
+      console.error("addNikud lines failed", linesRes.error);
+      return fail(GENERIC);
+    }
+    const lines = (linesRes.data ?? []).filter((l) => !l.vocalized && !isSectionLabel(l.hebrew) && hasHebrew(l.hebrew));
+
+    const wordsRes = await ctx.supabase.from("song_words").select("vocab_entries(id, lemma, vocalized)").eq("song_id", songId);
+    const wordEntries = (wordsRes.data ?? []).flatMap((row) => {
+      const v = (Array.isArray(row.vocab_entries) ? row.vocab_entries[0] : row.vocab_entries) as { id: string; lemma: string; vocalized: string | null } | undefined;
+      return v && !v.vocalized ? [v] : [];
+    });
+
+    if (lines.length === 0 && wordEntries.length === 0) return fail("This song already has nikud.");
+
+    const texts = [...lines.map((l) => l.hebrew), ...wordEntries.map((w) => w.lemma)];
+    const pointed = await getAIProvider().addNikud({ texts });
+
+    const out: NikudResult = { lines: [], words: [] };
+    lines.forEach((l, i) => {
+      if (isPointedVersion(l.hebrew, pointed[i])) out.lines.push({ id: l.id, vocalized: pointed[i].trim() });
+    });
+    wordEntries.forEach((w, i) => {
+      const text = pointed[lines.length + i];
+      if (isPointedVersion(w.lemma, text)) out.words.push({ id: w.id, vocalized: text.trim() });
+    });
+    if (out.lines.length === 0 && out.words.length === 0) return fail("Claude's answer didn't match the lyrics, so nothing was changed. Please try again.");
+
+    const results = await Promise.all(out.lines.map((l) => ctx.supabase.from("lines").update({ vocalized: l.vocalized }).eq("id", l.id).eq("song_id", songId)));
+    if (results.some((r) => r.error)) {
+      console.error("addNikud save failed", results.find((r) => r.error)?.error);
+      return fail(GENERIC);
+    }
+    if (out.words.length > 0) {
+      const { error } = await ctx.supabase.rpc("fill_word_extras", { p_items: out.words.map((w) => ({ id: w.id, vocalized: w.vocalized, gender: "", plural: "" })) });
+      if (error) console.error("fill_word_extras failed", error);
+    }
+    return { ok: true, ...out };
   });
 }
 
@@ -391,6 +448,7 @@ export async function reopenSuggestion(
 
 // A compile-time check that these actions match the shape the screens expect.
 const _check: EditActions = {
+  addNikud,
   updateLine,
   suggestWord,
   addVocabulary,

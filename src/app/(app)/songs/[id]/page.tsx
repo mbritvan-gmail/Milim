@@ -9,6 +9,7 @@ import { SongView, type SongLine, type SongWord } from "./song-view";
 import { QuizStartButton } from "./quiz-start-button";
 import { AddSongButton } from "./add-song-button";
 import { prepareQuiz } from "./quiz/actions";
+import { loadWordExtras } from "@/lib/word-extras";
 import { decodeSuggestion, type EditActions, type PendingSuggestion } from "@/lib/editing";
 import { EditModeProvider } from "@/components/edit-mode";
 import { SongHeaderControls } from "./song-header-controls";
@@ -16,6 +17,7 @@ import * as editActionModule from "./edit-actions";
 
 // Server actions handed to the screen as a plain object (so tests can swap in stand-ins).
 const editActions: EditActions = {
+  addNikud: editActionModule.addNikud,
   updateLine: editActionModule.updateLine,
   suggestWord: editActionModule.suggestWord,
   addVocabulary: editActionModule.addVocabulary,
@@ -55,9 +57,11 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
 
   // Row-level security decides what this user may see; a song they can't see is
   // simply "not found".
-  const [songRes, linesRes, wordsRes, settings, attemptsRes, mineRes] = await Promise.all([
+  const [songRes, linesRes, nikudRes, wordsRes, settings, attemptsRes, mineRes] = await Promise.all([
     supabase.from("songs").select("id, title, artist, media_url, visibility, owner_id").eq("id", id).maybeSingle(),
     supabase.from("lines").select("id, hebrew, transliteration, english").eq("song_id", id).order("position"),
+    // Nikud for each line lives in a newer column; if the database script isn't run yet this just comes back empty.
+    supabase.from("lines").select("id, vocalized").eq("song_id", id),
     supabase
       .from("song_words")
       .select("surface_form, line_id, source, vocab_entries(id, lemma, transliteration, english, part_of_speech)")
@@ -72,7 +76,8 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   const song = songRes.data;
   if (!song) notFound();
 
-  const lines: SongLine[] = linesRes.data ?? [];
+  const nikudByLine = new Map((nikudRes.error ? [] : (nikudRes.data ?? [])).map((r) => [r.id as string, (r.vocalized as string | null) ?? null]));
+  const lines: SongLine[] = (linesRes.data ?? []).map((l) => ({ ...l, vocalized: nikudByLine.get(l.id) ?? null }));
   const entries = (wordsRes.data ?? []).flatMap((row) => {
     const entry = Array.isArray(row.vocab_entries) ? row.vocab_entries[0] : row.vocab_entries;
     return entry ? [{ ...entry, surface_form: row.surface_form, line_id: row.line_id as string | null, source: (row.source as string | null) ?? "ai" }] : [];
@@ -84,9 +89,10 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
     const { data } = await supabase.from("user_words").select("vocab_entry_id, correct_count, learned_at").in("vocab_entry_id", ids);
     for (const p of data ?? []) progress.set(p.vocab_entry_id, p);
   }
+  const extras = await loadWordExtras(supabase, entries.map((e) => e.id as string));
   const words: SongWord[] = entries.map((e) => {
     const p = progress.get(e.id);
-    return { ...e, status: p ? (p.learned_at ? "learned" : "learning") : "new", count: p?.correct_count ?? 0 };
+    return { ...e, vocalized: extras.get(e.id as string)?.vocalized ?? null, status: p ? (p.learned_at ? "learned" : "learning") : "new", count: p?.correct_count ?? 0 };
   });
   const learnedCount = words.filter((w) => w.status === "learned").length;
   const toLearn = words.length - learnedCount;
@@ -207,7 +213,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       <SongView
-        key={fingerprint([...words.flatMap((w) => [w.id, w.status, w.count]), ...lines.flatMap((l) => [l.id, l.hebrew, l.english ?? "", l.transliteration ?? ""]), ...pending.map((p) => p.id), song.title, song.artist ?? "", song.media_url ?? "", settings.showTranslit, settings.learnAfter])}
+        key={fingerprint([...words.flatMap((w) => [w.id, w.status, w.count]), ...lines.flatMap((l) => [l.id, l.hebrew, l.english ?? "", l.transliteration ?? "", l.vocalized ?? ""]), ...words.map((w) => w.vocalized ?? ""), ...pending.map((p) => p.id), song.title, song.artist ?? "", song.media_url ?? "", settings.showTranslit, settings.showNikud, settings.learnAfter])}
         songId={song.id}
         isOwner={isOwner}
         canSuggest={!isOwner && song.visibility === "public"}
@@ -217,6 +223,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
         lines={lines}
         words={words}
         showTranslit={settings.showTranslit}
+        showNikud={settings.showNikud}
         learnAfter={settings.learnAfter}
       />
 

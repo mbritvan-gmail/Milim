@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StatusBadge } from "@/components/status-badge";
 import { fixLinePunctuation, isSectionLabel } from "@/lib/lyrics";
+import { hebrewText } from "@/lib/modules";
 import { cleanToken, splitTokens, type EditActions, type PendingSuggestion, type SongDetails, type VocabDraft } from "@/lib/editing";
 import type { WordStatus } from "@/lib/study";
 import { useEditMode } from "@/components/edit-mode";
 import { AddWordSheet, DetailsSheet, LineSheet, RemoveWordSheet, SuggestSheet } from "./edit-sheets";
 
-export type SongLine = { id: string; hebrew: string; transliteration: string | null; english: string | null };
+export type SongLine = { id: string; hebrew: string; transliteration: string | null; english: string | null; vocalized?: string | null };
 export type SongWord = {
   id: string;
   lemma: string;
@@ -18,6 +19,7 @@ export type SongWord = {
   transliteration: string | null;
   english: string;
   part_of_speech: string | null;
+  vocalized?: string | null;
   status: WordStatus;
   count: number;
   /** Where the word came from, kept so a removal can be undone exactly. */
@@ -41,6 +43,7 @@ export function SongView({
   lines: initialLines,
   words: initialWords,
   showTranslit,
+  showNikud,
   learnAfter,
   isOwner,
   canSuggest,
@@ -53,6 +56,8 @@ export function SongView({
   words: SongWord[];
   /** The person's "show pronunciation" setting (changed on the Settings page). */
   showTranslit: boolean;
+  /** The person's "show nikud" setting; used for lines and words that have nikud saved. */
+  showNikud: boolean;
   learnAfter: number;
   isOwner: boolean;
   canSuggest: boolean;
@@ -77,6 +82,8 @@ export function SongView({
   const lyricLines = lines.filter((l) => !isSectionLabel(l.hebrew));
   const allRevealed = lyricLines.length > 0 && lyricLines.every((l) => revealed.has(l.id));
   const lineById = (id: string) => lines.find((l) => l.id === id);
+  // The line as shown: with nikud when the person wants it and the line has it.
+  const lineText = (l: SongLine) => fixLinePunctuation(showNikud && l.vocalized ? l.vocalized : l.hebrew);
 
   function toggleLine(id: string) {
     setRevealed((prev) => {
@@ -88,7 +95,11 @@ export function SongView({
   }
 
   function patchLine(id: string, f: { english: string; transliteration: string; hebrew: string }) {
-    setLines((ls) => ls.map((l) => (l.id === id ? { ...l, english: f.english, transliteration: f.transliteration || null, hebrew: f.hebrew } : l)));
+    setLines((ls) =>
+      ls.map((l) =>
+        l.id === id ? { ...l, english: f.english, transliteration: f.transliteration || null, hebrew: f.hebrew, vocalized: f.hebrew === l.hebrew ? l.vocalized : null } : l,
+      ),
+    );
   }
 
   // ---- edit a line -------------------------------------------------------
@@ -155,6 +166,26 @@ export function SongView({
     return null;
   }
 
+  // ---- nikud -------------------------------------------------------------
+  const [nikudBusy, setNikudBusy] = useState(false);
+  const missingNikud = lyricLines.some((l) => !l.vocalized) || words.some((w) => !w.vocalized);
+
+  async function addNikud() {
+    setNikudBusy(true);
+    const r = await actions.addNikud(songId).catch(() => ({ ok: false as const, error: "Couldn't add nikud. Please try again." }));
+    setNikudBusy(false);
+    if (!r.ok) {
+      showToast(r.error);
+      return;
+    }
+    const byLine = new Map(r.lines.map((l) => [l.id, l.vocalized]));
+    const byWord = new Map(r.words.map((w) => [w.id, w.vocalized]));
+    setLines((ls) => ls.map((l) => (byLine.has(l.id) ? { ...l, vocalized: byLine.get(l.id) ?? null } : l)));
+    setWords((ws) => ws.map((w) => (byWord.has(w.id) ? { ...w, vocalized: byWord.get(w.id) ?? null } : w)));
+    const parts = [r.lines.length ? `${r.lines.length} ${r.lines.length === 1 ? "line" : "lines"}` : "", r.words.length ? `${r.words.length} ${r.words.length === 1 ? "word" : "words"}` : ""].filter(Boolean);
+    showToast(`Added nikud to ${parts.join(" and ")}`);
+  }
+
   // ---- song details ------------------------------------------------------
   async function saveDetails(d: SongDetails) {
     const r = await actions.updateSongDetails(songId, d);
@@ -213,7 +244,7 @@ export function SongView({
                 <li key={s.id} className="flex flex-col gap-2 rounded-lg border border-border bg-background p-3">
                   {line && (
                     <span lang="he" className="hebrew text-lg">
-                      {fixLinePunctuation(line.hebrew)}
+                      {lineText(line)}
                     </span>
                   )}
                   <span className="text-sm text-muted">Now: {line?.english || "(none)"}</span>
@@ -242,9 +273,21 @@ export function SongView({
           ) : editMode ? (
             <>
               <p className="text-sm text-muted">Tap a Hebrew word to add it to the Song Vocabulary.</p>
-              <button type="button" onClick={() => setSheet({ kind: "details" })} className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-surface-2">
-                Title, artist &amp; link
-              </button>
+              <div className="flex flex-wrap gap-2">
+                {missingNikud && (
+                  <button
+                    type="button"
+                    onClick={addNikud}
+                    disabled={nikudBusy}
+                    className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-surface-2 disabled:opacity-60"
+                  >
+                    {nikudBusy ? "Adding nikud…" : "Add nikud"}
+                  </button>
+                )}
+                <button type="button" onClick={() => setSheet({ kind: "details" })} className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-surface-2">
+                  Title, artist &amp; link
+                </button>
+              </div>
             </>
           ) : (
             <button
@@ -279,7 +322,7 @@ export function SongView({
                     className="w-full rounded-xl border border-accent/40 bg-surface px-4 py-3 text-left hover:bg-surface-2"
                   >
                     <span lang="he" className="hebrew block text-right text-xl">
-                      {fixLinePunctuation(line.hebrew)}
+                      {lineText(line)}
                     </span>
                     {showTranslit && line.transliteration && <span className="mt-1 block text-sm italic text-muted">{line.transliteration}</span>}
                     <span className="mt-2 block text-base text-accent">{line.english || "(no translation)"}</span>
@@ -325,7 +368,7 @@ export function SongView({
                   className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-surface-2"
                 >
                   <span lang="he" className="hebrew block text-right text-xl">
-                    {fixLinePunctuation(line.hebrew)}
+                    {lineText(line)}
                   </span>
                   {showTranslit && line.transliteration && (
                     <span className="mt-1 block text-sm italic text-muted">{line.transliteration}</span>
@@ -387,7 +430,7 @@ export function SongView({
                     </div>
                     <div className="shrink-0 text-right">
                       <span lang="he" className="hebrew block text-xl text-accent">
-                        {w.lemma}
+                        {hebrewText(w.lemma, w.vocalized, showNikud)}
                       </span>
                       {showTranslit && w.transliteration && <span className="block text-sm italic text-muted">{w.transliteration}</span>}
                       {w.surface_form && bareHebrew(w.surface_form) !== bareHebrew(w.lemma) && (

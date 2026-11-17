@@ -3,6 +3,7 @@
 Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-pmh51c`. Live preview: https://milim-seven.vercel.app
 
 ## TO DO FIRST (user)
+- Run `supabase/migrations/20261124000000_song_nikud.sql` (adds `lines.vocalized`, for the Add nikud button on songs).
 - Run `supabase/migrations/20261122000000_vocabulary_modules.sql` too (vocabulary modules: tables, nikud / gender / plural columns, Dictionary view). Run the conjugation one first.
 - Run `supabase/migrations/20261120000000_conjugation.sql` in the Supabase SQL editor (Show nikud setting + saved verb conjugations).
 
@@ -104,6 +105,10 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Module page (`/vocabulary/[id]`): read-only preview (nikud / pronunciation follow the settings), **Add module** puts its words in the Dictionary (`user_modules`), then **Start flashcards** (`/flashcards?module=ID`, `&scope=all` to review everything). Owners get Edit like songs: rename, remove a word (confirm + Undo), add more words by pasting, Make public (one-way), Remove module (delete private / archive public / remove from list).
 - Same rules as songs: public is permanent, public modules are archived not deleted. Dictionary = songs + added modules (`master_dictionary` view). Not built yet: suggestions from other people, nikud for song words, "N new words" version updates, a "From the X module" line on cards, nikud in the Dictionary list rows.
 - If the SQL hasn't been run, the Vocabulary page says so instead of failing, and everything else keeps working.
+
+## Nikud for songs (built; REQUIRES `supabase/migrations/20261124000000_song_nikud.sql`; not yet live-tested with the AI)
+- Owners get an **Add nikud** button when editing a song (only while some lines or words still lack it). Claude adds nikud to every lyric line (`lines.vocalized`) and every Song Vocabulary word (`vocab_entries.vocalized`, via `fill_word_extras`); an answer is only accepted if it is the original text with vowel marks added (`isPointedVersion`), so the words can never change.
+- Lyrics, Song Vocabulary, flashcards and the Dictionary word page follow the Show nikud switch where nikud exists; edit mode keeps plain text. Editing a line's Hebrew clears that line's saved nikud. New songs are not given nikud automatically yet.
 
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.
