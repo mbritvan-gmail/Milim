@@ -1,8 +1,19 @@
 import Link from "next/link";
+import { RotatingBackground } from "@/components/rotating-background";
 
 export const metadata = { title: "Home · milim" };
 
-const icon = { width: 30, height: 30, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+const icon = {
+  width: 30,
+  height: 30,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
 
 const MODULES = [
   {
@@ -41,18 +52,25 @@ const MODULES = [
 
 export default function HomePage() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-4 px-4 py-8">
-      <h1 className="hebrew mb-2 text-center text-5xl font-bold text-accent">מילים</h1>
-      {MODULES.map((m) => (
-        <Link
-          key={m.href}
-          href={m.href}
-          className="flex h-28 items-center gap-5 rounded-2xl border border-border bg-surface px-6 text-xl font-semibold transition-colors hover:bg-surface-2"
-        >
-          <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-surface-2 text-accent">{m.svg}</span>
-          {m.label}
-        </Link>
-      ))}
-    </main>
+    <div className="relative -mb-24 flex flex-1 flex-col pb-24">
+      <RotatingBackground creditClass="bottom-28" />
+      <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-4 px-4 py-8">
+        <h1 className="hebrew mb-2 text-center text-5xl font-bold text-accent">
+          מילים
+        </h1>
+        {MODULES.map((m) => (
+          <Link
+            key={m.href}
+            href={m.href}
+            className="flex h-28 items-center gap-5 rounded-2xl border border-border/70 bg-surface/80 px-6 backdrop-blur-md text-xl font-semibold transition-colors hover:bg-surface-2"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-surface-2 text-accent">
+              {m.svg}
+            </span>
+            {m.label}
+          </Link>
+        ))}
+      </main>
+    </div>
   );
 }
