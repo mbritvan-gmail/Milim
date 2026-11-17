@@ -27,7 +27,7 @@ async function LibraryBody() {
   const [songsRes, mineRes] = await Promise.all([
     supabase
       .from("songs")
-      .select("id, title, artist, owner_id, profiles(display_name)")
+      .select("id, title, artist, owner_id")
       .eq("visibility", "public")
       .is("archived_at", null)
       .order("created_at", { ascending: false })
@@ -35,18 +35,25 @@ async function LibraryBody() {
     supabase.from("user_songs").select("song_id"),
   ]);
 
+  if (songsRes.error) throw new Error(`library lookup failed: ${songsRes.error.message}`);
+
+  // Look up who shared each song in a separate, optional step.
+  const rows = songsRes.data ?? [];
+  const ownerIds = [...new Set(rows.map((s) => s.owner_id as string))];
+  const { data: owners } = ownerIds.length
+    ? await supabase.from("profiles").select("id, display_name").in("id", ownerIds)
+    : { data: [] };
+  const nameById = new Map((owners ?? []).map((o) => [o.id as string, o.display_name as string | null]));
+
   const mine = new Set((mineRes.data ?? []).map((r) => r.song_id as string));
-  const songs: LibrarySong[] = (songsRes.data ?? []).map((s) => {
-    const owner = (Array.isArray(s.profiles) ? s.profiles[0] : s.profiles) as { display_name: string | null } | null;
-    return {
-      id: s.id,
-      title: s.title,
-      artist: s.artist,
-      sharedBy: owner?.display_name ?? null,
-      isOwn: s.owner_id === user.id,
-      added: mine.has(s.id),
-    };
-  });
+  const songs: LibrarySong[] = rows.map((s) => ({
+    id: s.id,
+    title: s.title,
+    artist: s.artist,
+    sharedBy: nameById.get(s.owner_id) ?? null,
+    isOwn: s.owner_id === user.id,
+    added: mine.has(s.id),
+  }));
 
   return (
     <>

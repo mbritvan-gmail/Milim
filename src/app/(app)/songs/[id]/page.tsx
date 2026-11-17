@@ -38,7 +38,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   // Row-level security decides what this user may see; a song they can't see is
   // simply "not found".
   const [songRes, linesRes, wordsRes, profileRes, attemptsRes, mineRes] = await Promise.all([
-    supabase.from("songs").select("id, title, artist, media_url, visibility, owner_id, profiles(display_name)").eq("id", id).maybeSingle(),
+    supabase.from("songs").select("id, title, artist, media_url, visibility, owner_id").eq("id", id).maybeSingle(),
     supabase.from("lines").select("id, hebrew, transliteration, english").eq("song_id", id).order("position"),
     supabase
       .from("song_words")
@@ -49,6 +49,8 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
     supabase.from("user_songs").select("song_id").eq("song_id", id).maybeSingle(),
   ]);
 
+  // A real database error is not the same as "no such song": surface it instead of a 404.
+  if (songRes.error) throw new Error(`song lookup failed: ${songRes.error.message}`);
   const song = songRes.data;
   if (!song) notFound();
 
@@ -60,8 +62,12 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   const media = parseMedia(song.media_url);
   const isOwner = song.owner_id === user.id;
   const inMyList = Boolean(mineRes.data);
-  const ownerProfile = (Array.isArray(song.profiles) ? song.profiles[0] : song.profiles) as { display_name: string | null } | null;
-  const sharedBy = !isOwner && ownerProfile?.display_name ? `Shared by ${ownerProfile.display_name}` : null;
+  // The sharer's name is a separate, optional lookup, so it can never break the page.
+  let sharedBy: string | null = null;
+  if (!isOwner) {
+    const { data: owner } = await supabase.from("profiles").select("display_name").eq("id", song.owner_id).maybeSingle();
+    if (owner?.display_name) sharedBy = `Shared by ${owner.display_name}`;
+  }
   const attempts = attemptsRes.data ?? [];
   const best = attempts.reduce<{ score: number; total: number } | null>(
     (b, a) => (!b || a.score / a.total > b.score / b.total ? a : b),
