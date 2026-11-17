@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { SettingsLink } from "@/components/settings-link";
+import { fingerprint } from "@/lib/study";
 import { LibraryList, type LibrarySong } from "./library-list";
 
 export const metadata = { title: "Library · milim" };
@@ -57,11 +59,14 @@ async function LibraryBody() {
 
   return (
     <>
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Library</h1>
-        <p className="text-sm text-muted">Songs shared by everyone. Add one to study it.</p>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Library</h1>
+          <p className="text-sm text-muted">Songs shared by everyone. Add one to study it.</p>
+        </div>
+        <SettingsLink />
       </header>
-      <LibraryList initialSongs={songs} />
+      <LibraryList key={fingerprint(songs.flatMap((s) => [s.id, s.added]))} initialSongs={songs} />
     </>
   );
 }

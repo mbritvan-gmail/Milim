@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
-import { isStudyFilter, type SessionCard, type StudyFilter } from "@/lib/study";
+import { isStudyFilter, newSessionId, type SessionCard, type StudyFilter } from "@/lib/study";
 import { cardForWord, cardsForFilter, cardsForSong } from "@/lib/study-data";
 import { StudyRunner } from "./study-runner";
 
@@ -80,6 +80,7 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <StudyRunner
+      key={newSessionId()}
       cards={cards}
       learnAfter={settings.learnAfter}
       defaultDirection={settings.direction}

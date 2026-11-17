@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { parseMedia } from "@/lib/media";
 import { loadSettings } from "@/lib/settings";
-import { chunk } from "@/lib/study";
+import { chunk, fingerprint } from "@/lib/study";
 import { SongView, type SongLine, type SongWord } from "./song-view";
 import { SongActions } from "./song-actions";
 import { QuizStartButton } from "./quiz-start-button";
@@ -166,7 +166,13 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       </section>
       )}
 
-      <SongView lines={lines} words={words} showTranslit={settings.showTranslit} learnAfter={settings.learnAfter} />
+      <SongView
+        key={fingerprint(words.flatMap((w) => [w.id, w.status, w.count]))}
+        lines={lines}
+        words={words}
+        showTranslit={settings.showTranslit}
+        learnAfter={settings.learnAfter}
+      />
 
       <SongActions songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} inMyList={inMyList} />
     </>

@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
 import { chunk } from "@/lib/study";
+import { WordCardBack } from "@/components/word-card-back";
 import { WordActions } from "./word-actions";
 
 export const metadata = { title: "Word · milim" };
@@ -62,30 +63,30 @@ async function WordBody({ params }: { params: Promise<{ id: string }> }) {
         ← Dictionary
       </Link>
 
-      <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-6 text-center">
-        <span lang="he" className="hebrew text-6xl font-bold text-accent">
-          {word.lemma}
-        </span>
-        {settings.showTranslit && word.transliteration && <span className="italic text-muted">{word.transliteration}</span>}
-        <span className="text-3xl font-semibold">{word.english}</span>
-        {word.part_of_speech && <span className="text-sm text-muted">{word.part_of_speech}</span>}
+      {/* The same card as the back of a flashcard; its status and buttons live just below. */}
+      <div className="flex flex-col items-center gap-2.5 rounded-2xl border border-border bg-surface p-5 text-center">
+        <WordCardBack
+          lemma={word.lemma}
+          transliteration={word.transliteration}
+          english={word.english}
+          partOfSpeech={word.part_of_speech}
+          face="he-en"
+          showTranslit={settings.showTranslit}
+          heardIn={heard.map((h) => ({
+            songTitle: h.title,
+            hebrew: h.line.hebrew,
+            transliteration: h.line.transliteration ?? null,
+            href: `/songs/${h.songId}`,
+          }))}
+          status={status}
+          count={progressRes.data?.correct_count ?? 0}
+          learnAfter={settings.learnAfter}
+          showStatus={false}
+        />
       </div>
 
-      {heard.map((h) => (
-        <Link
-          key={`${h.songId}-${h.line.id}`}
-          href={`/songs/${h.songId}`}
-          className="flex flex-col gap-1 rounded-xl bg-surface-2 px-4 py-3 hover:bg-surface"
-        >
-          <span className="text-xs uppercase tracking-wide text-muted">Heard in {h.title}</span>
-          <span lang="he" className="hebrew text-lg">
-            {h.line.hebrew}
-          </span>
-          {settings.showTranslit && h.line.transliteration && <span className="text-sm italic text-muted">{h.line.transliteration}</span>}
-        </Link>
-      ))}
-
       <WordActions
+        key={`${word.id}-${status}-${progressRes.data?.correct_count ?? 0}-${settings.learnAfter}`}
         vocabId={word.id}
         initialStatus={status}
         initialCount={progressRes.data?.correct_count ?? 0}

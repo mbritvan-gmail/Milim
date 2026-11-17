@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buildOptions, pickQuizWords } from "@/lib/quiz";
+import { newSessionId } from "@/lib/study";
 import { QuizRunner, type QuizQuestion } from "./quiz-runner";
 
 export const metadata = { title: "Quiz · milim" };
@@ -92,7 +93,7 @@ async function QuizBody({ params }: { params: Promise<{ id: string }> }) {
           This song doesn&apos;t have enough key words for a quiz yet.
         </p>
       ) : (
-        <QuizRunner songId={id} questions={questions} showTranslit={profileRes.data?.show_transliteration ?? true} />
+        <QuizRunner key={newSessionId()} songId={id} questions={questions} showTranslit={profileRes.data?.show_transliteration ?? true} />
       )}
     </>
   );

@@ -68,6 +68,11 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 9. Housekeeping: delete the stray Vercel variable named `default`; lowercase "milim" in the Supabase email template.
 
 ## Notes
+- Screens that copy server data into their own memory (study, quiz, dictionary, word card, song key words, library, settings) are given a `key`
+  (a fresh id per visit, or a fingerprint of the data) so they never show stale statuses or hold on to an earlier session when navigated back to.
+  Without this, "Practice this word" showed an older session's word and the Dictionary kept old statuses after studying.
+- The back of a card (`src/components/word-card-back.tsx`) is shared by the flashcards and a word's page in the Dictionary, with "Heard in <song>".
+- The settings gear is on Songs, Library and Dictionary.
 - Sign-in links open a "Sign in to milim" button page (`/auth/confirm`); the one-time token is only used when the button is pressed, so mail apps / scanners that preview links can't use it up. Works with the existing Supabase template (no change needed).
 - Lesson: don't embed `profiles(...)` from `songs` in a Supabase query; `songs` relates to `profiles` two ways (owner and via `user_songs`), which makes the embed ambiguous and the query fail. Look names up separately.
 - The sign-in screen (also the landing page: `/` redirects to `/login` or `/songs`) rotates taglines (`src/components/rotating-tagline.tsx`)

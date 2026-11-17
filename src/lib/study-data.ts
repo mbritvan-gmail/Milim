@@ -5,7 +5,7 @@ import { chunk, matchesFilter, shuffle, type SessionCard, type StudyFilter, type
 // looked up by a long list of ids is fetched in chunks.
 const CHUNK = 60;
 
-type BaseCard = Omit<SessionCard, "context"> & { lineId: string | null };
+type BaseCard = Omit<SessionCard, "context"> & { lineId: string | null; songId: string | null };
 type VocabRow = { id: string; lemma: string; transliteration: string | null; english: string; part_of_speech: string | null };
 
 function statusOf(row: { learned_at: string | null } | undefined): WordStatus {
@@ -13,31 +13,45 @@ function statusOf(row: { learned_at: string | null } | undefined): WordStatus {
   return row.learned_at ? "learned" : "learning";
 }
 
-// Attach a lyric line to each card, as a reminder of where the word was heard.
+// Attach a lyric line (and the song it comes from) to each card, as a reminder of where the word was heard.
 async function withContext(supabase: SupabaseClient, base: BaseCard[]): Promise<SessionCard[]> {
-  const lineByVocab = new Map<string, string>();
-  for (const c of base) if (c.lineId) lineByVocab.set(c.vocabId, c.lineId);
+  const lineByVocab = new Map<string, { lineId: string; songId: string | null }>();
+  for (const c of base) if (c.lineId) lineByVocab.set(c.vocabId, { lineId: c.lineId, songId: c.songId });
 
   const needLines = base.filter((c) => !c.lineId).map((c) => c.vocabId);
   for (const ids of chunk(needLines, CHUNK)) {
     const { data } = await supabase
       .from("song_words")
-      .select("vocab_entry_id, line_id")
+      .select("vocab_entry_id, line_id, song_id")
       .in("vocab_entry_id", ids)
       .not("line_id", "is", null);
-    for (const r of data ?? []) if (!lineByVocab.has(r.vocab_entry_id)) lineByVocab.set(r.vocab_entry_id, r.line_id);
+    for (const r of data ?? []) {
+      if (!lineByVocab.has(r.vocab_entry_id)) lineByVocab.set(r.vocab_entry_id, { lineId: r.line_id, songId: r.song_id });
+    }
   }
 
   const lineById = new Map<string, { hebrew: string; transliteration: string | null }>();
-  for (const ids of chunk([...new Set(lineByVocab.values())], CHUNK)) {
+  for (const ids of chunk([...new Set([...lineByVocab.values()].map((v) => v.lineId))], CHUNK)) {
     const { data } = await supabase.from("lines").select("id, hebrew, transliteration").in("id", ids);
     for (const l of data ?? []) lineById.set(l.id, { hebrew: l.hebrew, transliteration: l.transliteration ?? null });
   }
 
-  return base.map(({ lineId, ...card }) => {
+  const titleById = new Map<string, string>();
+  const songIds = [...new Set([...lineByVocab.values()].map((v) => v.songId).filter((x): x is string => Boolean(x)))];
+  for (const ids of chunk(songIds, CHUNK)) {
+    const { data } = await supabase.from("songs").select("id, title").in("id", ids);
+    for (const s of data ?? []) titleById.set(s.id, s.title);
+  }
+
+  return base.map(({ lineId, songId, ...card }) => {
     void lineId;
-    const line = lineById.get(lineByVocab.get(card.vocabId) ?? "");
-    return { ...card, context: line ?? null };
+    void songId;
+    const found = lineByVocab.get(card.vocabId);
+    const line = found ? lineById.get(found.lineId) : undefined;
+    return {
+      ...card,
+      context: line ? { songTitle: found?.songId ? (titleById.get(found.songId) ?? null) : null, ...line } : null,
+    };
   });
 }
 
@@ -62,6 +76,7 @@ export async function cardsForFilter(supabase: SupabaseClient, filter: StudyFilt
       status: r.status,
       count: r.correct_count ?? 0,
       lineId: null,
+      songId: null,
     }));
   return withContext(supabase, shuffle(base));
 }
@@ -104,6 +119,7 @@ export async function cardsForSong(
         status: statusOf(p),
         count: p?.correct_count ?? 0,
         lineId: e.lineId,
+        songId,
       };
     })
     .filter((c) => (scope === "all" ? true : scope === "learned" ? c.status === "learned" : c.status !== "learned"));
@@ -128,6 +144,7 @@ export async function cardForWord(supabase: SupabaseClient, vocabId: string): Pr
       status: statusOf(progressRes.data ?? undefined),
       count: progressRes.data?.correct_count ?? 0,
       lineId: null,
+      songId: null,
     },
   ]);
   return card;

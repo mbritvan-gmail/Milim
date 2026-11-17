@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
+import { fingerprint } from "@/lib/study";
 import { SettingsForm } from "./settings-form";
 
 export const metadata = { title: "Settings · milim" };
@@ -34,6 +35,7 @@ async function SettingsBody() {
         <h1 className="mt-2 text-2xl font-semibold">Settings</h1>
       </header>
       <SettingsForm
+        key={fingerprint([settings.learnAfter, settings.direction, settings.showTranslit])}
         initialLearnAfter={settings.learnAfter}
         initialDirection={settings.direction}
         initialShowTranslit={settings.showTranslit}

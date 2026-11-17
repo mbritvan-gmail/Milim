@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { StatusBadge } from "@/components/status-badge";
+import { WordCardBack } from "@/components/word-card-back";
 import {
   applyAnswer,
   cardDirection,
@@ -30,13 +30,6 @@ function faceFor(direction: Direction, vocabId: string, shown: number) {
   let h = shown * 31;
   for (let i = 0; i < vocabId.length; i++) h = (h * 31 + vocabId.charCodeAt(i)) % 9973;
   return cardDirection(direction, () => (h % 100) / 100);
-}
-
-function remainingText(card: SessionCard, learnAfter: number) {
-  if (card.status === "new") return "Not practiced yet";
-  if (card.status === "learned") return "You know this one";
-  const left = learnAfter - Math.min(card.count, learnAfter - 1);
-  return `${left} more correct to learn it`;
 }
 
 export function StudyRunner({
@@ -206,41 +199,18 @@ export function StudyRunner({
             </>
           )
         ) : (
-          <>
-            {face === "he-en" ? (
-              <>
-                <span className="text-4xl font-semibold leading-tight text-foreground">{card.english}</span>
-                <span lang="he" className="hebrew text-3xl text-accent">
-                  {card.lemma}
-                </span>
-                {showTranslit && card.transliteration && <span className="text-base italic text-muted">{card.transliteration}</span>}
-              </>
-            ) : (
-              <>
-                <span lang="he" className="hebrew text-6xl font-bold text-accent">
-                  {card.lemma}
-                </span>
-                {showTranslit && card.transliteration && <span className="text-base italic text-muted">{card.transliteration}</span>}
-                <span className="text-2xl text-foreground">{card.english}</span>
-              </>
-            )}
-            {card.partOfSpeech && <span className="text-sm text-muted">{card.partOfSpeech}</span>}
-            {card.context && (
-              <span className="mt-2 w-full rounded-xl bg-surface-2 p-3">
-                <span className="mb-1 block text-xs uppercase tracking-wide text-muted">From a song</span>
-                <span lang="he" className="hebrew block text-lg">
-                  {card.context.hebrew}
-                </span>
-                {showTranslit && card.context.transliteration && (
-                  <span className="mt-1 block text-sm italic text-muted">{card.context.transliteration}</span>
-                )}
-              </span>
-            )}
-            <span className="mt-1 flex items-center justify-center gap-2 text-sm text-muted">
-              <StatusBadge status={card.status} count={card.count} learnAfter={learnAfter} />
-              {remainingText(card, learnAfter)}
-            </span>
-          </>
+          <WordCardBack
+            lemma={card.lemma}
+            transliteration={card.transliteration}
+            english={card.english}
+            partOfSpeech={card.partOfSpeech}
+            face={face}
+            showTranslit={showTranslit}
+            heardIn={card.context ? [card.context] : []}
+            status={card.status}
+            count={card.count}
+            learnAfter={learnAfter}
+          />
         )}
       </button>
 

@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
-import type { WordStatus } from "@/lib/study";
+import { fingerprint, type WordStatus } from "@/lib/study";
+import { SettingsLink } from "@/components/settings-link";
 import { DictionaryList, type DictionaryWord } from "./dictionary-list";
 
 export const metadata = { title: "Dictionary · milim" };
@@ -51,15 +52,23 @@ async function DictionaryBody() {
 
   return (
     <>
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Dictionary</h1>
-        <p className="text-sm text-muted">
-          {words.length === 0
-            ? "Every word from your songs, in one place."
-            : `${words.length} ${words.length === 1 ? "word" : "words"} from your songs`}
-        </p>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Dictionary</h1>
+          <p className="text-sm text-muted">
+            {words.length === 0
+              ? "Every word from your songs, in one place."
+              : `${words.length} ${words.length === 1 ? "word" : "words"} from your songs`}
+          </p>
+        </div>
+        <SettingsLink />
       </header>
-      <DictionaryList initialWords={words} showTranslit={settings.showTranslit} learnAfter={settings.learnAfter} />
+      <DictionaryList
+        key={fingerprint(words.flatMap((w) => [w.vocabId, w.status, w.count]))}
+        initialWords={words}
+        showTranslit={settings.showTranslit}
+        learnAfter={settings.learnAfter}
+      />
     </>
   );
 }

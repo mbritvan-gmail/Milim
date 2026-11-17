@@ -61,7 +61,7 @@ export type SessionCard = {
   status: WordStatus;
   /** Correct answers so far (what the database holds). */
   count: number;
-  context: { hebrew: string; transliteration: string | null } | null;
+  context: { songTitle: string | null; hebrew: string; transliteration: string | null } | null;
 };
 
 export type WordState = { status: WordStatus; count: number };
@@ -185,6 +185,21 @@ export function isDone(session: Session) {
 export function cardDirection(direction: Direction, rand: () => number = Math.random): "he-en" | "en-he" {
   if (direction !== "mixed") return direction;
   return rand() < 0.5 ? "he-en" : "en-he";
+}
+
+// A fresh id for each time the study page is opened. The study screen keeps its progress in the
+// browser, so without this it would hang on to an earlier session when you open another one.
+export function newSessionId() {
+  return crypto.randomUUID();
+}
+
+// A short fingerprint of some data. Screens that copy their starting data into their own memory use it as
+// a `key`, so they start over (and show the new data) whenever that data changes.
+export function fingerprint(parts: (string | number | boolean | null)[]): string {
+  let h = 2166136261;
+  const text = parts.join("\u001f");
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619) >>> 0;
+  return `${parts.length}-${h.toString(36)}`;
 }
 
 // ---------------------------------------------------------------------------
