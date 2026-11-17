@@ -98,24 +98,27 @@ export function SongView({
         </ul>
       </section>
 
-      <section aria-label="Key words" className="flex flex-col gap-3">
+      <section aria-label="Song vocabulary" className="flex flex-col gap-3">
         <button
           type="button"
           onClick={() => setWordsOpen((o) => !o)}
           aria-expanded={wordsOpen}
-          aria-controls="key-words-list"
+          aria-controls="song-vocabulary-list"
           className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 text-left hover:bg-surface-2"
         >
-          <span className="text-lg font-semibold">Key words ({words.length})</span>
+          <span className="text-lg font-semibold">Song vocabulary ({words.length})</span>
           <span aria-hidden className="text-2xl leading-none text-accent">
             {wordsOpen ? "−" : "+"}
           </span>
         </button>
+        {wordsOpen && words.length > 0 && (
+          <p className="px-1 text-xs text-muted">Words to learn from this song. Your Dictionary collects the words from all your songs.</p>
+        )}
         {wordsOpen &&
           (words.length === 0 ? (
-            <p className="text-sm text-muted">No key words were found for this song.</p>
+            <p className="text-sm text-muted">No vocabulary was found for this song.</p>
           ) : (
-            <ul id="key-words-list" className="grid gap-2">
+            <ul id="song-vocabulary-list" className="grid gap-2">
               {words.map((w) => (
                 <li key={w.id}>
                   <Link

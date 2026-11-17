@@ -90,7 +90,7 @@ async function QuizBody({ params }: { params: Promise<{ id: string }> }) {
       </header>
       {questions.length === 0 ? (
         <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">
-          This song doesn&apos;t have enough key words for a quiz yet.
+          This song doesn&apos;t have enough vocabulary for a quiz yet.
         </p>
       ) : (
         <QuizRunner key={newSessionId()} songId={id} questions={questions} showTranslit={profileRes.data?.show_transliteration ?? true} />

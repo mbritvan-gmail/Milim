@@ -35,7 +35,7 @@ export function SongActions({ songId, isOwner, isPublic, inMyList }: Props) {
   if (isOwner && !isPublic) {
     label = "Delete song";
     confirmLabel = "Delete forever";
-    warning = "This permanently deletes the song, its translations and its key words.";
+    warning = "This permanently deletes the song, its translations and its vocabulary.";
   } else if (isOwner) {
     label = "Archive song";
     confirmLabel = "Archive";

@@ -131,11 +131,11 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       <section aria-label="Quiz" className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
         <h2 className="text-lg font-semibold">Practice</h2>
         {words.length === 0 ? (
-          <p className="text-sm text-muted">This song has no key words yet, so there&apos;s nothing to study.</p>
+          <p className="text-sm text-muted">This song has no vocabulary yet, so there&apos;s nothing to study.</p>
         ) : (
           <>
             <p className="text-sm text-muted">
-              {toLearn === 0 ? "Every key word in this song is learned." : `${toLearn} of ${words.length} key words still to learn`}
+              {toLearn === 0 ? "Every word in this song's vocabulary is learned." : `${toLearn} of ${words.length} vocabulary words still to learn`}
               {best ? ` · Best quiz ${best.score}/${best.total}` : ""}
             </p>
             <div className="flex gap-2">

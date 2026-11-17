@@ -68,6 +68,10 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 9. Housekeeping: delete the stray Vercel variable named `default`; lowercase "milim" in the Supabase email template.
 
 ## Notes
+- Naming: a song's word list is called the **Song vocabulary** (not "key words"); the **Dictionary** is the words from all of a person's songs.
+- Editing plan (mockup approved in outline, see the "milim editing mockups" artifact): owners get an Edit button on their songs (edit a line's English / pronunciation / Hebrew,
+  remove a word from the song vocabulary with an x, add one by tapping a Hebrew word, edit song details, Undo after each edit). Other users can suggest a change to a line's English;
+  the owner reviews them in an inbox (approve / reject). "Regenerate" was dropped. Open question: keep words a person has studied in the Dictionary even after they are removed from every song.
 - Screens that copy server data into their own memory (study, quiz, dictionary, word card, song key words, library, settings) are given a `key`
   (a fresh id per visit, or a fingerprint of the data) so they never show stale statuses or hold on to an earlier session when navigated back to.
   Without this, "Practice this word" showed an older session's word and the Dictionary kept old statuses after studying.

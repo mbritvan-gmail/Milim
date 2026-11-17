@@ -12,7 +12,7 @@ import {
 } from "./types";
 
 // Small chunks run in parallel, so a long song takes about as long as one short one.
-// Words that are never worth a place in the key words, whatever the AI says: loose one-letter
+// Words that are never worth a place in the song vocabulary, whatever the AI says: loose one-letter
 // prefixes and the word "shel" (of). Pronouns, prepositions and conjunctions are kept.
 const SKIP_LEMMAS = new Set(["של"]);
 export function isSkippableLemma(lemma: string) {

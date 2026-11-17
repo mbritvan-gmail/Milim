@@ -11,7 +11,7 @@ function firstEntry<T>(value: T | T[] | null | undefined): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
 }
 
-// Make sure every key word of the song has wrong answers saved, then open the quiz.
+// Make sure every vocabulary word of the song has wrong answers saved, then open the quiz.
 // The AI writes them once per word; they're shared and reused. If the AI is slow or
 // unavailable the quiz still works, borrowing wrong answers from other words.
 export async function prepareQuiz(songId: string): Promise<void> {
