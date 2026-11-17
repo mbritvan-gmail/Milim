@@ -12,6 +12,14 @@ import {
 } from "./types";
 
 // Small chunks run in parallel, so a long song takes about as long as one short one.
+// Words that are never worth a place in the key words, whatever the AI says: loose one-letter
+// prefixes and the word "shel" (of). Pronouns, prepositions and conjunctions are kept.
+const SKIP_LEMMAS = new Set(["של"]);
+export function isSkippableLemma(lemma: string) {
+  const bare = lemma.trim().replace(/[\u0591-\u05C7]/g, ""); // ignore vowel marks
+  return bare.length <= 1 || SKIP_LEMMAS.has(bare);
+}
+
 const CHUNK_SIZE = 12;
 // Give up a little before the hosting platform's own time limit (60s) so the user gets a
 // clear message instead of a generic browser error.
@@ -58,7 +66,8 @@ You receive numbered Hebrew lyric lines. For each line produce:
 - "english": a natural, faithful English translation of that line. Keep the poetic meaning, but stay close to the Hebrew so a learner can map words to meaning. Translate each line on its own line number; never merge or skip lines.
 
 Also choose the key vocabulary a learner needs to understand the song:
-- Pick words that carry meaning (nouns, verbs, adjectives, adverbs, useful expressions). Skip words that are pure grammar (such as the object marker את, or של) unless they are essential to understanding the line.
+- Include every word a learner needs: nouns, verbs, adjectives, adverbs, useful expressions, and also pronouns (אני, אתה, את meaning "you" to a woman, הוא, היא, אנחנו, הם, זה), prepositions, conjunctions, and words like לא and כן. Beginners need those words too.
+- Skip only pure grammar markers that have no meaning of their own: the object marker את (pronounced "et"; do not confuse it with את meaning "you", pronounced "at", which you should include), the word של ("of"), and the one-letter prefixes ה ו ב ל מ כ ש when they are attached to another word.
 - Choose as many or as few as the song genuinely needs; do not pad. Do not list the same word twice.
 - "lemma": dictionary form in Hebrew letters without vowel marks (nikud). Verbs always in the infinitive (for example "לאהוב", never "אהב" or "אוהב"), nouns in the singular, adjectives in the masculine singular.
 - "surface_form": the word exactly as it appears in the lyric, in Hebrew letters.
@@ -185,7 +194,7 @@ export class AnthropicProvider implements AIProvider {
     });
 
     const vocab: AnalyzedWord[] = parsed.vocab
-      .filter((w) => w.lemma.trim() && w.english.trim())
+      .filter((w) => w.lemma.trim() && w.english.trim() && !isSkippableLemma(w.lemma))
       .map((w) => ({
         lemma: w.lemma.trim(),
         surface_form: w.surface_form.trim() || w.lemma.trim(),

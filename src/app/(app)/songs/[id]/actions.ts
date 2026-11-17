@@ -3,16 +3,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-// Remember the user's transliteration on/off preference.
-export async function setTransliteration(show: boolean) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-  await supabase.from("profiles").update({ show_transliteration: show }).eq("id", user.id);
-}
-
 // Remove a song from the signed-in user's account. What that means depends on the song:
 //  - their own private song: deleted for good
 //  - their own public song: archived (kept for people who already added it, hidden from

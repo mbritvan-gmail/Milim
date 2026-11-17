@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { setTransliteration } from "../songs/[id]/actions";
-import { markWordKnown } from "./actions";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { StatusBadge } from "@/components/status-badge";
+import { matchesFilter, studyLabel, type StudyFilter, type WordStatus } from "@/lib/study";
+import { markWordKnown, resetWord } from "./actions";
 
 export type DictionaryWord = {
   vocabId: string;
@@ -10,32 +12,31 @@ export type DictionaryWord = {
   transliteration: string | null;
   english: string;
   partOfSpeech: string | null;
-  status: "new" | "learning" | "learned";
-  box: number | null;
+  status: WordStatus;
+  count: number;
 };
 
-type Filter = "all" | "new" | "learning" | "learned";
-
-const STATUS_STYLE: Record<DictionaryWord["status"], string> = {
-  new: "border-border text-muted",
-  learning: "border-accent/60 text-accent",
-  learned: "border-success/60 text-success",
-};
-const STATUS_LABEL: Record<DictionaryWord["status"], string> = { new: "New", learning: "Learning", learned: "Learned" };
+const CHIPS: { id: StudyFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "new", label: "New" },
+  { id: "learning", label: "Learning" },
+  { id: "learned", label: "Learned" },
+];
 
 export function DictionaryList({
   initialWords,
-  initialShowTranslit,
+  showTranslit,
+  learnAfter,
 }: {
   initialWords: DictionaryWord[];
-  initialShowTranslit: boolean;
+  showTranslit: boolean;
+  learnAfter: number;
 }) {
   const [words, setWords] = useState(initialWords);
+  // Start on New when there are new words; otherwise on everything.
+  const [filter, setFilter] = useState<StudyFilter>(() => (initialWords.some((w) => w.status === "new") ? "new" : "all"));
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
-  const [showTranslit, setShowTranslit] = useState(initialShowTranslit);
   const [problem, setProblem] = useState("");
-  const [, startTransition] = useTransition();
 
   const counts = useMemo(
     () => ({
@@ -50,29 +51,17 @@ export function DictionaryList({
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return words.filter((w) => {
-      if (filter !== "all" && w.status !== filter) return false;
+      if (!matchesFilter(w.status, filter)) return false;
       if (!q) return true;
-      return (
-        w.lemma.includes(q) ||
-        w.english.toLowerCase().includes(q) ||
-        (w.transliteration ?? "").toLowerCase().includes(q)
-      );
+      return w.lemma.includes(q) || w.english.toLowerCase().includes(q) || (w.transliteration ?? "").toLowerCase().includes(q);
     });
-  }, [words, query, filter]);
+  }, [words, filter, query]);
 
-  function toggleTranslit() {
-    const next = !showTranslit;
-    setShowTranslit(next);
-    startTransition(() => {
-      void setTransliteration(next);
-    });
-  }
-
-  function markKnown(vocabId: string) {
+  function change(vocabId: string, next: Pick<DictionaryWord, "status" | "count">, save: Promise<boolean>) {
     setProblem("");
     const before = words;
-    setWords((ws) => ws.map((w) => (w.vocabId === vocabId ? { ...w, status: "learned", box: Math.max(w.box ?? 0, 3) } : w)));
-    markWordKnown(vocabId)
+    setWords((ws) => ws.map((w) => (w.vocabId === vocabId ? { ...w, ...next } : w)));
+    save
       .then((ok) => {
         if (!ok) {
           setWords(before);
@@ -85,41 +74,12 @@ export function DictionaryList({
       });
   }
 
-  const chips: { id: Filter; label: string }[] = [
-    { id: "all", label: "All" },
-    { id: "new", label: "New" },
-    { id: "learning", label: "Learning" },
-    { id: "learned", label: "Learned" },
-  ];
+  const studyCount = counts[filter];
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search Hebrew or English"
-          aria-label="Search words"
-          className="h-11 w-full rounded-xl border border-border bg-surface px-4 text-base placeholder:text-muted focus:border-accent focus:outline-none"
-        />
-        <button
-          type="button"
-          role="switch"
-          aria-checked={showTranslit}
-          aria-label="Show pronunciation"
-          onClick={toggleTranslit}
-          className="flex shrink-0 items-center gap-2 rounded-full border border-border px-3 py-2 text-sm hover:bg-surface-2"
-        >
-          <span className={`inline-block h-4 w-7 rounded-full p-0.5 transition-colors ${showTranslit ? "bg-accent" : "bg-border"}`}>
-            <span className={`block h-3 w-3 rounded-full bg-background transition-transform ${showTranslit ? "translate-x-3" : ""}`} />
-          </span>
-          Aa
-        </button>
-      </div>
-
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by status">
-        {chips.map((c) => (
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter and study">
+        {CHIPS.map((c) => (
           <button
             key={c.id}
             type="button"
@@ -132,6 +92,29 @@ export function DictionaryList({
         ))}
       </div>
 
+      {/* The chips decide what this studies, so it sits right under them. */}
+      {studyCount > 0 ? (
+        <Link
+          href={`/flashcards?filter=${filter}`}
+          className="flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast transition-colors hover:bg-accent-strong"
+        >
+          {studyLabel(filter, studyCount)}
+        </Link>
+      ) : (
+        <p className="flex h-12 items-center justify-center rounded-xl border border-border text-sm text-muted">
+          {words.length === 0 ? "Add a song to fill your dictionary" : "Nothing here to study"}
+        </p>
+      )}
+
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search Hebrew or English"
+        aria-label="Search words"
+        className="h-11 w-full rounded-xl border border-border bg-surface px-4 text-base placeholder:text-muted focus:border-accent focus:outline-none"
+      />
+
       {problem && <p className="rounded-xl border border-danger/40 bg-surface p-3 text-sm text-danger">{problem}</p>}
 
       {visible.length === 0 ? (
@@ -141,21 +124,34 @@ export function DictionaryList({
       ) : (
         <ul className="flex flex-col gap-2">
           {visible.map((w) => (
-            <li key={w.vocabId} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3">
-              <div className="min-w-0">
-                <span lang="he" className="hebrew text-xl">
-                  {w.lemma}
+            <li key={w.vocabId} className="flex flex-col gap-2 rounded-xl border border-border bg-surface px-4 py-3">
+              {/* English on the left, Hebrew on the right. Tapping opens the word's card. */}
+              <Link href={`/dictionary/${w.vocabId}`} className="flex items-center justify-between gap-3">
+                <span className="min-w-0 text-left">
+                  <span className="block">{w.english}</span>
+                  {w.partOfSpeech && <span className="block text-xs text-muted">{w.partOfSpeech}</span>}
                 </span>
-                {showTranslit && w.transliteration && <span className="ml-2 text-sm italic text-muted">{w.transliteration}</span>}
-                <span className="block truncate">{w.english}</span>
-                {w.partOfSpeech && <span className="block text-xs text-muted">{w.partOfSpeech}</span>}
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1.5">
-                <span className={`rounded-full border px-2 py-0.5 text-xs ${STATUS_STYLE[w.status]}`}>{STATUS_LABEL[w.status]}</span>
-                {w.status !== "learned" && (
+                <span className="shrink-0 text-right">
+                  <span lang="he" className="hebrew block text-xl text-accent">
+                    {w.lemma}
+                  </span>
+                  {showTranslit && w.transliteration && <span className="block text-sm italic text-muted">{w.transliteration}</span>}
+                </span>
+              </Link>
+              <div className="flex min-h-6 items-center justify-between">
+                <StatusBadge status={w.status} count={w.count} learnAfter={learnAfter} />
+                {w.status === "learned" ? (
                   <button
                     type="button"
-                    onClick={() => markKnown(w.vocabId)}
+                    onClick={() => change(w.vocabId, { status: "learning", count: 0 }, resetWord(w.vocabId))}
+                    className="text-xs text-muted underline underline-offset-2 hover:text-foreground"
+                  >
+                    Reset
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => change(w.vocabId, { status: "learned", count: Math.max(w.count, learnAfter) }, markWordKnown(w.vocabId))}
                     className="text-xs text-muted underline underline-offset-2 hover:text-foreground"
                   >
                     I know this

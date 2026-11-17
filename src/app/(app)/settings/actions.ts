@@ -1,0 +1,46 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { isDirection } from "@/lib/study";
+
+export type SettingsChange = { learnAfter?: number; direction?: string; showTranslit?: boolean };
+
+// Save one or more settings. Returns an error message, or null when everything was saved.
+export async function saveSettings(change: SettingsChange): Promise<string | null> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return "Please sign in again.";
+
+    if (change.learnAfter !== undefined) {
+      const n = Math.floor(change.learnAfter);
+      if (n < 1 || n > 3) return "Choose 1, 2 or 3.";
+      // Also counts words that already have enough correct answers as learned.
+      const { error } = await supabase.rpc("set_learn_after", { p_n: n });
+      if (error) {
+        console.error("set_learn_after failed", error);
+        return "Couldn't save that. Has the latest database update been applied?";
+      }
+    }
+
+    const profile: Record<string, unknown> = {};
+    if (change.direction !== undefined) {
+      if (!isDirection(change.direction)) return "Unknown direction.";
+      profile.study_direction = change.direction;
+    }
+    if (change.showTranslit !== undefined) profile.show_transliteration = Boolean(change.showTranslit);
+    if (Object.keys(profile).length > 0) {
+      const { error } = await supabase.from("profiles").update(profile).eq("id", user.id);
+      if (error) {
+        console.error("profile update failed", error);
+        return "Couldn't save that. Please try again.";
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error("saveSettings crashed", error);
+    return "Couldn't save that. Please try again.";
+  }
+}

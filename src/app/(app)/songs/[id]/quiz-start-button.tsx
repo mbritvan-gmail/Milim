@@ -8,9 +8,9 @@ export function QuizStartButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="h-11 rounded-xl bg-accent px-5 font-semibold text-accent-contrast transition-colors hover:bg-accent-strong disabled:opacity-60"
+      className="h-11 w-full rounded-xl border border-border px-3 font-semibold transition-colors hover:bg-surface-2 disabled:opacity-60"
     >
-      {pending ? "Preparing quiz… (the first time can take a bit)" : label}
+      {pending ? "Preparing…" : label}
     </button>
   );
 }

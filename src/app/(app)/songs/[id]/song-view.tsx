@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import Link from "next/link";
+import { useState } from "react";
+import { StatusBadge } from "@/components/status-badge";
 import { isSectionLabel } from "@/lib/lyrics";
-import { setTransliteration } from "./actions";
+import type { WordStatus } from "@/lib/study";
 
 export type SongLine = { id: string; hebrew: string; transliteration: string | null; english: string | null };
 export type SongWord = {
@@ -12,21 +14,24 @@ export type SongWord = {
   transliteration: string | null;
   english: string;
   part_of_speech: string | null;
+  status: WordStatus;
+  count: number;
 };
 
 export function SongView({
   lines,
   words,
-  initialShowTranslit,
+  showTranslit,
+  learnAfter,
 }: {
   lines: SongLine[];
   words: SongWord[];
-  initialShowTranslit: boolean;
+  /** The person's "show pronunciation" setting (changed on the Settings page). */
+  showTranslit: boolean;
+  learnAfter: number;
 }) {
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
-  const [showTranslit, setShowTranslit] = useState(initialShowTranslit);
   const [wordsOpen, setWordsOpen] = useState(false);
-  const [, startTransition] = useTransition();
 
   // Section labels (Verse, Chorus...) are headings, not tappable lines.
   const lyricLines = lines.filter((l) => !isSectionLabel(l.hebrew));
@@ -41,14 +46,6 @@ export function SongView({
     });
   }
 
-  function toggleTranslit() {
-    const next = !showTranslit;
-    setShowTranslit(next);
-    startTransition(() => {
-      void setTransliteration(next);
-    });
-  }
-
   return (
     <div className="flex flex-col gap-8">
       <section aria-label="Lyrics" className="flex flex-col gap-3">
@@ -59,22 +56,6 @@ export function SongView({
             className="rounded-full border border-border px-3 py-1.5 text-sm text-foreground hover:bg-surface-2"
           >
             {allRevealed ? "Hide all English" : "Show all English"}
-          </button>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={showTranslit}
-            onClick={toggleTranslit}
-            className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm hover:bg-surface-2"
-          >
-            <span
-              className={`inline-block h-4 w-7 rounded-full p-0.5 transition-colors ${showTranslit ? "bg-accent" : "bg-border"}`}
-            >
-              <span
-                className={`block h-3 w-3 rounded-full bg-background transition-transform ${showTranslit ? "translate-x-3" : ""}`}
-              />
-            </span>
-            Pronunciation
           </button>
         </div>
 
@@ -136,20 +117,28 @@ export function SongView({
           ) : (
             <ul id="key-words-list" className="grid gap-2">
               {words.map((w) => (
-                <li key={w.id} className="flex items-center justify-between gap-4 rounded-xl border border-border bg-surface px-4 py-3">
-                  {/* English on the left, Hebrew on the right. */}
-                  <div className="min-w-0 text-left">
-                    <span className="block">{w.english}</span>
-                    {w.part_of_speech && <span className="block text-xs text-muted">{w.part_of_speech}</span>}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <span lang="he" className="hebrew block text-xl">
-                      {w.lemma}
-                    </span>
-                    {showTranslit && w.transliteration && (
-                      <span className="block text-sm italic text-muted">{w.transliteration}</span>
-                    )}
-                  </div>
+                <li key={w.id}>
+                  <Link
+                    href={`/dictionary/${w.id}`}
+                    className="flex items-center justify-between gap-4 rounded-xl border border-border bg-surface px-4 py-3 hover:bg-surface-2"
+                  >
+                    {/* English on the left, Hebrew on the right. */}
+                    <div className="flex min-w-0 flex-col items-start gap-1.5 text-left">
+                      <span className="block">
+                        {w.english}
+                        {w.part_of_speech && <span className="ml-2 text-xs text-muted">{w.part_of_speech}</span>}
+                      </span>
+                      <StatusBadge status={w.status} count={w.count} learnAfter={learnAfter} />
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span lang="he" className="hebrew block text-xl text-accent">
+                        {w.lemma}
+                      </span>
+                      {showTranslit && w.transliteration && (
+                        <span className="block text-sm italic text-muted">{w.transliteration}</span>
+                      )}
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>

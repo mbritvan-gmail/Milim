@@ -6,7 +6,7 @@ Learn Hebrew through song lyrics. Mobile-first, dark mode, Next.js (App Router) 
 
 1. `npm install`
 2. Copy `.env.example` to `.env.local` and fill in the values.
-3. Apply the SQL in `supabase/migrations/` to your Supabase project
+3. Apply the SQL files in `supabase/migrations/`, in date order, to your Supabase project
    (Supabase CLI: `supabase db push`, or paste the file into the SQL editor).
 4. `npm run dev`
 
@@ -24,5 +24,5 @@ Learn Hebrew through song lyrics. Mobile-first, dark mode, Next.js (App Router) 
 
 - Songs are `private` or `public`. Public is permanent; public songs can be archived, never hard-deleted by users.
 - Only the owner edits a public song. Others submit `edit_suggestions` which the owner approves.
-- A word is "learned" after 3 cumulative correct answers (quiz + flashcards). Leitner boxes 1-5 (1/2/4/8/16 days).
+- A word is New, Learning or Learned. Learned = N correct answers (N is a per-person setting, 1 to 3, default 2; quiz and flashcards both count). A miss on a learned word puts it back to Learning. See `supabase/migrations/20261118000000_learning_model.sql`.
 - Progress tables are per user; content tables are shared.

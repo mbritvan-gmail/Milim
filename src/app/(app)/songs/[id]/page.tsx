@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { parseMedia } from "@/lib/media";
+import { loadSettings } from "@/lib/settings";
+import { chunk } from "@/lib/study";
 import { SongView, type SongLine, type SongWord } from "./song-view";
 import { SongActions } from "./song-actions";
 import { QuizStartButton } from "./quiz-start-button";
@@ -37,14 +39,14 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
 
   // Row-level security decides what this user may see; a song they can't see is
   // simply "not found".
-  const [songRes, linesRes, wordsRes, profileRes, attemptsRes, mineRes] = await Promise.all([
+  const [songRes, linesRes, wordsRes, settings, attemptsRes, mineRes] = await Promise.all([
     supabase.from("songs").select("id, title, artist, media_url, visibility, owner_id").eq("id", id).maybeSingle(),
     supabase.from("lines").select("id, hebrew, transliteration, english").eq("song_id", id).order("position"),
     supabase
       .from("song_words")
       .select("surface_form, vocab_entries(id, lemma, transliteration, english, part_of_speech)")
       .eq("song_id", id),
-    supabase.from("profiles").select("show_transliteration").eq("id", user.id).maybeSingle(),
+    loadSettings(supabase, user.id),
     supabase.from("quiz_attempts").select("score, total").eq("song_id", id).order("taken_at", { ascending: false }).limit(50),
     supabase.from("user_songs").select("song_id").eq("song_id", id).maybeSingle(),
   ]);
@@ -55,10 +57,23 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   if (!song) notFound();
 
   const lines: SongLine[] = linesRes.data ?? [];
-  const words: SongWord[] = (wordsRes.data ?? []).flatMap((row) => {
+  const entries = (wordsRes.data ?? []).flatMap((row) => {
     const entry = Array.isArray(row.vocab_entries) ? row.vocab_entries[0] : row.vocab_entries;
     return entry ? [{ ...entry, surface_form: row.surface_form }] : [];
   });
+
+  // Where the person stands with each of this song's words (New / Learning / Learned).
+  const progress = new Map<string, { correct_count: number; learned_at: string | null }>();
+  for (const ids of chunk(entries.map((e) => e.id as string), 60)) {
+    const { data } = await supabase.from("user_words").select("vocab_entry_id, correct_count, learned_at").in("vocab_entry_id", ids);
+    for (const p of data ?? []) progress.set(p.vocab_entry_id, p);
+  }
+  const words: SongWord[] = entries.map((e) => {
+    const p = progress.get(e.id);
+    return { ...e, status: p ? (p.learned_at ? "learned" : "learning") : "new", count: p?.correct_count ?? 0 };
+  });
+  const learnedCount = words.filter((w) => w.status === "learned").length;
+  const toLearn = words.length - learnedCount;
   const media = parseMedia(song.media_url);
   const isOwner = song.owner_id === user.id;
   const inMyList = Boolean(mineRes.data);
@@ -116,31 +131,42 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       <section aria-label="Quiz" className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
         <h2 className="text-lg font-semibold">Practice</h2>
         {words.length === 0 ? (
-          <p className="text-sm text-muted">This song has no key words yet, so there&apos;s nothing to quiz.</p>
+          <p className="text-sm text-muted">This song has no key words yet, so there&apos;s nothing to study.</p>
         ) : (
           <>
             <p className="text-sm text-muted">
-              {attempts.length === 0
-                ? `Test yourself on ${words.length} key words.`
-                : `Best score ${best!.score}/${best!.total} · ${attempts.length} ${attempts.length === 1 ? "attempt" : "attempts"}`}
+              {toLearn === 0 ? "Every key word in this song is learned." : `${toLearn} of ${words.length} key words still to learn`}
+              {best ? ` · Best quiz ${best.score}/${best.total}` : ""}
             </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <form action={prepareQuiz.bind(null, song.id)}>
-                <QuizStartButton label={attempts.length === 0 ? "Take the quiz" : "Take the quiz again"} />
+            <div className="flex gap-2">
+              {toLearn > 0 ? (
+                <Link
+                  href={`/flashcards?song=${song.id}&scope=unlearned`}
+                  className="flex h-11 flex-1 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong"
+                >
+                  Study {toLearn} {toLearn === 1 ? "word" : "words"}
+                </Link>
+              ) : (
+                <span className="flex h-11 flex-1 items-center justify-center rounded-xl border border-border text-sm text-muted">All learned</span>
+              )}
+              <form action={prepareQuiz.bind(null, song.id)} className="flex-1">
+                <QuizStartButton label={attempts.length === 0 ? "Take the quiz" : "Quiz again"} />
               </form>
-              <Link
-                href={`/flashcards?song=${song.id}`}
-                className="flex h-11 items-center rounded-xl border border-border px-5 font-semibold hover:bg-surface-2"
-              >
-                Flashcards
-              </Link>
             </div>
+            {learnedCount > 0 && (
+              <Link
+                href={`/flashcards?song=${song.id}&scope=learned`}
+                className="self-start text-xs text-muted underline underline-offset-2 hover:text-foreground"
+              >
+                Review the {learnedCount} learned {learnedCount === 1 ? "word" : "words"}
+              </Link>
+            )}
           </>
         )}
       </section>
       )}
 
-      <SongView lines={lines} words={words} initialShowTranslit={profileRes.data?.show_transliteration ?? true} />
+      <SongView lines={lines} words={words} showTranslit={settings.showTranslit} learnAfter={settings.learnAfter} />
 
       <SongActions songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} inMyList={inMyList} />
     </>
