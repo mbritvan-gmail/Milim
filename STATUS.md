@@ -18,16 +18,13 @@ Last updated: 2026-11-18. Branch: `claude/milim-handoff-review-pmh51c`. Live pre
 **Recently finished (2026-11):** smoked-glass Home with new glyphs and Frank Ruhl Libre title; lyrics-first song page (repeats collapse via `src/lib/lyric-repeats.ts`, Lyrics size setting Small/Medium/Large); songs get nikud automatically when added (`src/app/(app)/songs/new/actions.ts` + `src/lib/nikud-run.ts`); the Edit-mode Add nikud button and the bulk buttons were removed.
 
 **Next up (pick with the user)**
-1. (Done differently: no automatic catch-up. A temporary Settings tool adds nikud to all songs; see "Temporary nikud tool" below.)
+1. (Done: all existing songs now have nikud; see "Nikud for existing songs".)
 2. Dictionary rework alongside flash cards.
 3. Before sharing widely: report/takedown path, terms note, sign-up control (invite only), Anthropic spend limit, Deezer terms check.
 4. Notifications (suggestions, filled requests); pronouns/prepositions forms; "N new words" pack updates; nikud in Dictionary rows.
 
-## Temporary nikud tool (built; REQUIRES `supabase/migrations/20261206000000_fill_line_nikud.sql` and the Vercel variable `NIKUD_ADMIN_EMAIL`; not yet live-tested with the AI)
-- Settings shows a card "Temporary tool" only to the account whose sign-in email equals `NIKUD_ADMIN_EMAIL`: "Add nikud to all songs" with a count, progress, Stop, a summary, and "Run again" for songs that need another go. It handles one song per request (`addNikudToSong`, 3 tries / 45s each) and only fills blanks.
-- Sees every song the signed-in user can see (public songs, their own); other people's private songs are invisible to it.
-- The database function `fill_line_nikud` writes nikud only into lines that have none, and only if the letters match (yod/vav ignored); checked on a real Postgres.
-- **When every song has nikud, delete:** `src/app/(app)/settings/nikud-tool.tsx`, `nikud-tool-actions.ts`, `src/lib/nikud-admin.ts`, the card in `settings/page.tsx`, the `maxDuration` lines added in the settings pages, `NIKUD_ADMIN_EMAIL`, and (in the database) the `fill_line_nikud` function. The earlier owner-only "Add nikud" action was already removed.
+## Nikud for existing songs
+- Done (2026-11): every song now has nikud, added with a temporary Settings tool that has since been removed. New songs get nikud automatically when added. Leftover in the database, harmless: the `fill_line_nikud` function (its script was removed from the repo); it can be dropped with `drop function if exists public.fill_line_nikud(jsonb);`.
 
 ## SQL scripts (user)
 All scripts live in `supabase/migrations/`. The user has run them as features shipped (the latest, `20261204000000_lyrics_size.sql`, is run). If a feature says it needs a database update, ask which script and have them run it; each is safe to run again.

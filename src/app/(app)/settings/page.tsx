@@ -5,14 +5,8 @@ import { loadSettings } from "@/lib/settings";
 import { fingerprint } from "@/lib/study";
 import { SettingsForm } from "./settings-form";
 import { PageClose } from "@/components/overlay";
-import { isNikudAdmin } from "@/lib/nikud-admin";
-import { loadNikudStatus } from "./nikud-tool-actions";
-import { NikudTool } from "./nikud-tool";
 
 export const metadata = { title: "Settings · milim" };
-
-// The temporary nikud tool adds nikud to one song per request, which can take up to a minute.
-export const maxDuration = 60;
 
 export default function SettingsPage() {
   return (
@@ -31,8 +25,6 @@ async function SettingsBody() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const settings = await loadSettings(supabase, user.id);
-  // TEMPORARY: only the account named in NIKUD_ADMIN_EMAIL sees the nikud tool.
-  const nikud = isNikudAdmin(user.email) ? await loadNikudStatus() : null;
 
   return (
     <>
@@ -50,8 +42,6 @@ async function SettingsBody() {
         initialLyricsSize={settings.lyricsSize}
         email={user.email ?? ""}
       />
-      {nikud && "error" in nikud && <p className="text-sm text-danger">Nikud tool: {nikud.error}</p>}
-      {nikud && !("error" in nikud) && <NikudTool key={nikud.missing.map((m) => m.id).join(",")} total={nikud.total} missing={nikud.missing} />}
     </>
   );
 }
