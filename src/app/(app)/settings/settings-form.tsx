@@ -60,18 +60,21 @@ export function SettingsForm({
   initialDirection,
   initialShowTranslit,
   initialShowNikud,
+  initialPreferredPlayer,
   email,
 }: {
   initialLearnAfter: number;
   initialDirection: Direction;
   initialShowTranslit: boolean;
   initialShowNikud: boolean;
+  initialPreferredPlayer: "spotify" | "youtube";
   email: string;
 }) {
   const [learnAfter, setLearnAfter] = useState(initialLearnAfter);
   const [direction, setDirection] = useState<Direction>(initialDirection);
   const [showTranslit, setShowTranslit] = useState(initialShowTranslit);
   const [showNikud, setShowNikud] = useState(initialShowNikud);
+  const [player, setPlayer] = useState(initialPreferredPlayer);
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "dark" as ThemeChoice);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
@@ -138,6 +141,32 @@ export function SettingsForm({
           />
           <p className="text-xs text-muted">
             Answers from flashcards and quizzes both count. A word you miss after learning it goes back to Learning.
+          </p>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+        <h2 className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted">
+          Player <AppliesTo>Song pages</AppliesTo>
+        </h2>
+        <div className="flex flex-col gap-2">
+          <p className="font-medium">Preferred player</p>
+          <Segment
+            label="Preferred player"
+            options={[
+              { id: "spotify", label: "Spotify" },
+              { id: "youtube", label: "YouTube" },
+            ]}
+            value={player}
+            onChange={(p) => {
+              const before = player;
+              setPlayer(p);
+              void change({ preferredPlayer: p }, () => setPlayer(before));
+            }}
+          />
+          <p className="text-xs text-muted">
+            The player a song page opens with. Choose Spotify if you&apos;re logged in to Spotify in this browser: Premium listeners hear the full song, others
+            hear a 30-second preview. A song with only one link uses that one, and you can switch players on a song page when it has both.
           </p>
         </div>
       </section>

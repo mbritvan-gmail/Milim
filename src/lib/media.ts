@@ -42,3 +42,16 @@ export function parseMedia(input: string | null | undefined): Media | null {
   }
   return null;
 }
+
+// Which of a song's two players to show first. The preferred one when the song has it, otherwise the
+// other; `other` is the one the switch on the song page can flip to (null when there is only one).
+export function pickPlayer(
+  spotify: Media | null,
+  youtube: Media | null,
+  preferred: "spotify" | "youtube",
+): { primary: Media | null; other: Media | null } {
+  const first = preferred === "spotify" ? spotify : youtube;
+  const second = preferred === "spotify" ? youtube : spotify;
+  if (first && second) return { primary: first, other: second };
+  return { primary: first ?? second, other: null };
+}

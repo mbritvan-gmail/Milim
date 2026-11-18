@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
 import { MAX_LINES, MAX_LYRICS_CHARS, parseLyrics, sectionEnglish } from "@/lib/lyrics";
-import { parseMedia } from "@/lib/media";
+import { CatalogError, searchSongs, type SongMatch } from "@/lib/deezer";
+import { isMissingLinkColumn, readSongLinks, songLinkColumns } from "@/lib/song-links";
 import { findTracks, SpotifyError, type SpotifyMatch } from "@/lib/spotify";
 import { findVideos, YouTubeError, type YouTubeMatch } from "@/lib/youtube";
 
@@ -41,7 +42,6 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
 
   const title = String(formData.get("title") ?? "").trim();
   const artist = String(formData.get("artist") ?? "").trim();
-  const mediaInput = String(formData.get("media_url") ?? "").trim();
   const lyrics = String(formData.get("lyrics") ?? "");
   const makePublic = formData.get("visibility") === "public";
 
@@ -56,11 +56,9 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
   if (lines.length === 0) return { error: "Paste some Hebrew lyrics (we couldn't find any Hebrew text)." };
   if (lines.length > MAX_LINES) return { error: `Too many lines (max ${MAX_LINES}). Try one song at a time.` };
 
-  let media = null;
-  if (mediaInput) {
-    media = parseMedia(mediaInput);
-    if (!media) return { error: "That doesn't look like a Spotify or YouTube link." };
-  }
+  const links = readSongLinks(formData);
+  if ("error" in links) return { error: links.error };
+  const columns = songLinkColumns(links);
 
   // Simple per-user daily limit so a single account can't run up the AI bill.
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -97,18 +95,13 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
 
     // Always create as private first, so a failure part-way can be cleaned up
     // (public songs can't be deleted). Make it public only at the very end.
-    const { data: song, error: songError } = await supabase
-      .from("songs")
-      .insert({
-        owner_id: user.id,
-        title,
-        artist: artist || null,
-        media_url: media?.url ?? null,
-        media_type: media?.type ?? null,
-        visibility: "private",
-      })
-      .select("id")
-      .single();
+    const base = { owner_id: user.id, title, artist: artist || null, visibility: "private" };
+    let inserted = await supabase.from("songs").insert({ ...base, ...columns.extended }).select("id").single();
+    if (inserted.error && isMissingLinkColumn(inserted.error)) {
+      // The database script for song links hasn't been run yet: save with the single old link.
+      inserted = await supabase.from("songs").insert({ ...base, ...columns.legacy }).select("id").single();
+    }
+    const { data: song, error: songError } = inserted;
     if (songError || !song) throw new Error(`song insert: ${songError?.message}`);
     songId = song.id;
 
@@ -223,4 +216,22 @@ export async function findOnSpotify(title: string, artist: string): Promise<Spot
 // "Find on YouTube": suggest videos for a title and artist.
 export async function findOnYouTube(title: string, artist: string): Promise<YouTubeSearchResult> {
   return searchAs("YouTube", title, artist, findVideos, (e) => e instanceof YouTubeError);
+}
+
+// "Find the song": search a music catalog by title, to fill in the artist, album and cover art.
+export async function findSongCatalog(query: string): Promise<{ matches?: SongMatch[]; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { error: "Please sign in again." };
+    const q = query.trim().slice(0, 120);
+    if (!q) return { matches: [] };
+    return { matches: await searchSongs(q) };
+  } catch (error) {
+    if (error instanceof CatalogError) return { error: error.message };
+    console.error("findSongCatalog failed", error);
+    return { error: "The song search failed. You can enter the title and artist yourself." };
+  }
 }

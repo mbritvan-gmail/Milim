@@ -49,7 +49,7 @@ export function decodeSuggestion(value: string | null | undefined): SuggestionPa
 export type LineFields = { english: string; transliteration: string; hebrew: string };
 export type VocabDraft = { lemma: string; transliteration: string; english: string; partOfSpeech: string };
 export type VocabRestore = { vocabId: string; surfaceForm: string; lineId: string | null; source: string };
-export type SongDetails = { title: string; artist: string; mediaUrl: string };
+export type SongDetails = { title: string; artist: string; spotifyUrl: string; youtubeUrl: string; album: string; coverUrl: string };
 export type AddedWord = {
   vocabId: string;
   lemma: string;

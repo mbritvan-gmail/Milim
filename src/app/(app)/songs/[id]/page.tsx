@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { parseMedia } from "@/lib/media";
+import { SongPlayer } from "@/components/song-player";
+import { Cover } from "@/components/song-links";
 import { loadSettings } from "@/lib/settings";
 import { chunk, fingerprint } from "@/lib/study";
 import { SongView, type SongLine, type SongWord } from "./song-view";
@@ -57,8 +59,10 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
 
   // Row-level security decides what this user may see; a song they can't see is
   // simply "not found".
-  const [songRes, linesRes, nikudRes, wordsRes, settings, attemptsRes, mineRes] = await Promise.all([
-    supabase.from("songs").select("id, title, artist, media_url, visibility, owner_id").eq("id", id).maybeSingle(),
+  const [songRes, extrasRes, linesRes, nikudRes, wordsRes, settings, attemptsRes, mineRes] = await Promise.all([
+    supabase.from("songs").select("id, title, artist, media_url, media_type, visibility, owner_id").eq("id", id).maybeSingle(),
+    // Two links and album art live in newer columns; if the database script for them isn't run yet this comes back empty.
+    supabase.from("songs").select("spotify_url, youtube_url, album, cover_url").eq("id", id).maybeSingle(),
     supabase.from("lines").select("id, hebrew, transliteration, english").eq("song_id", id).order("position"),
     // Nikud for each line lives in a newer column; if the database script isn't run yet this just comes back empty.
     supabase.from("lines").select("id, vocalized").eq("song_id", id),
@@ -96,7 +100,14 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   });
   const learnedCount = words.filter((w) => w.status === "learned").length;
   const toLearn = words.length - learnedCount;
-  const media = parseMedia(song.media_url);
+  // The two player links: the new columns, or the old single link in the matching slot.
+  const extra = extrasRes.error ? null : extrasRes.data;
+  const spotifyUrl = extra?.spotify_url ?? (song.media_type === "spotify" ? song.media_url : null);
+  const youtubeUrl = extra?.youtube_url ?? (song.media_type === "youtube" ? song.media_url : null);
+  const spotifyMedia = parseMedia(spotifyUrl);
+  const youtubeMedia = parseMedia(youtubeUrl);
+  const coverUrl: string | null = extra?.cover_url ?? null;
+  const album: string | null = extra?.album ?? null;
   const isOwner = song.owner_id === user.id;
   const inMyList = Boolean(mineRes.data);
   // The sharer's name is a separate, optional lookup, so it can never break the page.
@@ -135,7 +146,9 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <EditModeProvider>
-      <header className="flex flex-col gap-1">
+      <header className="flex items-start gap-4">
+        {coverUrl && <Cover url={coverUrl} size={84} />}
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="min-w-[8rem] flex-1 text-2xl font-semibold">{song.title}</h1>
           {(isOwner || song.visibility === "public") && (
@@ -143,35 +156,14 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
           )}
         </div>
         <p className="text-sm text-muted">
-          {[song.artist, song.visibility === "public" ? "Public" : "Private", sharedBy].filter(Boolean).join(" · ")}
+          {[song.artist, album, song.visibility === "public" ? "Public" : "Private", sharedBy].filter(Boolean).join(" · ")}
         </p>
+        </div>
       </header>
 
       {!inMyList && <AddSongButton songId={song.id} />}
 
-      {media && (
-        <iframe
-          title={`${media.type === "spotify" ? "Spotify" : "YouTube"} player`}
-          src={media.embedUrl}
-          loading="lazy"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          allowFullScreen
-          className={`w-full rounded-xl border-0 ${media.type === "spotify" ? "h-[152px]" : "aspect-video"}`}
-        />
-      )}
-      {media && (
-        <p className="-mt-3 text-sm text-muted">
-          {media.type === "spotify" && "The player here may play only a 30-second preview. "}
-          <a
-            href={media.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent underline underline-offset-4"
-          >
-            Open the full song in {media.type === "spotify" ? "Spotify" : "YouTube"} ↗
-          </a>
-        </p>
-      )}
+      <SongPlayer spotify={spotifyMedia} youtube={youtubeMedia} preferred={settings.preferredPlayer} />
 
       {inMyList && (
       <section aria-label="Quiz" className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
@@ -213,11 +205,11 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       <SongView
-        key={fingerprint([...words.flatMap((w) => [w.id, w.status, w.count]), ...lines.flatMap((l) => [l.id, l.hebrew, l.english ?? "", l.transliteration ?? "", l.vocalized ?? ""]), ...words.map((w) => w.vocalized ?? ""), ...pending.map((p) => p.id), song.title, song.artist ?? "", song.media_url ?? "", settings.showTranslit, settings.showNikud, settings.learnAfter])}
+        key={fingerprint([...words.flatMap((w) => [w.id, w.status, w.count]), ...lines.flatMap((l) => [l.id, l.hebrew, l.english ?? "", l.transliteration ?? "", l.vocalized ?? ""]), ...words.map((w) => w.vocalized ?? ""), ...pending.map((p) => p.id), song.title, song.artist ?? "", spotifyUrl ?? "", youtubeUrl ?? "", coverUrl ?? "", album ?? "", settings.showTranslit, settings.showNikud, settings.learnAfter])}
         songId={song.id}
         isOwner={isOwner}
         canSuggest={!isOwner && song.visibility === "public"}
-        details={{ title: song.title, artist: song.artist ?? "", mediaUrl: song.media_url ?? "" }}
+        details={{ title: song.title, artist: song.artist ?? "", spotifyUrl: spotifyUrl ?? "", youtubeUrl: youtubeUrl ?? "", album: album ?? "", coverUrl: coverUrl ?? "" }}
         pending={pending}
         actions={editActions}
         lines={lines}

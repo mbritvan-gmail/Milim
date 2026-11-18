@@ -1,0 +1,50 @@
+"use client";
+
+import { useState } from "react";
+import { pickPlayer, type Media } from "@/lib/media";
+
+const NAME = { spotify: "Spotify", youtube: "YouTube" } as const;
+
+// The song's player. It opens with the person's preferred player (or whichever the song has); when the song
+// has both, a small switch flips between them.
+export function SongPlayer({ spotify, youtube, preferred }: { spotify: Media | null; youtube: Media | null; preferred: "spotify" | "youtube" }) {
+  const { primary, other } = pickPlayer(spotify, youtube, preferred);
+  const [showOther, setShowOther] = useState(false);
+  const media = showOther && other ? other : primary;
+  if (!media) return null;
+
+  return (
+    <>
+      {other && primary && (
+        <div role="group" aria-label="Player" className="flex gap-1 self-start rounded-xl border border-border bg-surface p-[3px]">
+          {[primary, other].map((m) => (
+            <button
+              key={m.type}
+              type="button"
+              aria-pressed={m.type === media.type}
+              onClick={() => setShowOther(m.type === other.type)}
+              className={`h-9 rounded-lg px-4 text-sm font-semibold transition-colors ${m.type === media.type ? "bg-accent text-accent-contrast" : "text-muted hover:text-foreground"}`}
+            >
+              {NAME[m.type]}
+            </button>
+          ))}
+        </div>
+      )}
+      <iframe
+        key={media.url}
+        title={`${NAME[media.type]} player`}
+        src={media.embedUrl}
+        loading="lazy"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        allowFullScreen
+        className={`w-full rounded-xl border-0 ${media.type === "spotify" ? "h-[152px]" : "aspect-video"}`}
+      />
+      <p className="-mt-3 text-sm text-muted">
+        {media.type === "spotify" ? "The player here may play only a 30-second preview. " : "Plays the whole song. "}
+        <a href={media.url} target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-4">
+          Open {media.type === "spotify" ? "the full song in Spotify" : "in YouTube"} ↗
+        </a>
+      </p>
+    </>
+  );
+}

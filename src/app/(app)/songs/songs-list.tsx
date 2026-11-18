@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { MenuButton } from "@/components/menu-button";
 import { SearchBox } from "@/components/search-box";
 import { Sheet } from "@/components/sheet";
+import { Cover } from "@/components/song-links";
 import { moveInList, startDrag } from "@/lib/drag-reorder";
 import { filterSongs, isSortKey, SORTS, sortSongs, type SortKey } from "@/lib/songs-order";
 import { makeSongPublic, removeFromList } from "./[id]/actions";
@@ -16,6 +17,7 @@ export type ListSong = {
   artist: string | null;
   visibility: "public" | "private";
   isOwner: boolean;
+  coverUrl?: string | null;
   groupId: string | null;
   position: number;
   addedAt: string;
@@ -333,9 +335,12 @@ export function SongsList({
     if (!editing) {
       return (
         <li key={song.id} className={pad}>
-          <Link href={`/songs/${song.id}`} className="flex flex-col rounded-xl border border-border bg-surface px-4 py-3 transition-colors hover:bg-surface-2">
-            <span className="font-medium">{song.title}</span>
-            <span className="text-sm text-muted">{meta}</span>
+          <Link href={`/songs/${song.id}`} className="flex items-center gap-3 rounded-xl border border-border bg-surface py-2.5 pl-2.5 pr-4 transition-colors hover:bg-surface-2">
+            <Cover url={song.coverUrl ?? null} size={48} />
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate font-medium">{song.title}</span>
+              <span className="truncate text-sm text-muted">{meta}</span>
+            </span>
           </Link>
         </li>
       );

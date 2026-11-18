@@ -11,7 +11,7 @@ import {
   type SongDetails,
   type VocabDraft,
 } from "@/lib/editing";
-import { MediaFinder } from "./media-finder";
+import { CatalogSearch, Cover, PlayerLinks } from "@/components/song-links";
 import { Sheet } from "@/components/sheet";
 
 const input = "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-base outline-none focus:border-accent";
@@ -177,20 +177,38 @@ export function DetailsSheet({ details, onSave, onClose }: { details: SongDetail
     if (err) setError(err);
   }
   return (
-    <Sheet title="Song details" onClose={onClose}>
-      <label className="flex flex-col gap-1">
-        <span className={label}>Title</span>
-        <input maxLength={MAX_TITLE} value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} className={input} />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className={label}>Artist</span>
-        <input maxLength={MAX_TITLE} value={d.artist} onChange={(e) => setD({ ...d, artist: e.target.value })} className={input} />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className={label}>Spotify or YouTube link</span>
-        <input value={d.mediaUrl} onChange={(e) => setD({ ...d, mediaUrl: e.target.value })} placeholder="https://…" className={input} />
-      </label>
-      <MediaFinder title={d.title} artist={d.artist} onPick={(url) => setD({ ...d, mediaUrl: url })} />
+    <Sheet title="Title, artist & links" onClose={onClose}>
+      {d.coverUrl || d.album ? (
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-background p-2.5">
+          <Cover url={d.coverUrl || null} size={56} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm font-semibold">{d.title}</span>
+            <span className="truncate text-xs text-muted">{[d.artist, d.album].filter(Boolean).join(" · ")}</span>
+          </div>
+          <button type="button" onClick={() => setD({ ...d, coverUrl: "", album: "" })} className="shrink-0 px-1 text-sm font-semibold text-accent">
+            Change
+          </button>
+        </div>
+      ) : (
+        <CatalogSearch onPick={(m) => setD({ ...d, title: m.title, artist: m.artist, album: m.album, coverUrl: m.coverUrl ?? "" })} />
+      )}
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1">
+          <span className={label}>Title</span>
+          <input maxLength={MAX_TITLE} value={d.title} onChange={(e) => setD({ ...d, title: e.target.value })} className={input} />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={label}>Artist</span>
+          <input maxLength={MAX_TITLE} value={d.artist} onChange={(e) => setD({ ...d, artist: e.target.value })} className={input} />
+        </label>
+      </div>
+      <PlayerLinks
+        title={d.title}
+        artist={d.artist}
+        spotifyUrl={d.spotifyUrl}
+        youtubeUrl={d.youtubeUrl}
+        onChange={(l) => setD({ ...d, spotifyUrl: l.spotifyUrl, youtubeUrl: l.youtubeUrl })}
+      />
       {error && <p className="text-sm text-danger">{error}</p>}
       <Buttons busy={busy} saveLabel="Save" onSave={save} onClose={onClose} disabled={!d.title.trim()} />
     </Sheet>

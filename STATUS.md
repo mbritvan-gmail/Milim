@@ -3,6 +3,7 @@
 Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-pmh51c`. Live preview: https://milim-seven.vercel.app
 
 ## TO DO FIRST (user)
+- Run `supabase/migrations/20261130000000_song_links.sql` (two player links per song, album art, preferred player). Until then songs keep their single link, the song search still works but art isn't saved, and the player setting says it needs the update.
 - Run `supabase/migrations/20261128000000_module_order.sql` (your own order for vocabulary modules). Until then reordering modules says it needs the database update; everything else works.
 - Run `supabase/migrations/20261126000000_song_groups.sql` (song groups and your own song order). Until then the Songs list works as before, without groups.
 - Run `supabase/migrations/20261124000000_song_nikud.sql` (adds `lines.vocalized`, for the Add nikud button on songs).
@@ -123,6 +124,11 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 ## Search boxes and module order (built; module order REQUIRES `supabase/migrations/20261128000000_module_order.sql`)
 - Search boxes (songs, modules) have an X to clear them (`src/components/search-box.tsx`).
 - Vocabulary list: search modules by title; modules you have added come first ("Your modules", in your own order), the rest follow ("More modules"). In Edit, drag the grip (or arrow keys) to reorder your added modules (`user_modules.position`, `reorderModules`).
+
+## Two player links, preferred player, song search with album art (built; REQUIRES `supabase/migrations/20261130000000_song_links.sql`)
+- A song can have a Spotify link and a YouTube link (`songs.spotify_url` / `youtube_url`; the old single `media_url` / `media_type` is kept in step with YouTube preferred, so older code and databases still work). Settings > Player > Preferred player (Spotify / YouTube, default YouTube; `profiles.preferred_player`). A song opens with the preferred player; with both links a small switch flips between them (`src/components/song-player.tsx`). milim cannot tell whether someone is logged in to Spotify (browsers keep other sites' cookies private), hence the setting.
+- Add lyrics and Edit > Title, artist & links: "Find the song" searches Deezer's public catalog (no key; Hebrew and English titles both work, verified live) and fills in title, artist, album and cover art; then player links (Find on Spotify / Find on YouTube, or paste a link) sit above the lyrics box. Cover art is stored as an address only, accepted only from Deezer's image servers (`isTrustedCover`). Cover art shows on the song page and in the Songs list. Code: `src/components/song-links.tsx`, `src/lib/deezer.ts`, `src/lib/song-links.ts`.
+- Check Deezer's terms before a wide launch (display of cover art, "Search by Deezer" credit is shown). The build session's network allowlist now includes api.deezer.com.
 
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.

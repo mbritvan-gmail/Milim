@@ -26,26 +26,31 @@ async function SongsBody() {
   // The proxy already redirects signed-out visitors; this is a second check.
   if (!user) redirect("/login");
 
-  // Group, order and "added" date come from newer columns; if the database script for groups hasn't
-  // been run yet, fall back to the plain list.
-  let rows: { added_at: string; group_id?: string | null; position?: number; songs: unknown }[] = [];
+  // Groups, order and cover art come from newer columns; if a database script hasn't been run yet, fall back
+  // to a simpler list instead of failing.
+  type Row = { added_at: string; group_id?: string | null; position?: number; songs: unknown };
+  let rows: Row[] = [];
   let groups: SongGroup[] = [];
-  const extended = await supabase
-    .from("user_songs")
-    .select("added_at, group_id, position, songs(id, title, artist, visibility, owner_id)")
-    .order("added_at", { ascending: false });
-  if (!extended.error) {
-    rows = extended.data ?? [];
-    const g = await supabase.from("song_groups").select("id, name, position").order("position");
-    groups = (g.data ?? []) as SongGroup[];
-  } else {
-    const plain = await supabase.from("user_songs").select("added_at, songs(id, title, artist, visibility, owner_id)").order("added_at", { ascending: false });
-    rows = plain.data ?? [];
+  const attempts = [
+    { select: "added_at, group_id, position, songs(id, title, artist, visibility, owner_id, cover_url)", groupsToo: true },
+    { select: "added_at, group_id, position, songs(id, title, artist, visibility, owner_id)", groupsToo: true },
+    { select: "added_at, songs(id, title, artist, visibility, owner_id, cover_url)", groupsToo: false },
+    { select: "added_at, songs(id, title, artist, visibility, owner_id)", groupsToo: false },
+  ];
+  for (const a of attempts) {
+    const res = await supabase.from("user_songs").select(a.select).order("added_at", { ascending: false });
+    if (res.error) continue;
+    rows = (res.data ?? []) as unknown as Row[];
+    if (a.groupsToo) {
+      const g = await supabase.from("song_groups").select("id, name, position").order("position");
+      groups = (g.data ?? []) as SongGroup[];
+    }
+    break;
   }
 
   const songs: ListSong[] = rows.flatMap((row) => {
     const song = (Array.isArray(row.songs) ? row.songs[0] : row.songs) as
-      | { id: string; title: string; artist: string | null; visibility: string; owner_id: string }
+      | { id: string; title: string; artist: string | null; visibility: string; owner_id: string; cover_url?: string | null }
       | undefined;
     if (!song) return [];
     return [
@@ -55,6 +60,7 @@ async function SongsBody() {
         artist: song.artist,
         visibility: song.visibility === "public" ? ("public" as const) : ("private" as const),
         isOwner: song.owner_id === user.id,
+        coverUrl: song.cover_url ?? null,
         groupId: row.group_id ?? null,
         position: row.position ?? 0,
         addedAt: row.added_at,

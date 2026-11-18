@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
 import { hasHebrew, isSectionLabel } from "@/lib/lyrics";
 import { isPointedVersion } from "@/lib/nikud";
-import { parseMedia } from "@/lib/media";
+import { checkSongLinks, isMissingLinkColumn, songLinkColumns } from "@/lib/song-links";
 import {
   MAX_ENGLISH,
   MAX_HEBREW,
@@ -312,27 +312,50 @@ export async function updateSongDetails(songId: string, details: SongDetails) {
   return guarded<{ previous: SongDetails }>(async () => {
     const title = details.title.trim();
     const artist = details.artist.trim();
-    const mediaUrl = details.mediaUrl.trim();
     if (!title) return fail("Please give the song a title.");
     if (title.length > MAX_TITLE || artist.length > MAX_TITLE) return fail("Title and artist must be under 120 characters.");
-    const media = mediaUrl ? parseMedia(mediaUrl) : null;
-    if (mediaUrl && !media) return fail("That doesn't look like a Spotify or YouTube link.");
+    const links = checkSongLinks({ spotify: details.spotifyUrl, youtube: details.youtubeUrl, cover: details.coverUrl, album: details.album });
+    if ("error" in links) return fail(links.error);
+    const columns = songLinkColumns(links);
 
     const ctx = await ownerContext(songId);
     if ("error" in ctx) return fail(ctx.error);
 
-    const { data: before } = await ctx.supabase.from("songs").select("title, artist, media_url").eq("id", songId).maybeSingle();
-    if (!before) return fail("We couldn't find that song.");
+    // What it was before (for Undo). Newer columns may not exist yet, so fall back to the old single link.
+    let previous: SongDetails | null = null;
+    const ext = await ctx.supabase.from("songs").select("title, artist, spotify_url, youtube_url, album, cover_url").eq("id", songId).maybeSingle();
+    if (!ext.error && ext.data) {
+      previous = {
+        title: ext.data.title,
+        artist: ext.data.artist ?? "",
+        spotifyUrl: ext.data.spotify_url ?? "",
+        youtubeUrl: ext.data.youtube_url ?? "",
+        album: ext.data.album ?? "",
+        coverUrl: ext.data.cover_url ?? "",
+      };
+    } else {
+      const old = await ctx.supabase.from("songs").select("title, artist, media_url, media_type").eq("id", songId).maybeSingle();
+      if (!old.data) return fail("We couldn't find that song.");
+      previous = {
+        title: old.data.title,
+        artist: old.data.artist ?? "",
+        spotifyUrl: old.data.media_type === "spotify" ? (old.data.media_url ?? "") : "",
+        youtubeUrl: old.data.media_type === "youtube" ? (old.data.media_url ?? "") : "",
+        album: "",
+        coverUrl: "",
+      };
+    }
 
-    const { error } = await ctx.supabase
-      .from("songs")
-      .update({ title, artist: artist || null, media_url: media?.url ?? null, media_type: media?.type ?? null })
-      .eq("id", songId);
-    if (error) {
-      console.error("updateSongDetails failed", error);
+    const base = { title, artist: artist || null };
+    let result = await ctx.supabase.from("songs").update({ ...base, ...columns.extended }).eq("id", songId);
+    if (result.error && isMissingLinkColumn(result.error)) {
+      result = await ctx.supabase.from("songs").update({ ...base, ...columns.legacy }).eq("id", songId);
+    }
+    if (result.error) {
+      console.error("updateSongDetails failed", result.error);
       return fail(GENERIC);
     }
-    return { ok: true, previous: { title: before.title, artist: before.artist ?? "", mediaUrl: before.media_url ?? "" } };
+    return { ok: true, previous };
   });
 }
 

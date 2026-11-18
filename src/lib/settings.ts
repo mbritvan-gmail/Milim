@@ -8,29 +8,38 @@ export type UserSettings = {
   showTranslit: boolean;
   /** Show the vowel marks (nikud) in conjugations. */
   showNikud: boolean;
+  /** The player a song page opens with. */
+  preferredPlayer: "spotify" | "youtube";
 };
 
-export const DEFAULT_SETTINGS: UserSettings = { learnAfter: 2, direction: "he-en", showTranslit: true, showNikud: true };
+export const DEFAULT_SETTINGS: UserSettings = { learnAfter: 2, direction: "he-en", showTranslit: true, showNikud: true, preferredPlayer: "youtube" };
 
 // Loads a person's settings. If the newer settings columns don't exist yet (the database script
 // hasn't been run), it falls back to the defaults instead of failing.
 export async function loadSettings(supabase: SupabaseClient, userId: string): Promise<UserSettings> {
-  const build = (data: { learn_after?: unknown; study_direction?: unknown; show_transliteration?: boolean | null; show_nikud?: boolean | null }) => {
+  const build = (data: { learn_after?: unknown; study_direction?: unknown; show_transliteration?: boolean | null; show_nikud?: boolean | null; preferred_player?: string | null }) => {
     const n = Number(data.learn_after);
     return {
       learnAfter: n >= 1 && n <= 3 ? n : DEFAULT_SETTINGS.learnAfter,
       direction: isDirection(data.study_direction) ? data.study_direction : DEFAULT_SETTINGS.direction,
       showTranslit: data.show_transliteration ?? DEFAULT_SETTINGS.showTranslit,
       showNikud: data.show_nikud ?? DEFAULT_SETTINGS.showNikud,
+      preferredPlayer: data.preferred_player === "spotify" ? ("spotify" as const) : ("youtube" as const),
     };
   };
   const full = await supabase
     .from("profiles")
-    .select("learn_after, study_direction, show_transliteration, show_nikud")
+    .select("learn_after, study_direction, show_transliteration, show_nikud, preferred_player")
     .eq("id", userId)
     .maybeSingle();
   if (!full.error && full.data) return build(full.data);
   // Older databases: leave out the columns that don't exist yet.
+  const noPlayer = await supabase
+    .from("profiles")
+    .select("learn_after, study_direction, show_transliteration, show_nikud")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!noPlayer.error && noPlayer.data) return build(noPlayer.data);
   const learning = await supabase
     .from("profiles")
     .select("learn_after, study_direction, show_transliteration")
