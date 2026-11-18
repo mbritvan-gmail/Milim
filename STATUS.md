@@ -3,6 +3,7 @@
 Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-pmh51c`. Live preview: https://milim-seven.vercel.app
 
 ## TO DO FIRST (user)
+- Run `supabase/migrations/20261126000000_song_groups.sql` (song groups and your own song order). Until then the Songs list works as before, without groups.
 - Run `supabase/migrations/20261124000000_song_nikud.sql` (adds `lines.vocalized`, for the Add nikud button on songs).
 - Run `supabase/migrations/20261122000000_vocabulary_modules.sql` too (vocabulary modules: tables, nikud / gender / plural columns, Dictionary view). Run the conjugation one first.
 - Run `supabase/migrations/20261120000000_conjugation.sql` in the Supabase SQL editor (Show nikud setting + saved verb conjugations).
@@ -111,6 +112,12 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 ## Nikud for songs (built; REQUIRES `supabase/migrations/20261124000000_song_nikud.sql`; not yet live-tested with the AI)
 - Owners get an **Add nikud** button when editing a song (only while some lines or words still lack it). Claude adds nikud to every lyric line (`lines.vocalized`) and every Song Vocabulary word (`vocab_entries.vocalized`, via `fill_word_extras`); an answer is only accepted if it is the original text with vowel marks added (`isPointedVersion`), so the words can never change.
 - Lyrics, Song Vocabulary, flashcards and the Dictionary word page follow the Show nikud switch where nikud exists; edit mode keeps plain text. Editing a line's Hebrew clears that line's saved nikud. New songs are not given nikud automatically yet.
+
+## Song groups, search, sort and reorder (built; REQUIRES `supabase/migrations/20261126000000_song_groups.sql`)
+- Songs hamburger menu: Add song / **Create group** / Edit. Groups are named folders (a song is in one group or none); songs not in a group show under "Not in a group" once a group exists. Groups collapse; empty groups stay.
+- Search box (title or artist, across all groups, results show the group) and a Sort button (My order / Title / Artist / Recently added, remembered on the device; sorts inside each group).
+- Edit mode: drag the grip (or arrow keys) to reorder songs within a group and groups themselves; the folder moves a song to another group (or a new one); Rename and delete (minus) on a group (its songs are kept, moved to "Not in a group"); the existing minus and Make public stay. Search and sort are paused while editing.
+- Data: `song_groups`, plus `user_songs.group_id` and `user_songs.position` (per person). Code: `src/app/(app)/songs/songs-list.tsx`, `group-actions.ts`, `src/lib/songs-order.ts`, `src/lib/drag-reorder.ts`.
 
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.
