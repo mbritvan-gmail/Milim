@@ -36,13 +36,19 @@ export type DefineWordInput = { word: string; line: string; title?: string };
 export type DefineWordResult = { lemma: string; transliteration: string; english: string; part_of_speech: string };
 
 import type { ConjugationData } from "../conjugation";
-export type ConjugateInput = { lemma: string; english: string; onUsage?: (usage: { input: number; output: number }) => void };
+export type ConjugateInput = { lemma: string; english: string };
 export type { ConjugationData };
 import type { WordForms } from "../word-forms";
 export type InflectInput = { lemma: string; english: string; kind: "noun" | "adjective" };
 export type { WordForms };
 import type { ModuleWordResult } from "../modules";
-export type AddNikudInput = { texts: string[]; /** Called with the tokens each request used, so a batch run can report its cost. */ onUsage?: (usage: { input: number; output: number }) => void };
+export type AddNikudInput = {
+  texts: string[];
+  /** Called with the tokens each request used (for logging). */
+  onUsage?: (usage: { input: number; output: number }) => void;
+  /** Longest this call may take, in milliseconds (default 50 seconds). */
+  timeoutMs?: number;
+};
 export type DefineWordsInput = { title: string; words: string[] };
 export type { ModuleWordResult };
 

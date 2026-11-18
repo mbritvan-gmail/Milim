@@ -70,8 +70,6 @@ export type NikudResult = {
   words: { id: string; vocalized: string }[];
   /** Lines and words Claude's answer was not accepted for (tap Add nikud again to retry them). */
   skipped: number;
-  /** Tokens this run used, for the "all my songs" button's cost report. */
-  usage?: { input: number; output: number };
 };
 
 export type EditActions = {

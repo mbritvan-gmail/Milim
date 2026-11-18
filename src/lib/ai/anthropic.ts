@@ -366,7 +366,7 @@ export class AnthropicProvider implements AIProvider {
     }
   }
 
-  async conjugateVerb({ lemma, english, onUsage }: ConjugateInput): Promise<ConjugationData> {
+  async conjugateVerb({ lemma, english }: ConjugateInput): Promise<ConjugationData> {
     const signal = AbortSignal.timeout(50_000);
     try {
       const response = await this.client.messages.parse(
@@ -379,7 +379,6 @@ export class AnthropicProvider implements AIProvider {
         },
         { signal },
       );
-      onUsage?.({ input: response.usage.input_tokens, output: response.usage.output_tokens });
       if (response.stop_reason === "refusal" || !response.parsed_output) {
         throw new AIError("Claude couldn't conjugate that verb.");
       }
@@ -463,13 +462,13 @@ export class AnthropicProvider implements AIProvider {
     }
   }
 
-  async addNikud({ texts, onUsage }: AddNikudInput): Promise<string[]> {
+  async addNikud({ texts, onUsage, timeoutMs }: AddNikudInput): Promise<string[]> {
     const BATCH = 20;
     const batches: string[][] = [];
     for (let i = 0; i < texts.length; i += BATCH) batches.push(texts.slice(i, i + BATCH));
-    const signal = AbortSignal.timeout(50_000);
+    const signal = AbortSignal.timeout(timeoutMs ?? 50_000);
     try {
-      const results = await Promise.all(
+      const settled = await Promise.allSettled(
         batches.map(async (batch) => {
           const response = await this.client.messages.parse(
             {
@@ -489,7 +488,10 @@ export class AnthropicProvider implements AIProvider {
           return items;
         }),
       );
-      return results.flat();
+      // One bad batch must not throw away the others: its texts come back empty and the caller asks again.
+      const failed = settled.find((r) => r.status === "rejected");
+      if (failed && settled.every((r) => r.status === "rejected")) throw (failed as PromiseRejectedResult).reason;
+      return settled.flatMap((r, i) => (r.status === "fulfilled" ? r.value : batches[i].map(() => "")));
     } catch (error) {
       if (error instanceof AIError) throw error;
       if (signal.aborted || error instanceof Anthropic.APIUserAbortError) {

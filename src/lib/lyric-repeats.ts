@@ -8,11 +8,11 @@ import { isSectionLabel, sectionEnglish, hasHebrew } from "./lyrics";
 
 export type RepeatLine = { id: string; hebrew: string };
 
-export type LyricItem =
+export type LyricItem<T extends RepeatLine = RepeatLine> =
   | { kind: "band"; key: string; english: string; hebrew: string; first: boolean }
   | { kind: "repeatBand"; key: string; english: string; hebrew: string; open: boolean }
   | { kind: "chip"; key: string; n: number; open: boolean }
-  | { kind: "line"; key: string; line: RepeatLine; /** Lines whose English this row reveals together (more than one when a block is collapsed). */ ids: string[]; last: boolean }
+  | { kind: "line"; key: string; line: T; /** Lines whose English this row reveals together (more than one when a block is collapsed). */ ids: string[]; last: boolean }
   | { kind: "divider"; key: string };
 
 export const MAX_BLOCK = 8;
@@ -27,11 +27,11 @@ export function normalizeLine(text: string): string {
     .toLowerCase();
 }
 
-type Section = { label: RepeatLine | null; lines: RepeatLine[] };
+type Section<T extends RepeatLine> = { label: T | null; lines: T[] };
 
-function splitSections(lines: RepeatLine[]): Section[] {
-  const out: Section[] = [];
-  let cur: Section = { label: null, lines: [] };
+function splitSections<T extends RepeatLine>(lines: T[]): Section<T>[] {
+  const out: Section<T>[] = [];
+  let cur: Section<T> = { label: null, lines: [] };
   for (const l of lines) {
     if (isSectionLabel(l.hebrew)) {
       if (cur.label || cur.lines.length) out.push(cur);
@@ -64,14 +64,14 @@ export function findBlock(norm: string[], i: number): Block | null {
   return null;
 }
 
-export function buildLyricItems(lines: RepeatLine[], open: ReadonlySet<string>): LyricItem[] {
-  const items: LyricItem[] = [];
+export function buildLyricItems<T extends RepeatLine>(lines: T[], open: ReadonlySet<string>): LyricItem<T>[] {
+  const items: LyricItem<T>[] = [];
   const seen = new Set<string>();
   const sections = splitSections(lines);
 
-  const pushLines = (ls: RepeatLine[], keyPrefix: string) => {
+  const pushLines = (ls: T[], keyPrefix: string) => {
     const norm = ls.map((l) => normalizeLine(l.hebrew));
-    const rows: LyricItem[] = [];
+    const rows: LyricItem<T>[] = [];
     for (let i = 0; i < ls.length; ) {
       const b = findBlock(norm, i);
       if (!b) {
@@ -89,6 +89,9 @@ export function buildLyricItems(lines: RepeatLine[], open: ReadonlySet<string>):
         const line = ls[i + k];
         rows.push({ kind: "line", key: line.id, line, ids: isOpen ? [line.id] : allIds(k), last: false });
       }
+      // The divider replaces the row's own bottom rule, so the last line of the block has none.
+      const lastRow = rows[rows.length - 1];
+      if (lastRow?.kind === "line") lastRow.last = true;
       rows.push({ kind: "divider", key: `${key}:div` });
       i += b.len * b.times;
     }
@@ -124,7 +127,7 @@ export function buildLyricItems(lines: RepeatLine[], open: ReadonlySet<string>):
 }
 
 // A row has no divider below it when it ends its section (the next band or the card edge follows).
-function markLast(items: LyricItem[], from: number) {
+function markLast<T extends RepeatLine>(items: LyricItem<T>[], from: number) {
   for (let i = items.length - 1; i >= from; i--) {
     const it = items[i];
     if (it.kind === "line") {

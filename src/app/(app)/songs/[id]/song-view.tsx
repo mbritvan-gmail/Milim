@@ -96,7 +96,6 @@ export function SongView({
   const lyricLines = lines.filter((l) => !isSectionLabel(l.hebrew));
   const allRevealed = lyricLines.length > 0 && lyricLines.every((l) => revealed.has(l.id));
   const lineById = (id: string) => lines.find((l) => l.id === id);
-  const fullLine = (l: { id: string }) => lines.find((x) => x.id === l.id);
   // The line as shown: with nikud when the person wants it and the line has it.
   const lineText = (l: SongLine) => fixLinePunctuation(showNikud && l.vocalized ? l.vocalized : l.hebrew);
 
@@ -352,8 +351,7 @@ export function SongView({
               }
               if (it.kind === "divider") return <div key={it.key} className="sp-gdiv" />;
               const open = it.ids.every((id) => revealed.has(id));
-              const line = fullLine(it.line);
-              if (!line) return null;
+              const line = it.line;
               return (
                 <button
                   key={it.key}

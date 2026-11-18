@@ -37,6 +37,7 @@ export async function createSong(_prev: CreateSongState, formData: FormData): Pr
 }
 
 async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
+  const startedAt = Date.now();
   const supabase = await createClient();
   const {
     data: { user },
@@ -109,11 +110,17 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
     // fails the song is still saved, and Settings has a button that fills in anything missing later.
     const lemmas = [...new Set(analysis.vocab.map((w) => w.lemma))];
     const lyricTexts = rows.filter((_, i) => positionOfLyric.includes(i)).map((r) => r.hebrew);
-    const nikudTexts = [...lyricTexts, ...lemmas];
-    const nikudPromise = pointAll(getAIProvider(), nikudTexts).catch((error) => {
-      console.error("createSong nikud failed", error);
-      return null;
-    });
+    // Repeated lines (choruses) are only sent once and the answer is used for every copy.
+    const uniqueTexts = [...new Set([...lyricTexts, ...lemmas])];
+    // The whole request has 60 seconds; nikud gets whatever is left after the analysis, minus time for saving.
+    const nikudBudget = Math.min(25_000, 50_000 - (Date.now() - startedAt));
+    const nikudPromise =
+      nikudBudget < 6_000
+        ? Promise.resolve(null)
+        : pointAll(getAIProvider(), uniqueTexts, nikudBudget).catch((error) => {
+            console.error("createSong nikud failed", error);
+            return null;
+          });
 
     // Always create as private first, so a failure part-way can be cleaned up
     // (public songs can't be deleted). Make it public only at the very end.
@@ -181,20 +188,25 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
         const nikud = await nikudPromise;
         if (nikud) {
           const { answers, usage } = nikud;
-          console.log(`createSong: nikud texts=${nikudTexts.length} accepted=${answers.filter(Boolean).length} tokens in=${usage.input} out=${usage.output}`);
-          await Promise.all(
-            lyricTexts.map((_, i) => {
-              const text = answers[i];
+          const byText = new Map(uniqueTexts.map((t, i) => [t, answers[i]]));
+          console.log(`createSong: nikud texts=${uniqueTexts.length} accepted=${answers.filter(Boolean).length} tokens in=${usage.input} out=${usage.output}`);
+          const updates = await Promise.all(
+            lyricTexts.map((t, i) => {
+              const text = byText.get(t);
               const lineId = lineIdByPosition.get(positionOfLyric[i]);
               return text && lineId ? supabase.from("lines").update({ vocalized: text }).eq("id", lineId).eq("song_id", songId) : null;
             }),
           );
-          const byLemma = new Map(lemmas.map((l, i) => [l, answers[lyricTexts.length + i]]));
+          const failed = updates.find((u) => u && u.error);
+          if (failed?.error) console.error("createSong nikud line save failed", failed.error.message);
           const items = entryRows.flatMap((e) => {
-            const text = byLemma.get(e.lemma);
+            const text = byText.get(e.lemma);
             return text ? [{ id: e.id, vocalized: text, gender: "", plural: "" }] : [];
           });
-          if (items.length > 0) await supabase.rpc("fill_word_extras", { p_items: items });
+          if (items.length > 0) {
+            const { error: rpcError } = await supabase.rpc("fill_word_extras", { p_items: items });
+            if (rpcError) console.error("createSong nikud word save failed", rpcError.message);
+          }
         }
       } catch (error) {
         console.error("createSong nikud save failed", error);

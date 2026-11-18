@@ -131,9 +131,9 @@ export async function addNikud(songId: string) {
     if (lines.length === 0 && wordEntries.length === 0) return fail("This song already has nikud.");
 
     const texts = [...lines.map((l) => l.hebrew), ...wordEntries.map((w) => w.lemma)];
-    const { answers, usage, lastError } = await pointAll(getAIProvider(), texts);
+    const { answers, lastError } = await pointAll(getAIProvider(), texts);
 
-    const out: NikudResult = { lines: [], words: [], skipped: 0, usage };
+    const out: NikudResult = { lines: [], words: [], skipped: 0 };
     lines.forEach((l, i) => {
       const text = answers[i];
       if (text) out.lines.push({ id: l.id, vocalized: text });
@@ -144,8 +144,7 @@ export async function addNikud(songId: string) {
     });
     out.skipped = texts.length - out.lines.length - out.words.length;
     if (out.lines.length === 0 && out.words.length === 0) {
-      const failure = { ok: false as const, error: lastError || "Claude's answer didn't match the lyrics, so nothing was changed. Please try again.", usage };
-      return failure;
+      return fail(lastError || "Claude's answer didn't match the lyrics, so nothing was changed. Please try again.");
     }
 
     const results = await Promise.all(out.lines.map((l) => ctx.supabase.from("lines").update({ vocalized: l.vocalized }).eq("id", l.id).eq("song_id", songId)));
