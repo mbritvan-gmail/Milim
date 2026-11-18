@@ -79,10 +79,13 @@ export function EditButton({
   onRemove,
   visibility,
   removeLabel = "Remove song",
+  iconOnly = false,
 }: {
   onRemove?: () => void;
   visibility?: { isPublic: boolean; onMakePublic: () => void };
   removeLabel?: string;
+  /** A round pencil button instead of the "✎ Edit" text button (the song page). */
+  iconOnly?: boolean;
 }) {
   const { editing, setEditing } = useEditMode();
   return editing ? (
@@ -123,12 +126,21 @@ export function EditButton({
       </button>
     </div>
   ) : (
-    <button
-      type="button"
-      onClick={() => setEditing(true)}
-      className="h-10 shrink-0 rounded-xl border border-border px-4 text-sm font-medium hover:bg-surface"
-    >
-      ✎ Edit
-    </button>
+    iconOnly ? (
+      <button type="button" onClick={() => setEditing(true)} aria-label="Edit song" className="sp-circle">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z" />
+          <path d="M14 7l3 3" />
+        </svg>
+      </button>
+    ) : (
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="h-10 shrink-0 rounded-xl border border-border px-4 text-sm font-medium hover:bg-surface"
+      >
+        ✎ Edit
+      </button>
+    )
   );
 }

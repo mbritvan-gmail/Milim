@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isDirection } from "@/lib/study";
+import { isLyricsSize } from "@/lib/settings";
 
-export type SettingsChange = { learnAfter?: number; direction?: string; showTranslit?: boolean; showNikud?: boolean; preferredPlayer?: string };
+export type SettingsChange = { learnAfter?: number; direction?: string; showTranslit?: boolean; showNikud?: boolean; preferredPlayer?: string; lyricsSize?: string };
 
 // Save one or more settings. Returns an error message, or null when everything was saved.
 export async function saveSettings(change: SettingsChange): Promise<string | null> {
@@ -37,12 +38,19 @@ export async function saveSettings(change: SettingsChange): Promise<string | nul
       if (change.preferredPlayer !== "spotify" && change.preferredPlayer !== "youtube") return "Unknown player.";
       profile.preferred_player = change.preferredPlayer;
     }
+    if (change.lyricsSize !== undefined) {
+      if (!isLyricsSize(change.lyricsSize)) return "Unknown size.";
+      profile.lyrics_size = change.lyricsSize;
+    }
     if (Object.keys(profile).length > 0) {
       const { error } = await supabase.from("profiles").update(profile).eq("id", user.id);
       if (error) {
         console.error("profile update failed", error);
         if (change.preferredPlayer !== undefined && /preferred_player/i.test(error.message)) {
           return "Couldn't save that yet. The latest database update (the song links script) hasn't been run.";
+        }
+        if (change.lyricsSize !== undefined && /lyrics_size/i.test(error.message)) {
+          return "Couldn't save that yet. The latest database update (the lyrics size script) hasn't been run.";
         }
         if (change.showNikud !== undefined && /show_nikud/i.test(error.message)) {
           return "Couldn't save that yet. The latest database update (the conjugation script) hasn't been run.";

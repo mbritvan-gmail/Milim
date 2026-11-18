@@ -45,6 +45,7 @@ export function SongHeaderControls({ songId, isOwner, isPublic, canRemove }: { s
   return (
     <>
       <EditButton
+        iconOnly
         onRemove={canRemove ? () => setConfirming(true) : undefined}
         visibility={isOwner ? { isPublic, onMakePublic: () => setConfirmingPublic(true) } : undefined}
       />

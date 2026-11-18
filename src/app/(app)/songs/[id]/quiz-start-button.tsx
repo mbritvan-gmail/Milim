@@ -2,13 +2,14 @@
 
 import { useFormStatus } from "react-dom";
 
-export function QuizStartButton({ label }: { label: string }) {
+export function QuizStartButton({ label, ariaLabel }: { label: string; ariaLabel?: string }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
+      aria-label={ariaLabel}
       disabled={pending}
-      className="h-11 w-full rounded-xl border border-border px-3 font-semibold transition-colors hover:bg-surface-2 disabled:opacity-60"
+      className="sp-outline"
     >
       {pending ? "Preparing…" : label}
     </button>

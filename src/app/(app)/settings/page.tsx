@@ -31,12 +31,13 @@ async function SettingsBody() {
         <h1 className="text-2xl font-semibold">Settings</h1>
       </header>
       <SettingsForm
-        key={fingerprint([settings.learnAfter, settings.direction, settings.showTranslit, settings.showNikud, settings.preferredPlayer])}
+        key={fingerprint([settings.learnAfter, settings.direction, settings.showTranslit, settings.showNikud, settings.preferredPlayer, settings.lyricsSize])}
         initialLearnAfter={settings.learnAfter}
         initialDirection={settings.direction}
         initialShowTranslit={settings.showTranslit}
         initialShowNikud={settings.showNikud}
         initialPreferredPlayer={settings.preferredPlayer}
+        initialLyricsSize={settings.lyricsSize}
         email={user.email ?? ""}
       />
     </>

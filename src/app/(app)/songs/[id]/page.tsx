@@ -39,7 +39,7 @@ export const maxDuration = 60;
 
 export default function SongPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 pb-7 pt-5">
       <Suspense fallback={<p className="text-center text-muted">Loading…</p>}>
         <SongBody params={params} />
       </Suspense>
@@ -147,21 +147,22 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <EditModeProvider>
-      <header className="flex items-start gap-4">
-        {coverUrl && <Cover url={coverUrl} size={84} />}
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="min-w-[8rem] flex-1 text-2xl font-semibold">{song.title}</h1>
-          <div className="ml-auto flex items-center gap-2">
-            {(isOwner || song.visibility === "public") && (
-              <SongHeaderControls songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} canRemove={isOwner || inMyList} />
-            )}
-            <CloseButton fallbackHref={inMyList ? "/songs" : "/library"} />
-          </div>
+     <div className="song-page flex flex-col gap-[14px] text-[var(--sp-ink)]" data-size={settings.lyricsSize}>
+      <header className="flex items-start gap-3">
+        {coverUrl && <Cover url={coverUrl} size={64} />}
+        <div className="min-w-0 flex-1">
+          <h1 dir="auto" className="text-start text-[21px] font-bold leading-tight">
+            {song.title}
+          </h1>
+          <p className="mt-0.5 text-[13px] text-[var(--sp-muted)]">
+            {[song.artist, album, song.visibility === "public" ? "Public" : "Private", sharedBy].filter(Boolean).join(" · ")}
+          </p>
         </div>
-        <p className="text-sm text-muted">
-          {[song.artist, album, song.visibility === "public" ? "Public" : "Private", sharedBy].filter(Boolean).join(" · ")}
-        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          {(isOwner || song.visibility === "public") && (
+            <SongHeaderControls songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} canRemove={isOwner || inMyList} />
+          )}
+          <CloseButton fallbackHref={inMyList ? "/songs" : "/library"} className="sp-circle" />
         </div>
       </header>
 
@@ -170,46 +171,39 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
       <SongPlayer spotify={spotifyMedia} youtube={youtubeMedia} preferred={settings.preferredPlayer} />
 
       {inMyList && (
-      <section aria-label="Quiz" className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
-        <h2 className="text-lg font-semibold">Practice</h2>
-        {words.length === 0 ? (
-          <p className="text-sm text-muted">This song has no vocabulary yet, so there&apos;s nothing to study.</p>
-        ) : (
-          <>
-            <p className="text-sm text-muted">
-              {toLearn === 0 ? "Every word in this song's vocabulary is learned." : `${toLearn} of ${words.length} vocabulary words still to learn`}
-              {best ? ` · Best quiz ${best.score}/${best.total}` : ""}
-            </p>
-            <div className="flex gap-2">
-              {toLearn > 0 ? (
-                <Link
-                  href={`/flashcards?song=${song.id}&scope=unlearned`}
-                  className="flex h-11 flex-1 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong"
-                >
-                  Study {toLearn} {toLearn === 1 ? "word" : "words"}
+        <section aria-label="Practice" className="sp-card flex items-center gap-3 py-3.5 pl-[18px] pr-3.5">
+          {words.length === 0 ? (
+            <p className="flex-1 text-sm text-[var(--sp-muted)]">No vocabulary yet, so there&apos;s nothing to study.</p>
+          ) : (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-bold leading-snug">{toLearn === 0 ? "All words learned" : `${toLearn} ${toLearn === 1 ? "word" : "words"} to learn`}</p>
+                {learnedCount > 0 ? (
+                  <Link
+                    href={`/flashcards?song=${song.id}&scope=learned`}
+                    className="inline-block py-1 text-[13px] text-[var(--sp-accent)] underline underline-offset-2"
+                  >
+                    Review the {learnedCount} learned {learnedCount === 1 ? "word" : "words"}
+                  </Link>
+                ) : (
+                  <p className="text-[13px] text-[var(--sp-muted)]">From this song{best ? ` · Best quiz ${best.score}/${best.total}` : ""}</p>
+                )}
+              </div>
+              {toLearn > 0 && (
+                <Link href={`/flashcards?song=${song.id}&scope=unlearned`} aria-label={`Study ${toLearn} ${toLearn === 1 ? "word" : "words"}`} className="sp-primary">
+                  Study
                 </Link>
-              ) : (
-                <span className="flex h-11 flex-1 items-center justify-center rounded-xl border border-border text-sm text-muted">All learned</span>
               )}
-              <form action={prepareQuiz.bind(null, song.id)} className="flex-1">
-                <QuizStartButton label={attempts.length === 0 ? "Take the quiz" : "Quiz again"} />
+              <form action={prepareQuiz.bind(null, song.id)}>
+                <QuizStartButton label="Quiz" ariaLabel={attempts.length === 0 ? "Take the quiz" : "Quiz again"} />
               </form>
-            </div>
-            {learnedCount > 0 && (
-              <Link
-                href={`/flashcards?song=${song.id}&scope=learned`}
-                className="self-start text-xs text-muted underline underline-offset-2 hover:text-foreground"
-              >
-                Review the {learnedCount} learned {learnedCount === 1 ? "word" : "words"}
-              </Link>
-            )}
-          </>
-        )}
-      </section>
+            </>
+          )}
+        </section>
       )}
 
       <SongView
-        key={fingerprint([...words.flatMap((w) => [w.id, w.status, w.count]), ...lines.flatMap((l) => [l.id, l.hebrew, l.english ?? "", l.transliteration ?? "", l.vocalized ?? ""]), ...words.map((w) => w.vocalized ?? ""), ...pending.map((p) => p.id), song.title, song.artist ?? "", spotifyUrl ?? "", youtubeUrl ?? "", coverUrl ?? "", album ?? "", settings.showTranslit, settings.showNikud, settings.learnAfter])}
+        key={fingerprint([...words.flatMap((w) => [w.id, w.status, w.count]), ...lines.flatMap((l) => [l.id, l.hebrew, l.english ?? "", l.transliteration ?? "", l.vocalized ?? ""]), ...words.map((w) => w.vocalized ?? ""), ...pending.map((p) => p.id), song.title, song.artist ?? "", spotifyUrl ?? "", youtubeUrl ?? "", coverUrl ?? "", album ?? "", settings.showTranslit, settings.showNikud, settings.learnAfter, settings.lyricsSize])}
         songId={song.id}
         isOwner={isOwner}
         canSuggest={!isOwner && song.visibility === "public"}
@@ -223,6 +217,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
         learnAfter={settings.learnAfter}
       />
 
+     </div>
     </EditModeProvider>
   );
 }

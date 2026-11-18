@@ -187,3 +187,10 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Title מילים uses the system font; labels have a soft dark halo for legibility on bright photos.
 - Bottom bar is glass on Home only (light glass in light theme); other screens keep the standard bar.
 - CSS lives in `globals.css` (`.module-tile`, `.module-label`, `--tile-*`/`--nav-glass-*` variables). No SQL needed.
+
+## Song page redesign (lyrics first)
+- Header: 64px cover, title, round Edit (pencil) and Close buttons. Compact YouTube/Spotify tabs, video, then a one-row Practice card (N words to learn, Study, Quiz).
+- Lyrics: one card with section bands, tap-a-line English (gray placeholder bar when hidden), a Show/Hide English pill. Transliteration stays italic and muted and is controlled only by the Settings toggle.
+- Repeats (display only): a section that repeats an earlier one collapses to a "Repeat" band; back-to-back repeated lines/blocks show once with a "Repeats N×" chip (`src/lib/lyric-repeats.ts`). Edit and suggest modes show every line.
+- New setting **Lyrics size** (Small / Medium / Large, default Medium) in Settings. **Needs SQL:** `supabase/migrations/20261204000000_lyrics_size.sql` (until it runs, the size just stays Medium and saving shows a message).
+- Colors are scoped to `.song-page` (dark and light values in `globals.css`); other screens unchanged.

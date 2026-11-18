@@ -10,14 +10,19 @@ export type UserSettings = {
   showNikud: boolean;
   /** The player a song page opens with. */
   preferredPlayer: "spotify" | "youtube";
+  /** How big the lyrics are on the song page. */
+  lyricsSize: LyricsSize;
 };
 
-export const DEFAULT_SETTINGS: UserSettings = { learnAfter: 2, direction: "he-en", showTranslit: true, showNikud: true, preferredPlayer: "youtube" };
+export type LyricsSize = "small" | "medium" | "large";
+export const isLyricsSize = (v: unknown): v is LyricsSize => v === "small" || v === "medium" || v === "large";
+
+export const DEFAULT_SETTINGS: UserSettings = { learnAfter: 2, direction: "he-en", showTranslit: true, showNikud: true, preferredPlayer: "youtube", lyricsSize: "medium" };
 
 // Loads a person's settings. If the newer settings columns don't exist yet (the database script
 // hasn't been run), it falls back to the defaults instead of failing.
 export async function loadSettings(supabase: SupabaseClient, userId: string): Promise<UserSettings> {
-  const build = (data: { learn_after?: unknown; study_direction?: unknown; show_transliteration?: boolean | null; show_nikud?: boolean | null; preferred_player?: string | null }) => {
+  const build = (data: { learn_after?: unknown; study_direction?: unknown; show_transliteration?: boolean | null; show_nikud?: boolean | null; preferred_player?: string | null; lyrics_size?: string | null }) => {
     const n = Number(data.learn_after);
     return {
       learnAfter: n >= 1 && n <= 3 ? n : DEFAULT_SETTINGS.learnAfter,
@@ -25,8 +30,15 @@ export async function loadSettings(supabase: SupabaseClient, userId: string): Pr
       showTranslit: data.show_transliteration ?? DEFAULT_SETTINGS.showTranslit,
       showNikud: data.show_nikud ?? DEFAULT_SETTINGS.showNikud,
       preferredPlayer: data.preferred_player === "spotify" ? ("spotify" as const) : ("youtube" as const),
+      lyricsSize: isLyricsSize(data.lyrics_size) ? data.lyrics_size : DEFAULT_SETTINGS.lyricsSize,
     };
   };
+  const withSize = await supabase
+    .from("profiles")
+    .select("learn_after, study_direction, show_transliteration, show_nikud, preferred_player, lyrics_size")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!withSize.error && withSize.data) return build(withSize.data);
   const full = await supabase
     .from("profiles")
     .select("learn_after, study_direction, show_transliteration, show_nikud, preferred_player")

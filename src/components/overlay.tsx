@@ -58,18 +58,19 @@ export function Overlay({ children, bar = true, nav = false }: { children: React
 // renders nothing if none is given.
 const closeClass =
   "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-xl text-muted transition-colors hover:bg-surface hover:text-foreground";
-export function CloseButton({ fallbackHref }: { fallbackHref?: string }) {
+export function CloseButton({ fallbackHref, className }: { fallbackHref?: string; className?: string }) {
+  const cls = className ?? closeClass;
   const overlay = useOverlay();
   if (overlay) {
     return (
-      <button type="button" onClick={overlay.close} aria-label="Close" className={closeClass}>
+      <button type="button" onClick={overlay.close} aria-label="Close" className={cls}>
         ×
       </button>
     );
   }
   if (!fallbackHref) return null;
   return (
-    <Link href={fallbackHref} aria-label="Close" className={closeClass}>
+    <Link href={fallbackHref} aria-label="Close" className={cls}>
       ×
     </Link>
   );
