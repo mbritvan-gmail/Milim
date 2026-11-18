@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { StatusBadge } from "@/components/status-badge";
-import { matchesFilter, studyLabel, type StudyFilter, type WordStatus } from "@/lib/study";
+import { matchesFilter, type StudyFilter, type WordStatus } from "@/lib/study";
 import { markWordKnown, resetWord } from "./actions";
 
 export type DictionaryWord = {
@@ -12,6 +12,9 @@ export type DictionaryWord = {
   transliteration: string | null;
   english: string;
   partOfSpeech: string | null;
+  /** Part of speech and where the word comes from, e.g. "verb · from Hava Nagila". */
+  note: string;
+  vocalized: string | null;
   status: WordStatus;
   count: number;
 };
@@ -26,15 +29,16 @@ const CHIPS: { id: StudyFilter; label: string }[] = [
 export function DictionaryList({
   initialWords,
   showTranslit,
+  showNikud,
   learnAfter,
 }: {
   initialWords: DictionaryWord[];
   showTranslit: boolean;
+  showNikud: boolean;
   learnAfter: number;
 }) {
   const [words, setWords] = useState(initialWords);
-  // Start on New when there are new words; otherwise on everything.
-  const [filter, setFilter] = useState<StudyFilter>(() => (initialWords.some((w) => w.status === "new") ? "new" : "all"));
+  const [filter, setFilter] = useState<StudyFilter>("all");
   const [query, setQuery] = useState("");
   const [problem, setProblem] = useState("");
 
@@ -74,11 +78,9 @@ export function DictionaryList({
       });
   }
 
-  const studyCount = counts[filter];
-
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter and study">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter">
         {CHIPS.map((c) => (
           <button
             key={c.id}
@@ -91,20 +93,6 @@ export function DictionaryList({
           </button>
         ))}
       </div>
-
-      {/* The chips decide what this studies, so it sits right under them. */}
-      {studyCount > 0 ? (
-        <Link
-          href={`/flashcards?filter=${filter}`}
-          className="flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast transition-colors hover:bg-accent-strong"
-        >
-          {studyLabel(filter, studyCount)}
-        </Link>
-      ) : (
-        <p className="flex h-12 items-center justify-center rounded-xl border border-border text-sm text-muted">
-          {words.length === 0 ? "Add a song to fill your dictionary" : "Nothing here to study"}
-        </p>
-      )}
 
       <input
         type="search"
@@ -129,11 +117,11 @@ export function DictionaryList({
               <Link href={`/dictionary/${w.vocabId}`} className="flex items-center justify-between gap-3">
                 <span className="min-w-0 text-left">
                   <span className="block">{w.english}</span>
-                  {w.partOfSpeech && <span className="block text-xs text-muted">{w.partOfSpeech}</span>}
+                  {w.note && <span className="block text-xs text-muted">{w.note}</span>}
                 </span>
                 <span className="shrink-0 text-right">
                   <span lang="he" className="hebrew block text-xl text-accent">
-                    {w.lemma}
+                    {showNikud && w.vocalized ? w.vocalized : w.lemma}
                   </span>
                   {showTranslit && w.transliteration && <span className="block text-sm italic text-muted">{w.transliteration}</span>}
                 </span>

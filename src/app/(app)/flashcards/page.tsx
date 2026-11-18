@@ -8,6 +8,8 @@ import { cardsForFilter, cardsForModule, cardsForSong } from "@/lib/study-data";
 import { StudyRunner } from "./study-runner";
 import { CloseOrLink } from "@/components/overlay";
 import { readAllRows } from "@/lib/paged";
+import { loadLearnedIds, loadSources, type Source } from "@/lib/word-sources";
+import { StudyPicker, type PickOption } from "./study-picker";
 
 export const metadata = { title: "Study · milim" };
 
@@ -43,7 +45,7 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
   if (!user) redirect("/login");
 
   // With nothing chosen yet, this is the Flash Cards home: pick which words to study.
-  if (!rawFilter && !song && !moduleId) return <FlashcardsHub />;
+  if (!rawFilter && !song && !moduleId) return <FlashcardsHub userId={user.id} />;
 
   const settings = await loadSettings(supabase, user.id);
 
@@ -103,8 +105,13 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
 }
 
 // Counts how many words are in each group and links to a study session for it.
-async function FlashcardsHub() {
+async function FlashcardsHub({ userId }: { userId: string }) {
   const supabase = await createClient();
+  const [sources, learned] = await Promise.all([loadSources(supabase, userId), loadLearnedIds(supabase)]);
+  const toOption = (s: Source): PickOption => ({ id: s.id, title: s.title, total: s.words.length, unlearned: s.words.filter((w) => !learned.has(w)).length });
+  // Only Songs and Packs that have words to practise.
+  const songOptions = sources.songs.map(toOption).filter((o) => o.total > 0);
+  const packOptions = sources.packs.map(toOption).filter((o) => o.total > 0);
   const { data } = await readAllRows((a, b) => supabase.from("master_dictionary").select("status").order("vocab_entry_id").range(a, b));
   const counts = { new: 0, learning: 0, learned: 0 };
   for (const r of data) {
@@ -126,6 +133,9 @@ async function FlashcardsHub() {
           No words yet. Add a song and its vocabulary shows up here.
         </p>
       ) : (
+        <>
+        <section className="flex flex-col gap-2" aria-label="My words">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-muted">My words</h2>
         <ul className="flex flex-col gap-2">
           {groups.map((g) => (
             <li key={g.filter}>
@@ -147,6 +157,9 @@ async function FlashcardsHub() {
             </li>
           ))}
         </ul>
+        </section>
+        <StudyPicker songs={songOptions} packs={packOptions} />
+        </>
       )}
     </>
   );

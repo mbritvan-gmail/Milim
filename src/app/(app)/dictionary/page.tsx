@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
 import { fingerprint, type WordStatus } from "@/lib/study";
 import { readAllRows } from "@/lib/paged";
+import { loadSources, sourceNote, sourcesByWord } from "@/lib/word-sources";
 import { DictionaryList, type DictionaryWord } from "./dictionary-list";
 
 export const metadata = { title: "Dictionary · milim" };
@@ -25,7 +26,7 @@ async function DictionaryBody() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [dictRes, settings] = await Promise.all([
+  const [dictRes, settings, sources, nikudRes] = await Promise.all([
     readAllRows((a, b) =>
       supabase
         .from("master_dictionary")
@@ -34,7 +35,12 @@ async function DictionaryBody() {
         .range(a, b),
     ),
     loadSettings(supabase, user.id),
+    loadSources(supabase, user.id),
+    // Which words have nikud saved (the column is newer; if it isn't there yet this just comes back empty).
+    readAllRows<{ id: string; vocalized: string }>((a, b) => supabase.from("vocab_entries").select("id, vocalized").not("vocalized", "is", null).order("id").range(a, b)),
   ]);
+  const found = sourcesByWord(sources);
+  const nikud = new Map(nikudRes.data.map((r) => [r.id, r.vocalized]));
 
   const rows = dictRes.data as {
     vocab_entry_id: string; lemma: string; transliteration: string | null; english: string;
@@ -48,6 +54,8 @@ async function DictionaryBody() {
       transliteration: r.transliteration,
       english: r.english,
       partOfSpeech: r.part_of_speech,
+      note: sourceNote(r.part_of_speech, found.get(r.vocab_entry_id)),
+      vocalized: nikud.get(r.vocab_entry_id) ?? null,
       status: r.status,
       count: r.correct_count ?? 0,
     }))
@@ -66,9 +74,10 @@ async function DictionaryBody() {
         </div>
       </header>
       <DictionaryList
-        key={fingerprint([settings.showTranslit, settings.learnAfter, ...words.flatMap((w) => [w.vocabId, w.status, w.count])])}
+        key={fingerprint([settings.showTranslit, settings.learnAfter, settings.showNikud, ...words.flatMap((w) => [w.vocabId, w.status, w.count, w.note, w.vocalized ?? ""])])}
         initialWords={words}
         showTranslit={settings.showTranslit}
+        showNikud={settings.showNikud}
         learnAfter={settings.learnAfter}
       />
     </>

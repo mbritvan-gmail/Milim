@@ -19,7 +19,7 @@ Last updated: 2026-11-18. Branch: `claude/milim-handoff-review-pmh51c`. Live pre
 
 **Next up (pick with the user)**
 1. (Done: all existing songs now have nikud; see "Nikud for existing songs".)
-2. Dictionary rework alongside flash cards.
+2. (Done: Dictionary is for looking things up, Flash Cards is where you start practising; see "Dictionary and Flash Cards split".)
 3. Before sharing widely: report/takedown path, terms note, sign-up control (invite only), Anthropic spend limit, Deezer terms check.
 4. Notifications (suggestions, filled requests); pronouns/prepositions forms; "N new words" pack updates; nikud in Dictionary rows.
 
@@ -30,6 +30,11 @@ Last updated: 2026-11-18. Branch: `claude/milim-handoff-review-pmh51c`. Live pre
 - New songs pasted without any `[headers]` get a best guess when added (`src/lib/section-detect.ts`, used in `songs/new/actions.ts`): paragraphs (blank lines) are stanzas; a stanza that comes back (60% of its lines shared) is the Chorus; the rest are numbered Verses; strict rules add Pre-chorus (a repeated stanza always right before the chorus), Bridge (last lone stanza between choruses after 2 verses and 2 choruses, not longer than a verse), Outro (short last stanza after the final chorus), Intro (very short opener, 4+ stanzas). Without blank lines it looks for a repeating block of 2 to 8 lines. Headers pasted without brackets are recognised too and stored in bracket form (`bareSectionLabel` in `src/lib/lyrics.ts`): a line that is only a section name such as `Chorus`, `Verse 1`, `Pre-Chorus:`, `(Bridge)`, `פזמון`, `בית א'` (exact names only; a bare Hebrew `בית` needs a letter or number). Lyrics that already have headers (either way), or a single stanza with no repeats, are left alone. Rules only, no AI; if results are weak, a Claude check could be added. Existing songs are not touched.
 - Headers are ordinary rows (`[Verse 1]`). In Edit mode (owner) each header has a grip (drag, or arrow keys), its name (tap to rename: Verse, Pre-chorus, Chorus, Bridge, Intro, Outro, Interlude, Solo + number), and a trash can (removes only the header). A line's Edit sheet has "Add section above this line". Everything has Undo. Server actions in `edit-actions.ts` (`addSection`, `removeSection`, `renameSection`, `reorderLines`); `reorderLines` refuses any order that changes the lyric lines' order. The database function `reorder_lines` moves lines (adding and moving need it; renaming and removing do not).
 - Checked: detection with unit tests on made-up songs, the SQL on a real Postgres, the Edit mode screen in a browser with stand-in data. Not yet tried against the live database.
+
+## Dictionary and Flash Cards split (built; no new SQL; not yet seen live)
+- Dictionary (`/dictionary`) is for looking words up: search, the All / New / Learning / Learned chips now only filter (default All), nikud in rows (follows Show nikud), and a line under each word with its part of speech and where it comes from ("verb · from Hava Nagila, Hatikva", "from 3 songs", "Pack: Nature"; `src/lib/word-sources.ts`). The Study button was removed; "I know this / Reset" stay.
+- Flash Cards start screen has "My words" (All / New / Still learning / Learned with counts, as before) and "Or practise words from": **A Song** and **A Word Pack** pickers (`flashcards/study-picker.tsx`) listing the Songs and added Packs with how many words are left to learn, then a Study (or Review, if all learned) button linking to the existing `?song=` / `?module=` study sessions. Song and Pack pages keep their own study buttons.
+- Checked: the "from …" text with unit tests; the picker and Dictionary in a browser with stand-in data. The live database path is not yet exercised.
 
 ## SQL scripts (user)
 All scripts live in `supabase/migrations/`. The user has run them as features shipped (the latest, `20261204000000_lyrics_size.sql`, is run). If a feature says it needs a database update, ask which script and have them run it; each is safe to run again.
