@@ -1,15 +1,30 @@
 # Milim: where we left off
 
-Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-pmh51c`. Live preview: https://milim-seven.vercel.app
+Last updated: 2026-11-18. Branch: `claude/milim-handoff-review-pmh51c`. Live preview: https://milim-seven.vercel.app
 
-## TO DO FIRST (user)
-- Run `supabase/migrations/20261202000000_song_requests.sql` (song requests). Until then the Requests tab says it needs the database update.
-- Run `supabase/migrations/20261130000000_song_links.sql` (two player links per song, album art, preferred player). Until then songs keep their single link, the song search still works but art isn't saved, and the player setting says it needs the update.
-- Run `supabase/migrations/20261128000000_module_order.sql` (your own order for vocabulary modules). Until then reordering modules says it needs the database update; everything else works.
-- Run `supabase/migrations/20261126000000_song_groups.sql` (song groups and your own song order). Until then the Songs list works as before, without groups.
-- Run `supabase/migrations/20261124000000_song_nikud.sql` (adds `lines.vocalized`, for the Add nikud button on songs).
-- Run `supabase/migrations/20261122000000_vocabulary_modules.sql` too (vocabulary modules: tables, nikud / gender / plural columns, Dictionary view). Run the conjugation one first.
-- Run `supabase/migrations/20261120000000_conjugation.sql` in the Supabase SQL editor (Show nikud setting + saved verb conjugations).
+## How to continue (read this first in a new chat)
+**What milim is:** a mobile-first web app that teaches Hebrew through song lyrics. Next.js 16 (App Router, cacheComponents, `proxy.ts`; read `node_modules/next/dist/docs/` before writing Next code, see `AGENTS.md`), Tailwind, Supabase (Postgres + auth + RLS), Vercel at milim.britvan.net, Anthropic for AI behind a provider interface (`src/lib/ai`). Brand is lowercase "milim".
+
+**Who the user is:** non-technical. They check things on their phone, run SQL by pasting it into the Supabase SQL editor, and want plain-language answers. Give them SQL as a paste-ready block (also saved in `supabase/migrations/`, safe to run twice) and say plainly what stops working until it runs. Always say what you did not test.
+
+**How we work**
+- Develop on branch `claude/milim-handoff-review-pmh51c`; commit and push after each change (that is how it deploys to Vercel). Do not open a PR unless asked.
+- For anything with new UI the user usually asks for a mockup first, on their Design canvas artifact (https://claude.ai/artifact/WKRPZHy6Q97EHsJSQrmMzX; read the live `project/canvas.json` before publishing, the user edits it too). Do not build until they approve.
+- Verify with `npm run build` and `npx eslint`; `npx tsc --noEmit` shows two known errors from generated types (`LayoutProps`, `.next/types`), ignore those. For visual checks use Playwright against `next start` with a temporary page under `src/app/(app)/ui-test`, and delete it afterwards. Unit-test pure logic (e.g. `src/lib/lyric-repeats.ts`, `src/lib/nikud-run.ts`) with an esbuild bundle in the scratchpad.
+- Pop-up screens are intercepting routes under `src/app/(app)/@modal` using `<Overlay nav>` (keeps the bottom bar; study screens use `<Overlay>` full screen). Small panels (`src/components/sheet.tsx`) are portals centered on screen.
+- Styling: theme tokens in `src/app/globals.css` (dark default, light, system). Home glass tiles use `.module-tile`; the song page uses colors scoped to `.song-page`. Do not restyle other screens unless asked.
+- Cost: the whole song library cost about 20 cents to add nikud; one verb conjugation is about 4 cents (so conjugations stay on demand and are saved for everyone in `word_forms`).
+
+**Recently finished (2026-11):** smoked-glass Home with new glyphs and Frank Ruhl Libre title; lyrics-first song page (repeats collapse via `src/lib/lyric-repeats.ts`, Lyrics size setting Small/Medium/Large); songs get nikud automatically when added (`src/app/(app)/songs/new/actions.ts` + `src/lib/nikud-run.ts`); the Edit-mode Add nikud button and the bulk buttons were removed.
+
+**Next up (pick with the user)**
+1. Automatic nikud catch-up for songs you own that are missing it (agreed design: runs only when the owner opens such a song, one attempt of at most 3 tries and a 45s cap, at most once per song per day per device, silent on failure). Needed because the manual button is gone.
+2. Dictionary rework alongside flash cards.
+3. Before sharing widely: report/takedown path, terms note, sign-up control (invite only), Anthropic spend limit, Deezer terms check.
+4. Notifications (suggestions, filled requests); pronouns/prepositions forms; "N new words" pack updates; nikud in Dictionary rows.
+
+## SQL scripts (user)
+All scripts live in `supabase/migrations/`. The user has run them as features shipped (the latest, `20261204000000_lyrics_size.sql`, is run). If a feature says it needs a database update, ask which script and have them run it; each is safe to run again.
 
 ## Done
 - Product decisions locked (see README "Rules baked into the database").
