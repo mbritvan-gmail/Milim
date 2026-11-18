@@ -140,6 +140,10 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - **Add lyrics** from a request opens `/songs/new?request=ID` prefilled (title, artist, album, cover art, links); the song is always public and owned by the filler; on save the database function `fulfill_song_request` marks the request filled and adds the song to the requester's list (a row for another user, hence the function). If someone else filled it first, the song is still added to the library.
 - Not built: notifications (the requester finds out on the Requests tab), fading done requests beyond 14 days is just a filter.
 
+## Songs open as pop-ups
+- A song opens over the page you were on (Songs list, Library, Requests, a Dictionary link), with its **X beside Edit** (`@modal/(.)songs/[id]`); opened directly (a reload, or right after creating a song) it is the normal page with a fallback X to the Songs list. Add lyrics (`/songs/new`) and Request a song (`/songs/request`) are pop-ups too, with their own routes in the modal slot so "new" and "request" are never read as a song id. Creating a song or a request, and removing a song or a Pack, replace the form in the history so the X returns to the list.
+- The Requests tab moved to `/requests` (top level), because anything under `/songs/` would be caught by the song pop-up route.
+
 ## Naming
 - Vocabulary modules are called **Word Packs** ("Pack", capitalized) everywhere users see them; "modules" is reserved for the Home screen sections (Songs, Vocabulary, Flash Cards, Dictionary). Code, routes and database tables keep the name `modules`.
 

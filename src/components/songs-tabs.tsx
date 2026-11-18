@@ -12,7 +12,7 @@ export function SongsTabs({ active }: { active: "mine" | "library" | "requests" 
       <Link href="/library" role="tab" aria-selected={active === "library"} className={tab(active === "library")}>
         Public library
       </Link>
-      <Link href="/songs/requests" role="tab" aria-selected={active === "requests"} className={tab(active === "requests")}>
+      <Link href="/requests" role="tab" aria-selected={active === "requests"} className={tab(active === "requests")}>
         Requests
       </Link>
     </div>

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 // Remove a song from the signed-in user's account. What that means depends on the song:
@@ -46,7 +46,7 @@ async function performRemove(songId: string) {
 // From a song's own page: remove it, then go back to the list.
 export async function removeSong(songId: string) {
   await performRemove(songId);
-  redirect("/songs");
+  redirect("/songs", RedirectType.replace);
 }
 
 // From the song list: remove it and stay on the list. Returns an error message, or null.

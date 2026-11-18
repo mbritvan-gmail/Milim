@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { readSongLinks } from "@/lib/song-links";
 
@@ -88,8 +88,9 @@ export async function createRequest(_prev: RequestState, formData: FormData): Pr
     return { error: "Something went wrong. Please try again." };
   }
   if (ok) {
-    revalidatePath("/songs/requests");
-    redirect("/songs/requests");
+    revalidatePath("/requests");
+    // Replace the form in the history, so closing returns to where the request was started.
+    redirect("/requests", RedirectType.replace);
   }
   return {};
 }
@@ -104,7 +105,7 @@ export async function cancelRequest(requestId: string): Promise<string | null> {
     if (!user) return "Please sign in again.";
     const { data, error } = await supabase.from("song_requests").update({ status: "cancelled" }).eq("id", requestId).eq("requester_id", user.id).eq("status", "open").select("id");
     if (error || !data || data.length === 0) return "Couldn't cancel that request. It may have just been filled.";
-    revalidatePath("/songs/requests");
+    revalidatePath("/requests");
     return null;
   } catch (error) {
     console.error("cancelRequest crashed", error);

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { parseMedia } from "@/lib/media";
 import { SongPlayer } from "@/components/song-player";
 import { Cover } from "@/components/song-links";
+import { CloseButton } from "@/components/overlay";
 import { loadSettings } from "@/lib/settings";
 import { chunk, fingerprint } from "@/lib/study";
 import { SongView, type SongLine, type SongWord } from "./song-view";
@@ -151,9 +152,12 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
         <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="min-w-[8rem] flex-1 text-2xl font-semibold">{song.title}</h1>
-          {(isOwner || song.visibility === "public") && (
-            <SongHeaderControls songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} canRemove={isOwner || inMyList} />
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            {(isOwner || song.visibility === "public") && (
+              <SongHeaderControls songId={song.id} isOwner={isOwner} isPublic={song.visibility === "public"} canRemove={isOwner || inMyList} />
+            )}
+            <CloseButton fallbackHref={inMyList ? "/songs" : "/library"} />
+          </div>
         </div>
         <p className="text-sm text-muted">
           {[song.artist, album, song.visibility === "public" ? "Public" : "Private", sharedBy].filter(Boolean).join(" · ")}

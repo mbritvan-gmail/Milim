@@ -263,7 +263,7 @@ async function performRemoveModule(moduleId: string) {
 // From a module's own page: remove it, then go back to the list.
 export async function removeModule(moduleId: string) {
   await performRemoveModule(moduleId);
-  redirect("/vocabulary");
+  redirect("/vocabulary", RedirectType.replace);
 }
 
 // From the module list: remove it and stay on the list. Returns an error message, or null.

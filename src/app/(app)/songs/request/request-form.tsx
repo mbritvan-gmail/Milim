@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { CatalogSearch, Cover, PlayerLinks } from "@/components/song-links";
 import { addSong } from "../[id]/actions";
-import { checkExisting, createRequest, type ExistingMatch, type RequestState } from "../requests/actions";
+import { checkExisting, createRequest, type ExistingMatch, type RequestState } from "@/app/(app)/requests/actions";
 
 const field =
   "w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none";
@@ -104,7 +104,7 @@ export function RequestForm() {
             {existing.request.byName ? ` · requested by ${existing.request.byName}` : ""}
           </p>
           <div className="flex gap-2">
-            <Link href="/songs/requests" className="flex h-10 flex-1 items-center justify-center rounded-xl bg-accent text-sm font-semibold text-accent-contrast">
+            <Link href="/requests" className="flex h-10 flex-1 items-center justify-center rounded-xl bg-accent text-sm font-semibold text-accent-contrast">
               See the requests
             </Link>
             <button type="button" onClick={() => setDismissed(true)} className="h-10 flex-1 rounded-xl border border-border text-sm font-semibold hover:bg-surface-2">

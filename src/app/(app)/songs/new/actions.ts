@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, RedirectType } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
 import { MAX_LINES, MAX_LYRICS_CHARS, parseLyrics, sectionEnglish } from "@/lib/lyrics";
@@ -30,7 +30,8 @@ export async function createSong(_prev: CreateSongState, formData: FormData): Pr
     return { error: "Something went wrong while saving your song. Please try again." };
   }
   if (outcome.signedOut) redirect("/login");
-  if (outcome.songId) redirect(`/songs/${outcome.songId}`);
+  // Replace the form in the history, so closing the new song returns to the list, not the empty form.
+  if (outcome.songId) redirect(`/songs/${outcome.songId}`, RedirectType.replace);
   return { error: outcome.error };
 }
 
@@ -182,7 +183,7 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
   if (requestId) {
     const { error: fulfillError } = await supabase.rpc("fulfill_song_request", { p_request_id: requestId, p_song_id: songId });
     if (fulfillError) console.error("fulfill_song_request failed", fulfillError);
-    revalidatePath("/songs/requests");
+    revalidatePath("/requests");
   }
 
   return { songId };
