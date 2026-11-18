@@ -44,13 +44,13 @@ export function NewModuleForm() {
       </div>
 
       <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
-        <legend className="px-1 text-sm text-muted">Who can see this pack?</legend>
+        <legend className="px-1 text-sm text-muted">Who can see this Pack?</legend>
         <label className="flex items-start gap-3">
           <input type="radio" name="visibility" value="public" defaultChecked className="mt-1 accent-[var(--accent)]" />
           <span>
             <span className="font-medium">Public</span>
             <span className="block text-sm text-muted">
-              Shared with everyone. <strong className="text-foreground">A public pack stays public.</strong>
+              Shared with everyone. <strong className="text-foreground">A public Pack stays public.</strong>
             </span>
           </span>
         </label>
@@ -74,7 +74,7 @@ export function NewModuleForm() {
         disabled={pending || count === 0}
         className="h-12 rounded-xl bg-accent font-semibold text-accent-contrast transition-colors hover:bg-accent-strong disabled:opacity-60"
       >
-        {pending ? "Looking up the words… this can take a moment" : count > 0 ? `Create pack (${count} ${count === 1 ? "word" : "words"})` : "Create pack"}
+        {pending ? "Looking up the words… this can take a moment" : count > 0 ? `Create Pack (${count} ${count === 1 ? "word" : "words"})` : "Create Pack"}
       </button>
     </form>
   );

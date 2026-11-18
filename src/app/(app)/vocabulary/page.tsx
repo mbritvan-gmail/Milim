@@ -43,7 +43,7 @@ async function VocabularyBody() {
         items={[
           {
             href: "/vocabulary/new",
-            label: "New pack",
+            label: "New Pack",
             icon: (
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
                 <path d="M12 5v14M5 12h14" />
@@ -62,8 +62,8 @@ async function VocabularyBody() {
         {header}
         <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">
           {missing
-            ? "Word packs need the latest database update, which hasn't been run yet."
-            : "Couldn't load the packs. Please try again."}
+            ? "Word Packs need the latest database update, which hasn't been run yet."
+            : "Couldn't load the Packs. Please try again."}
         </p>
       </>
     );

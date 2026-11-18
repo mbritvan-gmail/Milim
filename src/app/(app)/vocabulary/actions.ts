@@ -22,7 +22,7 @@ type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; error: string 
 
 // A cost safety net, like the one for songs. Set DAILY_MODULE_LIMIT in Vercel to change it.
 const DAILY_MODULE_LIMIT = Number(process.env.DAILY_MODULE_LIMIT) || 50;
-const MISSING_TABLES = "Word packs need the latest database update. It hasn't been run yet.";
+const MISSING_TABLES = "Word Packs need the latest database update. It hasn't been run yet.";
 
 function isMissingTable(error: { message?: string; code?: string } | null | undefined) {
   if (!error) return false;
@@ -113,7 +113,7 @@ export async function createModule(_prev: CreateModuleState, formData: FormData)
     outcome = await runCreateModule(formData);
   } catch (error) {
     console.error("createModule crashed", error);
-    return { error: "Something went wrong while saving your pack. Please try again." };
+    return { error: "Something went wrong while saving your Pack. Please try again." };
   }
   if (outcome.signedOut) redirect("/login");
   // Replace the form in the history, so closing the new module returns to the list, not the empty form.
@@ -128,7 +128,7 @@ async function runCreateModule(formData: FormData): Promise<Outcome> {
 
   const title = String(formData.get("title") ?? "").trim();
   const makePublic = formData.get("visibility") === "public";
-  if (!title) return { error: "Please give the pack a title." };
+  if (!title) return { error: "Please give the Pack a title." };
   if (title.length > MAX_MODULE_TITLE) return { error: `The title must be under ${MAX_MODULE_TITLE} characters.` };
 
   const { words } = parseWordList(String(formData.get("words") ?? ""));
@@ -142,7 +142,7 @@ async function runCreateModule(formData: FormData): Promise<Outcome> {
     .eq("owner_id", user.id)
     .gte("created_at", since);
   if (isMissingTable(countError)) return { error: MISSING_TABLES };
-  if ((count ?? 0) >= DAILY_MODULE_LIMIT) return { error: "You've reached today's limit for new packs. Please try again tomorrow." };
+  if ((count ?? 0) >= DAILY_MODULE_LIMIT) return { error: "You've reached today's limit for new Packs. Please try again tomorrow." };
 
   try {
     const saved = await defineAndSave(supabase, title, words);
@@ -173,7 +173,7 @@ async function runCreateModule(formData: FormData): Promise<Outcome> {
     if (error instanceof AIError) return { error: error.message };
     if (error instanceof Error && error.message === MISSING_TABLES) return { error: MISSING_TABLES };
     console.error("createModule failed", error);
-    return { error: "Something went wrong while saving your pack. Please try again." };
+    return { error: "Something went wrong while saving your Pack. Please try again." };
   }
 }
 
@@ -274,7 +274,7 @@ export async function removeModuleFromList(moduleId: string): Promise<string | n
   } catch (error) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
     console.error("removeModuleFromList failed", error);
-    return "Couldn't remove that pack. Please try again.";
+    return "Couldn't remove that Pack. Please try again.";
   }
 }
 
@@ -289,7 +289,7 @@ export async function renameModule(moduleId: string, title: string): Promise<Act
   try {
     const supabase = await createClient();
     const owned = await ownedModule(supabase, moduleId);
-    if (!owned) return { ok: false, error: "Only the person who made this pack can change it." };
+    if (!owned) return { ok: false, error: "Only the person who made this Pack can change it." };
     const next = title.trim();
     if (!next) return { ok: false, error: "The title can't be empty." };
     if (next.length > MAX_MODULE_TITLE) return { ok: false, error: `The title must be under ${MAX_MODULE_TITLE} characters.` };
@@ -307,7 +307,7 @@ export async function renameModule(moduleId: string, title: string): Promise<Act
 export async function removeModuleWord(moduleId: string, vocabId: string): Promise<ActionResult<{ position: number }>> {
   try {
     const supabase = await createClient();
-    if (!(await ownedModule(supabase, moduleId))) return { ok: false, error: "Only the person who made this pack can change it." };
+    if (!(await ownedModule(supabase, moduleId))) return { ok: false, error: "Only the person who made this Pack can change it." };
     const { data: row } = await supabase.from("module_words").select("position").eq("module_id", moduleId).eq("vocab_entry_id", vocabId).maybeSingle();
     const { error } = await supabase.from("module_words").delete().eq("module_id", moduleId).eq("vocab_entry_id", vocabId);
     if (error) return { ok: false, error: "Couldn't remove that word. Please try again." };
@@ -321,7 +321,7 @@ export async function removeModuleWord(moduleId: string, vocabId: string): Promi
 export async function restoreModuleWord(moduleId: string, vocabId: string, position: number): Promise<ActionResult> {
   try {
     const supabase = await createClient();
-    if (!(await ownedModule(supabase, moduleId))) return { ok: false, error: "Only the person who made this pack can change it." };
+    if (!(await ownedModule(supabase, moduleId))) return { ok: false, error: "Only the person who made this Pack can change it." };
     const { error } = await supabase
       .from("module_words")
       .upsert({ module_id: moduleId, vocab_entry_id: vocabId, position }, { onConflict: "module_id,vocab_entry_id", ignoreDuplicates: true });
@@ -337,7 +337,7 @@ export async function restoreModuleWord(moduleId: string, vocabId: string, posit
 export async function reorderModuleWords(moduleId: string, orderedIds: string[]): Promise<ActionResult> {
   try {
     const supabase = await createClient();
-    if (!(await ownedModule(supabase, moduleId))) return { ok: false, error: "Only the person who made this pack can change it." };
+    if (!(await ownedModule(supabase, moduleId))) return { ok: false, error: "Only the person who made this Pack can change it." };
     const { data: current } = await supabase.from("module_words").select("vocab_entry_id").eq("module_id", moduleId);
     const have = new Set((current ?? []).map((r) => r.vocab_entry_id as string));
     if (orderedIds.length !== have.size || new Set(orderedIds).size !== have.size || !orderedIds.every((id) => have.has(id))) {
@@ -359,17 +359,17 @@ export async function addModuleWords(moduleId: string, text: string): Promise<Ac
   try {
     const supabase = await createClient();
     const owned = await ownedModule(supabase, moduleId);
-    if (!owned) return { ok: false, error: "Only the person who made this pack can change it." };
+    if (!owned) return { ok: false, error: "Only the person who made this Pack can change it." };
     const { words } = parseWordList(text);
     if (words.length === 0) return { ok: false, error: "Paste some Hebrew words (we couldn't find any Hebrew text)." };
 
     const { data: existing } = await supabase.from("module_words").select("vocab_entry_id, position").eq("module_id", moduleId);
     const have = new Set((existing ?? []).map((r) => r.vocab_entry_id as string));
-    if (have.size + words.length > MAX_MODULE_WORDS) return { ok: false, error: `A pack can hold up to ${MAX_MODULE_WORDS} words.` };
+    if (have.size + words.length > MAX_MODULE_WORDS) return { ok: false, error: `A Pack can hold up to ${MAX_MODULE_WORDS} words.` };
     let position = Math.max(-1, ...(existing ?? []).map((r) => r.position as number)) + 1;
 
     const saved = (await defineAndSave(supabase, owned.module.title, words)).filter((w) => !have.has(w.id));
-    if (saved.length === 0) return { ok: false, error: "Those words are already in this pack." };
+    if (saved.length === 0) return { ok: false, error: "Those words are already in this Pack." };
     const { error } = await supabase
       .from("module_words")
       .insert(saved.map((w) => ({ module_id: moduleId, vocab_entry_id: w.id, position: position++ })));

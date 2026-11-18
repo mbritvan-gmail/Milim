@@ -130,8 +130,11 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Add lyrics and Edit > Title, artist & links: "Find the song" searches Deezer's public catalog (no key; Hebrew and English titles both work, verified live) and fills in title, artist, album and cover art; then player links (Find on Spotify / Find on YouTube, or paste a link) sit above the lyrics box. Cover art is stored as an address only, accepted only from Deezer's image servers (`isTrustedCover`). Cover art shows on the song page and in the Songs list. Code: `src/components/song-links.tsx`, `src/lib/deezer.ts`, `src/lib/song-links.ts`.
 - Check Deezer's terms before a wide launch (display of cover art, "Search by Deezer" credit is shown). The build session's network allowlist now includes api.deezer.com.
 
+## About page
+- Home's bottom bar shows **About** where Back would be (Back is irrelevant on Home). `/about` (opens as a pop-up with an X) has what's in milim, a few things to know, the photo credits (from `src/lib/login-photos.ts`, so new photos are credited automatically) and thanks. The Home screen no longer shows a photo credit; the sign-in screen still does.
+
 ## Naming
-- Vocabulary modules are called **Word packs** ("pack") everywhere users see them; "modules" is reserved for the Home screen sections (Songs, Vocabulary, Flash Cards, Dictionary). Code, routes and database tables keep the name `modules`.
+- Vocabulary modules are called **Word Packs** ("Pack", capitalized) everywhere users see them; "modules" is reserved for the Home screen sections (Songs, Vocabulary, Flash Cards, Dictionary). Code, routes and database tables keep the name `modules`.
 
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.

@@ -25,13 +25,13 @@ export type ListModule = {
 type Confirm = { kind: "remove" | "public"; module: ListModule } | null;
 
 function removeWording(m: ListModule) {
-  if (m.isOwner && m.visibility === "private") return { warning: "This permanently deletes the pack. The words stay in the shared dictionary.", button: "Delete forever" };
+  if (m.isOwner && m.visibility === "private") return { warning: "This permanently deletes the Pack. The words stay in the shared dictionary.", button: "Delete forever" };
   if (m.isOwner)
     return {
-      warning: "Public packs can't be deleted. Archiving hides it from the list and removes it from yours, but people who already added it keep it.",
+      warning: "Public Packs can't be deleted. Archiving hides it from the list and removes it from yours, but people who already added it keep it.",
       button: "Archive",
     };
-  return { warning: "This only removes it from your list. The pack itself isn't deleted.", button: "Remove" };
+  return { warning: "This only removes it from your list. The Pack itself isn't deleted.", button: "Remove" };
 }
 
 export function ModulesList({ modules: serverModules }: { modules: ListModule[] }) {
@@ -206,7 +206,7 @@ export function ModulesList({ modules: serverModules }: { modules: ListModule[] 
     setProblem("");
     const { kind, module } = confirm;
     if (kind === "remove") {
-      const error = await removeModuleFromList(module.id).catch(() => "Couldn't remove that pack. Please try again.");
+      const error = await removeModuleFromList(module.id).catch(() => "Couldn't remove that Pack. Please try again.");
       if (error) setProblem(error);
       else {
         setModules((ms) => ms.filter((m) => m.id !== module.id));
@@ -214,7 +214,7 @@ export function ModulesList({ modules: serverModules }: { modules: ListModule[] 
       }
     } else {
       const ok = await makeModulePublic(module.id).catch(() => false);
-      if (!ok) setProblem("Couldn't make this pack public. Please try again.");
+      if (!ok) setProblem("Couldn't make this Pack public. Please try again.");
       else {
         setModules((ms) => ms.map((m) => (m.id === module.id ? { ...m, visibility: "public", by: "Shared by you" } : m)));
         setConfirm(null);
@@ -237,7 +237,7 @@ export function ModulesList({ modules: serverModules }: { modules: ListModule[] 
             items={[
               {
                 href: "/vocabulary/new",
-                label: "New pack",
+                label: "New Pack",
                 icon: (
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent)" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
                     <path d="M12 5v14M5 12h14" />
@@ -264,12 +264,12 @@ export function ModulesList({ modules: serverModules }: { modules: ListModule[] 
 
       {editing ? (
         <p className="px-0.5 text-sm text-muted">
-          Tap the minus to remove a pack. Drag the grip to put your added modules in your order. Private modules can be made public, but a public module stays public.
+          Tap the minus to remove a Pack. Drag the grip to put your added Packs in your order. Private Packs can be made public, but a public Pack stays public.
         </p>
       ) : (
         <>
           <p className="text-sm text-muted">Themed word lists. Add one to put its words in your Dictionary.</p>
-          <SearchBox value={query} onChange={setQuery} placeholder="Search packs" label="Search packs" />
+          <SearchBox value={query} onChange={setQuery} placeholder="Search Packs" label="Search Packs" />
         </>
       )}
 
@@ -280,14 +280,14 @@ export function ModulesList({ modules: serverModules }: { modules: ListModule[] 
       )}
 
       {modules.length === 0 ? (
-        <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">No packs yet. Use the menu to make your first one.</p>
+        <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">No Packs yet. Use the menu to make your first one.</p>
       ) : searching && !addedList.some(matches) && !otherList.some(matches) ? (
-        <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">No packs match &quot;{query.trim()}&quot;.</p>
+        <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">No Packs match &quot;{query.trim()}&quot;.</p>
       ) : (
         <div className="flex flex-col gap-3">
           {[
-            { key: "added", label: "Your packs", list: addedList.filter(matches) },
-            { key: "other", label: "More packs", list: otherList.filter(matches) },
+            { key: "added", label: "Your Packs", list: addedList.filter(matches) },
+            { key: "other", label: "More Packs", list: otherList.filter(matches) },
           ]
             .filter((sec) => sec.list.length > 0)
             .map((sec, _i, all) => (
@@ -300,7 +300,7 @@ export function ModulesList({ modules: serverModules }: { modules: ListModule[] 
       )}
 
       {confirm && (
-        <Sheet title={confirm.kind === "remove" ? "Remove this pack?" : "Make this pack public?"} onClose={() => !busy && setConfirm(null)}>
+        <Sheet title={confirm.kind === "remove" ? "Remove this Pack?" : "Make this Pack public?"} onClose={() => !busy && setConfirm(null)}>
           {confirm.kind === "remove" ? (
             <p className="text-sm">
               <strong>{confirm.module.title}</strong>. {removeWording(confirm.module).warning}

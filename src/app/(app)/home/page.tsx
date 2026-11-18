@@ -65,7 +65,7 @@ const MODULES = [
 export default function HomePage() {
   return (
     <div className="relative -mb-24 flex flex-1 flex-col pb-24">
-      <RotatingBackground creditClass="bottom-28" fade={false} />
+      <RotatingBackground fade={false} showCredit={false} />
       <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-8 px-4 py-8">
         <h1 className="hebrew text-center text-4xl font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]">מילים</h1>
         {/* Like app icons on a phone's home screen: an icon with its name underneath. */}

@@ -23,6 +23,7 @@ export function AppNav() {
   const router = useRouter();
   const onHome = pathname === "/home";
   const onSettings = pathname === "/settings";
+  const onAbout = pathname === "/about";
 
   function goBack() {
     if (window.history.length > 1) router.back();
@@ -33,17 +34,23 @@ export function AppNav() {
     <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
       <ul className="mx-auto flex max-w-md">
         <li className="flex-1">
-          <button
-            type="button"
-            onClick={goBack}
-            disabled={onHome}
-            className={`${itemClass} w-full ${onHome ? "text-border" : "text-muted hover:text-foreground"}`}
-          >
-            <svg {...icon}>
-              <path d="M19 12H5M11 6l-6 6 6 6" />
-            </svg>
-            Back
-          </button>
+          {onHome ? (
+            <Link href="/about" aria-current={onAbout ? "page" : undefined} className={`${itemClass} text-muted hover:text-foreground`}>
+              <svg {...icon}>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 11v5" />
+                <path d="M12 8h.01" />
+              </svg>
+              About
+            </Link>
+          ) : (
+            <button type="button" onClick={goBack} className={`${itemClass} w-full text-muted hover:text-foreground`}>
+              <svg {...icon}>
+                <path d="M19 12H5M11 6l-6 6 6 6" />
+              </svg>
+              Back
+            </button>
+          )}
         </li>
         <li className="flex-1">
           <Link href="/home" aria-current={onHome ? "page" : undefined} className={`${itemClass} ${onHome ? "font-semibold text-accent" : "text-muted hover:text-foreground"}`}>
