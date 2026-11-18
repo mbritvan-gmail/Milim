@@ -34,10 +34,10 @@ const MODULES = [
     tint: { rgb: "195,217,140", dark: "#C3D98C", deep: "#5E8A1E" },
     svg: (
       <svg {...icon}>
-        <rect x="3" y="3" width="8" height="8" rx="1.5" />
-        <rect x="13" y="3" width="8" height="8" rx="1.5" />
-        <rect x="3" y="13" width="8" height="8" rx="1.5" />
-        <rect x="13" y="13" width="8" height="8" rx="1.5" />
+        <path d="M4 6h16" />
+        <rect x="4" y="10" width="9" height="4.5" rx="2.25" />
+        <path d="M16 12.25h4" />
+        <path d="M4 19h11" />
       </svg>
     ),
   },
@@ -47,8 +47,10 @@ const MODULES = [
     tint: { rgb: "245,204,132", dark: "#F5CC84", deep: "#B9740A" },
     svg: (
       <svg {...icon}>
-        <rect x="3" y="6" width="14" height="12" rx="2" />
-        <path d="M7 3h12a2 2 0 0 1 2 2v10" />
+        <g transform="rotate(-10 11 11)">
+          <rect x="3" y="4.5" width="13" height="9" rx="2" />
+        </g>
+        <rect x="8" y="9.5" width="13" height="10" rx="2.2" />
       </svg>
     ),
   },
@@ -58,9 +60,8 @@ const MODULES = [
     tint: { rgb: "240,169,138", dark: "#F0A98A", deep: "#C2502A" },
     svg: (
       <svg {...icon}>
-        <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" />
-        <path d="M4 19V5" />
-        <path d="M9 8h6" />
+        <path d="M12 6.5c-2.2-1.6-5-2-8-1.5v13c3-.5 5.8 0 8 1.5 2.2-1.5 5-2 8-1.5V5c-3-.5-5.8-.1-8 1.5z" />
+        <path d="M12 6.5v13" />
       </svg>
     ),
   },
