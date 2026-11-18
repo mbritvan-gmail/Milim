@@ -24,14 +24,16 @@ async function VocabularyBody() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [modulesRes, mineRes] = await Promise.all([
+  const [modulesRes, mineExtended] = await Promise.all([
     supabase
       .from("modules")
       .select("id, title, owner_id, visibility, archived_at")
       .order("created_at", { ascending: false })
       .limit(300),
-    supabase.from("user_modules").select("module_id"),
+    supabase.from("user_modules").select("module_id, position"),
   ]);
+  // Position comes from a newer column; if the database script for ordering hasn't been run yet, ask without it.
+  const mineRes = mineExtended.error ? await supabase.from("user_modules").select("module_id") : mineExtended;
 
   const header = (
     <div className="flex items-center justify-between gap-3">
@@ -68,6 +70,7 @@ async function VocabularyBody() {
   }
 
   const mine = new Set((mineRes.data ?? []).map((r) => r.module_id as string));
+  const positionOf = new Map((mineRes.data ?? []).map((r) => [r.module_id as string, (r as { position?: number }).position ?? 0]));
   // Everyone's public modules, plus anything of yours (including ones you added that were archived since).
   const modules = (modulesRes.data ?? []).filter(
     (m) => mine.has(m.id) || m.owner_id === user.id || (m.visibility === "public" && !m.archived_at),
@@ -103,6 +106,7 @@ async function VocabularyBody() {
       visibility: m.visibility === "public" ? "public" : "private",
       isOwner: m.owner_id === user.id,
       added: mine.has(m.id),
+      position: positionOf.get(m.id) ?? 0,
       archived: Boolean(m.archived_at),
       words: words.length,
       learned: words.filter((w) => learned.has(w)).length,

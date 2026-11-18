@@ -177,6 +177,28 @@ async function runCreateModule(formData: FormData): Promise<Outcome> {
   }
 }
 
+// Saves the order of the modules a person has added (their own list order).
+export async function reorderModules(orderedIds: string[]): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const user = await signedInUser(supabase);
+    if (!user) return { ok: false, error: "Please sign in again." };
+    const results = await Promise.all(
+      orderedIds.map((id, i) => supabase.from("user_modules").update({ position: i }).eq("user_id", user.id).eq("module_id", id)),
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      console.error("reorderModules failed", failed.error);
+      return { ok: false, error: /position|schema cache|column/.test(failed.error.message) ? "Ordering needs the latest database update, which hasn't been run yet." : "Couldn't save the new order. Please try again." };
+    }
+    revalidatePath("/vocabulary");
+    return { ok: true };
+  } catch (error) {
+    console.error("reorderModules crashed", error);
+    return { ok: false, error: "Couldn't save the new order. Please try again." };
+  }
+}
+
 // Put a module's words in the person's Dictionary.
 export async function addModule(moduleId: string): Promise<boolean> {
   try {

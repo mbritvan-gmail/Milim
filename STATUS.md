@@ -3,6 +3,7 @@
 Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-pmh51c`. Live preview: https://milim-seven.vercel.app
 
 ## TO DO FIRST (user)
+- Run `supabase/migrations/20261128000000_module_order.sql` (your own order for vocabulary modules). Until then reordering modules says it needs the database update; everything else works.
 - Run `supabase/migrations/20261126000000_song_groups.sql` (song groups and your own song order). Until then the Songs list works as before, without groups.
 - Run `supabase/migrations/20261124000000_song_nikud.sql` (adds `lines.vocalized`, for the Add nikud button on songs).
 - Run `supabase/migrations/20261122000000_vocabulary_modules.sql` too (vocabulary modules: tables, nikud / gender / plural columns, Dictionary view). Run the conjugation one first.
@@ -118,6 +119,10 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Search box (title or artist, across all groups, results show the group) and a Sort button (My order / Title / Artist / Recently added, remembered on the device; sorts inside each group).
 - Edit mode: drag the grip (or arrow keys) to reorder songs within a group and groups themselves; the folder moves a song to another group (or a new one); Rename and delete (minus) on a group (its songs are kept, moved to "Not in a group"); the existing minus and Make public stay. Search and sort are paused while editing.
 - Data: `song_groups`, plus `user_songs.group_id` and `user_songs.position` (per person). Code: `src/app/(app)/songs/songs-list.tsx`, `group-actions.ts`, `src/lib/songs-order.ts`, `src/lib/drag-reorder.ts`.
+
+## Search boxes and module order (built; module order REQUIRES `supabase/migrations/20261128000000_module_order.sql`)
+- Search boxes (songs, modules) have an X to clear them (`src/components/search-box.tsx`).
+- Vocabulary list: search modules by title; modules you have added come first ("Your modules", in your own order), the rest follow ("More modules"). In Edit, drag the grip (or arrow keys) to reorder your added modules (`user_modules.position`, `reorderModules`).
 
 ## Remaining work, in order
 1. Run the learning-model SQL script in Supabase, then live-test study, dictionary, settings and the public library with two real accounts. Set up `YOUTUBE_API_KEY`.
