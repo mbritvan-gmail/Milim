@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { getWordForms } from "../word-forms/actions";
 import { verbsNeedingConjugation } from "./forms-actions";
 
@@ -15,8 +15,10 @@ export function ConjugateAll() {
   const [progress, setProgress] = useState("");
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState("");
+  const stopRef = useRef(false);
 
   async function run() {
+    stopRef.current = false;
     setState("running");
     setError("");
     setReport(null);
@@ -38,7 +40,7 @@ export function ConjugateAll() {
     let next = 0;
     let finished = 0;
     async function worker() {
-      while (next < verbs.length) {
+      while (next < verbs.length && !stopRef.current) {
         const verb = verbs[next++];
         const r = await getWordForms(verb.id).catch(() => null);
         const used = r && r.ok ? r.usage : undefined;
@@ -47,7 +49,7 @@ export function ConjugateAll() {
         if (r && r.ok) total.done++;
         else total.failed.push({ lemma: verb.lemma, reason: r && !r.ok ? r.error : "The request didn't finish." });
         finished++;
-        setProgress(`Verb ${finished} of ${verbs.length}`);
+        setProgress(`Verb ${finished} of ${verbs.length} · ${total.input.toLocaleString()} input and ${total.output.toLocaleString()} output tokens so far`);
       }
     }
     setProgress(`Verb 0 of ${verbs.length}`);
@@ -69,9 +71,16 @@ export function ConjugateAll() {
             used. It works through five verbs at a time. On a computer you can switch to another tab; on a phone keep the screen on and this page open. If it stops, tap Run again and it carries on with the verbs that are left.
           </p>
         </div>
+        <div className="flex shrink-0 gap-2">
         <button type="button" onClick={run} disabled={state === "running"} className="shrink-0 rounded-xl border border-border px-4 py-2 text-sm hover:bg-surface-2 disabled:opacity-60">
           {state === "running" ? "Working…" : "Run"}
         </button>
+        {state === "running" && (
+          <button type="button" onClick={() => { stopRef.current = true; }} className="shrink-0 rounded-xl border border-border px-4 py-2 text-sm hover:bg-surface-2">
+            Stop
+          </button>
+        )}
+        </div>
       </div>
       {progress && <p role="status" className="text-sm text-muted">{progress}</p>}
       {error && <p className="text-sm text-danger">{error}</p>}
