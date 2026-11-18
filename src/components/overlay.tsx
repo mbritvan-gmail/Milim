@@ -19,7 +19,9 @@ export function useOverlay() {
 
 // `bar={false}` leaves out the top bar with the X; the screen then puts its own <CloseButton /> where it fits
 // (for example beside its Edit button) to save space.
-export function Overlay({ children, bar = true }: { children: React.ReactNode; bar?: boolean }) {
+// `nav` keeps the bottom bar visible under the pop-up (for screens that scroll); without it the pop-up covers
+// everything, bar included (for study screens like Flash Cards).
+export function Overlay({ children, bar = true, nav = false }: { children: React.ReactNode; bar?: boolean; nav?: boolean }) {
   const router = useRouter();
   const close = useCallback(() => router.back(), [router]);
 
@@ -37,8 +39,8 @@ export function Overlay({ children, bar = true }: { children: React.ReactNode; b
 
   return (
     <OverlayContext.Provider value={{ close }}>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 z-40 overflow-y-auto bg-background">
-        <div className="flex min-h-full flex-col">
+      <div role="dialog" aria-modal="true" className={`fixed inset-0 overflow-y-auto bg-background ${nav ? "z-10" : "z-40"}`}>
+        <div className={`flex min-h-full flex-col ${nav ? "pb-24" : ""}`}>
           {bar && (
             <div className="sticky top-0 z-10 flex justify-end bg-background/90 px-3 py-2 backdrop-blur-md">
               <CloseButton />

@@ -3,7 +3,7 @@ import SettingsPage from "../../settings/page";
 
 export default function SettingsOverlay() {
   return (
-    <Overlay>
+    <Overlay nav>
       <SettingsPage />
     </Overlay>
   );

@@ -5,7 +5,7 @@ export const maxDuration = 60;
 
 export default function WordOverlay(props: Parameters<typeof WordPage>[0]) {
   return (
-    <Overlay>
+    <Overlay nav>
       <WordPage {...props} />
     </Overlay>
   );

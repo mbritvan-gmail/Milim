@@ -7,7 +7,7 @@ export const maxDuration = 60;
 // A song opens over the page you were on. Its X sits beside Edit, so the top bar is left out.
 export default function SongOverlay(props: Parameters<typeof SongPage>[0]) {
   return (
-    <Overlay bar={false}>
+    <Overlay bar={false} nav>
       <SongPage {...props} />
     </Overlay>
   );

@@ -3,7 +3,7 @@ import AboutPage from "../../about/page";
 
 export default function AboutOverlay() {
   return (
-    <Overlay>
+    <Overlay nav>
       <AboutPage />
     </Overlay>
   );

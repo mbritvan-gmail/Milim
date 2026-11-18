@@ -8,7 +8,7 @@ export const maxDuration = 60;
 // it were a song id. The form opens as a pop-up too.
 export default function NewSongOverlay(props: Parameters<typeof NewSongPage>[0]) {
   return (
-    <Overlay>
+    <Overlay nav>
       <NewSongPage {...props} />
     </Overlay>
   );

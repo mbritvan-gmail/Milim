@@ -8,7 +8,7 @@ export const maxDuration = 60;
 // doesn't catch "new" as if it were a module id. The form opens as a pop-up too.
 export default function NewModuleOverlay() {
   return (
-    <Overlay>
+    <Overlay nav>
       <NewModulePage />
     </Overlay>
   );
