@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MenuButton } from "@/components/menu-button";
 import { ModulesList, type ListModule } from "./modules-list";
 import { chunk } from "@/lib/study";
+import { readAllRows } from "@/lib/paged";
 
 export const metadata = { title: "Vocabulary · milim" };
 
@@ -80,8 +81,10 @@ async function VocabularyBody() {
   const ids = modules.map((m) => m.id as string);
   const wordsByModule = new Map<string, string[]>();
   for (const part of chunk(ids, 60)) {
-    const { data } = await supabase.from("module_words").select("module_id, vocab_entry_id").in("module_id", part).limit(5000);
-    for (const r of data ?? []) {
+    const { data } = await readAllRows((a, b) =>
+      supabase.from("module_words").select("module_id, vocab_entry_id").in("module_id", part).order("module_id").order("vocab_entry_id").range(a, b),
+    );
+    for (const r of data) {
       const list = wordsByModule.get(r.module_id as string) ?? [];
       list.push(r.vocab_entry_id as string);
       wordsByModule.set(r.module_id as string, list);

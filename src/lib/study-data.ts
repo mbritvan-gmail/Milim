@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadWordExtras } from "./word-extras";
+import { readAllRows } from "./paged";
 import { chunk, matchesFilter, shuffle, type SessionCard, type StudyFilter, type WordStatus } from "./study";
 
 // Loads the cards for a study session. A web address can only hold so many ids, so anything
@@ -22,12 +23,17 @@ async function withContext(supabase: SupabaseClient, base: BaseCard[]): Promise<
 
   const needLines = base.filter((c) => !c.lineId).map((c) => c.vocabId);
   for (const ids of chunk(needLines, CHUNK)) {
-    const { data } = await supabase
-      .from("song_words")
-      .select("vocab_entry_id, line_id, song_id")
-      .in("vocab_entry_id", ids)
-      .not("line_id", "is", null);
-    for (const r of data ?? []) {
+    const { data } = await readAllRows((a, b) =>
+      supabase
+        .from("song_words")
+        .select("vocab_entry_id, line_id, song_id")
+        .in("vocab_entry_id", ids)
+        .not("line_id", "is", null)
+        .order("song_id")
+        .order("vocab_entry_id")
+        .range(a, b),
+    );
+    for (const r of data) {
       if (!lineByVocab.has(r.vocab_entry_id)) lineByVocab.set(r.vocab_entry_id, { lineId: r.line_id, songId: r.song_id });
     }
   }
@@ -60,11 +66,14 @@ async function withContext(supabase: SupabaseClient, base: BaseCard[]): Promise<
 
 // Every word the person has met (the Master Dictionary), narrowed by status.
 export async function cardsForFilter(supabase: SupabaseClient, filter: StudyFilter): Promise<SessionCard[]> {
-  const { data } = await supabase
-    .from("master_dictionary")
-    .select("vocab_entry_id, lemma, transliteration, english, part_of_speech, correct_count, status")
-    .limit(3000);
-  const rows = (data ?? []) as {
+  const { data } = await readAllRows((a, b) =>
+    supabase
+      .from("master_dictionary")
+      .select("vocab_entry_id, lemma, transliteration, english, part_of_speech, correct_count, status")
+      .order("vocab_entry_id")
+      .range(a, b),
+  );
+  const rows = data as {
     vocab_entry_id: string; lemma: string; transliteration: string | null; english: string;
     part_of_speech: string | null; correct_count: number | null; status: WordStatus;
   }[];

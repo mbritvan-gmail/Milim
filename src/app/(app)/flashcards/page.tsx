@@ -7,6 +7,7 @@ import { isStudyFilter, newSessionId, type SessionCard, type StudyFilter } from 
 import { cardsForFilter, cardsForModule, cardsForSong } from "@/lib/study-data";
 import { StudyRunner } from "./study-runner";
 import { CloseOrLink } from "@/components/overlay";
+import { readAllRows } from "@/lib/paged";
 
 export const metadata = { title: "Study · milim" };
 
@@ -104,9 +105,9 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
 // Counts how many words are in each group and links to a study session for it.
 async function FlashcardsHub() {
   const supabase = await createClient();
-  const { data } = await supabase.from("master_dictionary").select("status").limit(3000);
+  const { data } = await readAllRows((a, b) => supabase.from("master_dictionary").select("status").order("vocab_entry_id").range(a, b));
   const counts = { new: 0, learning: 0, learned: 0 };
-  for (const r of data ?? []) {
+  for (const r of data) {
     const k = r.status as keyof typeof counts;
     if (k in counts) counts[k] += 1;
   }

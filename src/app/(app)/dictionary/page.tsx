@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
 import { fingerprint, type WordStatus } from "@/lib/study";
+import { readAllRows } from "@/lib/paged";
 import { DictionaryList, type DictionaryWord } from "./dictionary-list";
 
 export const metadata = { title: "Dictionary · milim" };
@@ -25,14 +26,17 @@ async function DictionaryBody() {
   if (!user) redirect("/login");
 
   const [dictRes, settings] = await Promise.all([
-    supabase
-      .from("master_dictionary")
-      .select("vocab_entry_id, lemma, transliteration, english, part_of_speech, correct_count, status")
-      .limit(3000),
+    readAllRows((a, b) =>
+      supabase
+        .from("master_dictionary")
+        .select("vocab_entry_id, lemma, transliteration, english, part_of_speech, correct_count, status")
+        .order("vocab_entry_id")
+        .range(a, b),
+    ),
     loadSettings(supabase, user.id),
   ]);
 
-  const rows = (dictRes.data ?? []) as {
+  const rows = dictRes.data as {
     vocab_entry_id: string; lemma: string; transliteration: string | null; english: string;
     part_of_speech: string | null; correct_count: number | null; status: WordStatus;
   }[];

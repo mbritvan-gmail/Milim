@@ -193,6 +193,7 @@ All scripts live in `supabase/migrations/`. The user has run them as features sh
 - The back of a card (`src/components/word-card-back.tsx`) is shared by the flashcards and a word's page in the Dictionary, with "Heard in <song>".
 - The settings gear is on Songs, Library and Dictionary.
 - Sign-in links open a "Sign in to milim" button page (`/auth/confirm`); the one-time token is only used when the button is pressed, so mail apps / scanners that preview links can't use it up. Works with the existing Supabase template (no change needed).
+- Lesson: the database returns at most 1000 rows per request, whatever `.limit()` says (the Dictionary silently stopped at exactly 1000 words). Lists that can grow past that must be read with `readAllRows` (`src/lib/paged.ts`) and a unique `.order()`. Done for the Dictionary, Flash Cards counts and study cards, "heard in" lookups and Pack word counts. Still capped on purpose or by size: Library (300 songs), Vocabulary list (300 Packs), Requests (200); raise them with `readAllRows` when they get close.
 - Lesson: don't embed `profiles(...)` from `songs` in a Supabase query; `songs` relates to `profiles` two ways (owner and via `user_songs`), which makes the embed ambiguous and the query fail. Look names up separately.
 - The sign-in screen (also the landing page: `/` redirects to `/login` or `/songs`) rotates taglines (`src/components/rotating-tagline.tsx`)
   and crossfades Israel photos (`src/lib/login-photos.ts`, files in `public/login-bg`). All photos are from Wikimedia Commons (mostly CC BY-SA, one public domain);
