@@ -5,7 +5,6 @@ import { applyTheme, readTheme, THEME_EVENT, type ThemeChoice } from "@/lib/them
 import { saveSettings, type SettingsChange } from "./actions";
 import type { Direction } from "@/lib/study";
 import type { LyricsSize } from "@/lib/settings";
-import { NikudAll } from "./nikud-all";
 import { ConjugateAll } from "./conjugate-all";
 
 const DIRECTIONS: { id: Direction; label: string }[] = [
@@ -243,8 +242,6 @@ export function SettingsForm({
           <p className="text-xs text-muted">How big the lyrics are on a song page. Smaller shows more lines at once.</p>
         </div>
       </section>
-
-      <NikudAll />
 
       <ConjugateAll />
 
