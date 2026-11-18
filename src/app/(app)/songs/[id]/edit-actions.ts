@@ -2,8 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
-import { hasHebrew, isSectionLabel } from "@/lib/lyrics";
-import { pointAll } from "@/lib/nikud-run";
+import { hasHebrew } from "@/lib/lyrics";
 import { checkSongLinks, isMissingLinkColumn, songLinkColumns } from "@/lib/song-links";
 import {
   MAX_ENGLISH,
@@ -18,7 +17,6 @@ import {
   type AddedWord,
   type EditActions,
   type LineFields,
-  type NikudResult,
   type SongDetails,
   type VocabDraft,
   type VocabRestore,
@@ -102,61 +100,6 @@ export async function updateLine(songId: string, lineId: string, fields: LineFie
       ok: true,
       previous: { english: before.english ?? "", transliteration: before.transliteration ?? "", hebrew: before.hebrew },
     };
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Nikud
-// ---------------------------------------------------------------------------
-// Adds nikud to every lyric line and vocabulary word of the song that doesn't have it yet.
-export async function addNikud(songId: string) {
-  return guarded<NikudResult>(async () => {
-    const ctx = await ownerContext(songId);
-    if ("error" in ctx) return fail(ctx.error);
-
-    const linesRes = await ctx.supabase.from("lines").select("id, hebrew, vocalized").eq("song_id", songId).order("position");
-    if (linesRes.error) {
-      if (/vocalized/.test(linesRes.error.message)) return fail("Nikud for songs needs the latest database update, which hasn't been run yet.");
-      console.error("addNikud lines failed", linesRes.error);
-      return fail(GENERIC);
-    }
-    const lines = (linesRes.data ?? []).filter((l) => !l.vocalized && !isSectionLabel(l.hebrew) && hasHebrew(l.hebrew));
-
-    const wordsRes = await ctx.supabase.from("song_words").select("vocab_entries(id, lemma, vocalized)").eq("song_id", songId);
-    const wordEntries = (wordsRes.data ?? []).flatMap((row) => {
-      const v = (Array.isArray(row.vocab_entries) ? row.vocab_entries[0] : row.vocab_entries) as { id: string; lemma: string; vocalized: string | null } | undefined;
-      return v && !v.vocalized ? [v] : [];
-    });
-
-    if (lines.length === 0 && wordEntries.length === 0) return fail("This song already has nikud.");
-
-    const texts = [...lines.map((l) => l.hebrew), ...wordEntries.map((w) => w.lemma)];
-    const { answers, lastError } = await pointAll(getAIProvider(), texts);
-
-    const out: NikudResult = { lines: [], words: [], skipped: 0 };
-    lines.forEach((l, i) => {
-      const text = answers[i];
-      if (text) out.lines.push({ id: l.id, vocalized: text });
-    });
-    wordEntries.forEach((w, i) => {
-      const text = answers[lines.length + i];
-      if (text) out.words.push({ id: w.id, vocalized: text });
-    });
-    out.skipped = texts.length - out.lines.length - out.words.length;
-    if (out.lines.length === 0 && out.words.length === 0) {
-      return fail(lastError || "Claude's answer didn't match the lyrics, so nothing was changed. Please try again.");
-    }
-
-    const results = await Promise.all(out.lines.map((l) => ctx.supabase.from("lines").update({ vocalized: l.vocalized }).eq("id", l.id).eq("song_id", songId)));
-    if (results.some((r) => r.error)) {
-      console.error("addNikud save failed", results.find((r) => r.error)?.error);
-      return fail(GENERIC);
-    }
-    if (out.words.length > 0) {
-      const { error } = await ctx.supabase.rpc("fill_word_extras", { p_items: out.words.map((w) => ({ id: w.id, vocalized: w.vocalized, gender: "", plural: "" })) });
-      if (error) console.error("fill_word_extras failed", error);
-    }
-    return { ok: true, ...out };
   });
 }
 
@@ -475,7 +418,6 @@ export async function reopenSuggestion(
 
 // A compile-time check that these actions match the shape the screens expect.
 const _check: EditActions = {
-  addNikud,
   updateLine,
   suggestWord,
   addVocabulary,

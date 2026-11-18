@@ -17,13 +17,9 @@ import { decodeSuggestion, type EditActions, type PendingSuggestion } from "@/li
 import { EditModeProvider } from "@/components/edit-mode";
 import { SongHeaderControls } from "./song-header-controls";
 import * as editActionModule from "./edit-actions";
-import { NikudCatchUp } from "@/components/nikud-catchup";
-import { songNeedsNikud } from "@/lib/nikud-catchup";
-import { hasHebrew, isSectionLabel } from "@/lib/lyrics";
 
 // Server actions handed to the screen as a plain object (so tests can swap in stand-ins).
 const editActions: EditActions = {
-  addNikud: editActionModule.addNikud,
   updateLine: editActionModule.updateLine,
   suggestWord: editActionModule.suggestWord,
   addVocabulary: editActionModule.addVocabulary,
@@ -103,10 +99,6 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
     const p = progress.get(e.id);
     return { ...e, vocalized: extras.get(e.id as string)?.vocalized ?? null, status: p ? (p.learned_at ? "learned" : "learning") : "new", count: p?.correct_count ?? 0 };
   });
-  // Songs you own that are missing nikud (e.g. added before it was automatic) get it quietly when opened.
-  // Skipped if the nikud column isn't in the database yet.
-  const needsNikud =
-    isOwner && !nikudRes.error && songNeedsNikud({ lines, words, isSkippable: (h) => isSectionLabel(h) || !hasHebrew(h) });
   const learnedCount = words.filter((w) => w.status === "learned").length;
   const toLearn = words.length - learnedCount;
   // The two player links: the new columns, or the old single link in the matching slot.
@@ -208,8 +200,6 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
           )}
         </section>
       )}
-
-      {needsNikud && <NikudCatchUp songId={song.id} addNikud={editActions.addNikud} />}
 
       <SongView
         key={fingerprint([...words.flatMap((w) => [w.id, w.status, w.count]), ...lines.flatMap((l) => [l.id, l.hebrew, l.english ?? "", l.transliteration ?? "", l.vocalized ?? ""]), ...words.map((w) => w.vocalized ?? ""), ...pending.map((p) => p.id), song.title, song.artist ?? "", spotifyUrl ?? "", youtubeUrl ?? "", coverUrl ?? "", album ?? "", settings.showTranslit, settings.showNikud, settings.learnAfter, settings.lyricsSize])}
