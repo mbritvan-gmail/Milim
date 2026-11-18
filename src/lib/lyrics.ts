@@ -14,13 +14,15 @@ export function isSectionLabel(text: string) {
 }
 
 const SECTION_NAMES: [RegExp, string][] = [
-  [/^(קדם[\s-]?פזמון|pre[\s-]?chorus)/i, "Pre-chorus"],
-  [/^(פזמון|chorus|hook)/i, "Chorus"],
+  [/^(קדם[\s-]?פ(?:י)?זמון|pre[\s-]?chorus)/i, "Pre-chorus"],
+  [/^(בתר[\s-]?פ(?:י)?זמון|post[\s-]?chorus)/i, "Post-chorus"],
+  [/^(פ(?:י)?זמון|chorus|hook)/i, "Chorus"],
   [/^(בית|verse)/i, "Verse"],
   [/^(גשר|bridge)/i, "Bridge"],
   [/^(פתיחה|אינטרו|intro)/i, "Intro"],
   [/^(סיום|אאוטרו|outro)/i, "Outro"],
   [/^(סולו|solo)/i, "Solo"],
+  [/^(אינטרלוד|interlude)/i, "Interlude"],
 ];
 
 // English name for a section label, for display ("[בית 2]" -> "Verse 2").
