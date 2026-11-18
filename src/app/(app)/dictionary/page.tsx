@@ -59,19 +59,12 @@ async function DictionaryBody() {
       status: r.status,
       count: r.correct_count ?? 0,
     }))
-    .sort((a, b) => a.lemma.localeCompare(b.lemma, "he"));
+    .sort((a, b) => a.english.localeCompare(b.english, "en", { sensitivity: "base" }) || a.lemma.localeCompare(b.lemma, "he"));
 
   return (
     <>
       <header>
-        <div>
-          <h1 className="text-2xl font-semibold">Dictionary</h1>
-          <p className="text-sm text-muted">
-            {words.length === 0
-              ? "Every word from your songs, in one place."
-              : `${words.length} ${words.length === 1 ? "word" : "words"} from your songs`}
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold">Dictionary</h1>
       </header>
       <DictionaryList
         key={fingerprint([settings.showTranslit, settings.learnAfter, settings.showNikud, ...words.flatMap((w) => [w.vocabId, w.status, w.count, w.note, w.vocalized ?? ""])])}
