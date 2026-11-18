@@ -24,7 +24,7 @@ Last updated: 2026-11-18. Branch: `claude/milim-handoff-review-pmh51c`. Live pre
 4. Notifications (suggestions, filled requests); pronouns/prepositions forms; "N new words" pack updates; nikud in Dictionary rows.
 
 ## Nikud for existing songs
-- Done (2026-11): every song now has nikud, added with a temporary Settings tool that has since been removed. New songs get nikud automatically when added. Leftover in the database, harmless: the `fill_line_nikud` function (its script was removed from the repo); it can be dropped with `drop function if exists public.fill_line_nikud(jsonb);`.
+- Done (2026-11): every song now has nikud, added with a temporary Settings tool that has since been removed. New songs get nikud automatically when added. The temporary database function `fill_line_nikud` has been dropped. There is no button or automatic catch-up for nikud any more: only new songs get it, when they are added.
 
 ## SQL scripts (user)
 All scripts live in `supabase/migrations/`. The user has run them as features shipped (the latest, `20261204000000_lyrics_size.sql`, is run). If a feature says it needs a database update, ask which script and have them run it; each is safe to run again.
@@ -131,7 +131,7 @@ All scripts live in `supabase/migrations/`. The user has run them as features sh
 - If the SQL hasn't been run, the Vocabulary page says so instead of failing, and everything else keeps working.
 
 ## Nikud for songs (built; REQUIRES `supabase/migrations/20261124000000_song_nikud.sql`; not yet live-tested with the AI)
-- Owners get an **Add nikud** button when editing a song (only while some lines or words still lack it). Claude adds nikud to every lyric line (`lines.vocalized`) and every Song Vocabulary word (`vocab_entries.vocalized`, via `fill_word_extras`); an answer is only accepted if it is the original text with vowel marks added (`isPointedVersion`), so the words can never change.
+- When a song is added, Claude adds nikud to every lyric line (`lines.vocalized`) and every Song Vocabulary word (`vocab_entries.vocalized`, via `fill_word_extras`); an answer is only accepted if it is the original text with vowel marks added (`isPointedVersion`), so the words can never change.
 - Lyrics, Song Vocabulary, flashcards and the Dictionary word page follow the Show nikud switch where nikud exists; edit mode keeps plain text. Editing a line's Hebrew clears that line's saved nikud. New songs are not given nikud automatically yet.
 
 ## Song groups, search, sort and reorder (built; REQUIRES `supabase/migrations/20261126000000_song_groups.sql`)
