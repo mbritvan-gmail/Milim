@@ -57,9 +57,9 @@ async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
     const result = await cardsForModule(supabase, moduleId, scope);
     if (!result) notFound();
     cards = result.cards;
-    studyName = scope === "learned" ? "this module's learned words" : "this module";
+    studyName = scope === "learned" ? "this pack's learned words" : "this pack";
     backHref = `/vocabulary/${moduleId}`;
-    backLabel = "Back to the module";
+    backLabel = "Back to the pack";
   } else if (song) {
     if (!uuid.test(song)) notFound();
     const scope = rawScope === "learned" ? "learned" : rawScope === "all" ? "all" : "unlearned";

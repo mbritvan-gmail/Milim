@@ -178,7 +178,7 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
     if (ok) {
       setAdded(true);
       router.refresh();
-    } else setProblem("Couldn't add this module. Please try again.");
+    } else setProblem("Couldn't add this pack. Please try again.");
   }
 
   async function rename() {
@@ -231,20 +231,20 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
       setIsPublic(true);
       setSheet(null);
       router.refresh();
-    } else setProblem("Couldn't make this module public. Please try again.");
+    } else setProblem("Couldn't make this pack public. Please try again.");
   }
 
   let removeWarning: string;
   let removeLabel: string;
   if (isOwner && !isPublic) {
     removeLabel = "Delete forever";
-    removeWarning = "This permanently deletes the module. The words stay in the shared dictionary.";
+    removeWarning = "This permanently deletes the pack. The words stay in the shared dictionary.";
   } else if (isOwner) {
     removeLabel = "Archive";
-    removeWarning = "Public modules can't be deleted. Archiving hides it from the list and removes it from yours, but people who already added it keep it.";
+    removeWarning = "Public packs can't be deleted. Archiving hides it from the list and removes it from yours, but people who already added it keep it.";
   } else {
     removeLabel = "Remove";
-    removeWarning = "This only removes it from your list. The module itself isn't deleted.";
+    removeWarning = "This only removes it from your list. The pack itself isn't deleted.";
   }
 
   return (
@@ -260,7 +260,7 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
         <div className="ml-auto flex items-center gap-2">
         {(isOwner || added) && (
           <EditButton
-            removeLabel="Remove module"
+            removeLabel="Remove pack"
             onRemove={() => {
               setProblem("");
               setSheet({ kind: "remove-module" });
@@ -319,7 +319,7 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
       )}
 
       {words.length === 0 ? (
-        <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">This module has no words yet.</p>
+        <p className="rounded-xl border border-border bg-surface p-5 text-center text-muted">This pack has no words yet.</p>
       ) : (
         <ul className="grid gap-2">
           {words.map((w) => {
@@ -356,7 +356,7 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
                       setProblem("");
                       setSheet({ kind: "remove-word", word: w });
                     }}
-                    aria-label={`Remove ${w.lemma} from this module`}
+                    aria-label={`Remove ${w.lemma} from this pack`}
                     className="w-10 shrink-0 rounded-xl border border-border text-lg text-danger hover:bg-surface-2"
                   >
                     ✕
@@ -416,7 +416,7 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
               disabled={busy}
               className="h-12 rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong disabled:opacity-60"
             >
-              {busy ? "Adding…" : `Add module (${words.length} ${words.length === 1 ? "word" : "words"})`}
+              {busy ? "Adding…" : `Add pack (${words.length} ${words.length === 1 ? "word" : "words"})`}
             </button>
           )}
           {problem && !sheet && <p className="text-center text-sm text-danger">{problem}</p>}
@@ -424,7 +424,7 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
       )}
 
       {sheet?.kind === "rename" && (
-        <Sheet title="Rename module" onClose={() => !busy && setSheet(null)}>
+        <Sheet title="Rename pack" onClose={() => !busy && setSheet(null)}>
           <input value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={120} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-base outline-none focus:border-accent" />
           {problem && <p className="text-sm text-danger">{problem}</p>}
           <div className="flex gap-2">
@@ -439,9 +439,9 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
       )}
 
       {sheet?.kind === "remove-word" && (
-        <Sheet title="Remove from this module?" onClose={() => !busy && setSheet(null)}>
+        <Sheet title="Remove from this pack?" onClose={() => !busy && setSheet(null)}>
           <p className="text-sm">
-            Remove <span lang="he" className="hebrew text-base text-accent">{sheet.word.lemma}</span> from this module? The word stays in the shared dictionary, and in your Dictionary if it comes from a song or another module.
+            Remove <span lang="he" className="hebrew text-base text-accent">{sheet.word.lemma}</span> from this pack? The word stays in the shared dictionary, and in your Dictionary if it comes from a song or another module.
           </p>
           {problem && <p className="text-sm text-danger">{problem}</p>}
           <div className="flex gap-2">
@@ -456,9 +456,9 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
       )}
 
       {sheet?.kind === "public" && (
-        <Sheet title="Make this module public?" onClose={() => !busy && setSheet(null)}>
+        <Sheet title="Make this pack public?" onClose={() => !busy && setSheet(null)}>
           <p className="text-sm">
-            Everyone using milim will be able to find this module and add it. <strong>This can&apos;t be undone.</strong>
+            Everyone using milim will be able to find this pack and add it. <strong>This can&apos;t be undone.</strong>
           </p>
           {problem && <p className="text-sm text-danger">{problem}</p>}
           <div className="flex gap-2">
@@ -473,7 +473,7 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
       )}
 
       {sheet?.kind === "remove-module" && (
-        <Sheet title="Remove this module?" onClose={() => !pending && setSheet(null)}>
+        <Sheet title="Remove this pack?" onClose={() => !pending && setSheet(null)}>
           <p className="text-sm">{removeWarning}</p>
           <div className="flex gap-2">
             <button type="button" disabled={pending} onClick={() => setSheet(null)} className="h-11 flex-1 rounded-xl border border-border hover:bg-surface-2">

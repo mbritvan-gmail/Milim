@@ -6,7 +6,7 @@ import { chunk, fingerprint } from "@/lib/study";
 import { ModuleView, type ModuleActions, type ModuleRow } from "./module-view";
 import { addModule, addModuleWords, makeModulePublic, removeModule, removeModuleWord, renameModule, reorderModuleWords, restoreModuleWord } from "../actions";
 
-export const metadata = { title: "Module · milim" };
+export const metadata = { title: "Pack · milim" };
 
 // Looking up new words with the AI can take a little while.
 export const maxDuration = 60;
