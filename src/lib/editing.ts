@@ -66,6 +66,10 @@ export type PendingSuggestion = { id: string; lineId: string; by: string; text: 
 export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 export type EditActions = {
+  addSection(songId: string, beforeLineId: string | null, label: string): Promise<ActionResult<{ id: string; hebrew: string; english: string | null }>>;
+  removeSection(songId: string, lineId: string): Promise<ActionResult<{ hebrew: string; beforeLineId: string | null }>>;
+  renameSection(songId: string, lineId: string, label: string): Promise<ActionResult<{ english: string | null; previous: string }>>;
+  reorderLines(songId: string, orderedIds: string[]): Promise<ActionResult>;
   updateLine(songId: string, lineId: string, fields: LineFields): Promise<ActionResult<{ previous: LineFields }>>;
   suggestWord(songId: string, lineId: string, token: string): Promise<ActionResult<{ draft: VocabDraft }>>;
   addVocabulary(songId: string, lineId: string, token: string, draft: VocabDraft): Promise<ActionResult<{ word: AddedWord }>>;

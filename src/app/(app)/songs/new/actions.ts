@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
 import { pointAll } from "@/lib/nikud-run";
 import { MAX_LINES, MAX_LYRICS_CHARS, parseLyrics, sectionEnglish } from "@/lib/lyrics";
+import { detectSections } from "@/lib/section-detect";
 import { CatalogError, searchSongs, type SongMatch } from "@/lib/deezer";
 import { isMissingLinkColumn, readSongLinks, songLinkColumns } from "@/lib/song-links";
 import { findTracks, SpotifyError, type SpotifyMatch } from "@/lib/spotify";
@@ -57,7 +58,8 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
     return { error: `Lyrics are too long (max ${MAX_LYRICS_CHARS.toLocaleString()} characters).` };
   }
 
-  const items = parseLyrics(lyrics);
+  // Lyrics pasted without section headers get a best guess (Verse 1, Chorus...); the owner can fix them in Edit mode.
+  const items = detectSections(lyrics) ?? parseLyrics(lyrics);
   const lines = items.filter((i) => !i.section).map((i) => i.text);
   if (lines.length === 0) return { error: "Paste some Hebrew lyrics (we couldn't find any Hebrew text)." };
   if (lines.length > MAX_LINES) return { error: `Too many lines (max ${MAX_LINES}). Try one song at a time.` };

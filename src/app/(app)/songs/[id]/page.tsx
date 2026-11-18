@@ -20,6 +20,10 @@ import * as editActionModule from "./edit-actions";
 
 // Server actions handed to the screen as a plain object (so tests can swap in stand-ins).
 const editActions: EditActions = {
+  addSection: editActionModule.addSection,
+  removeSection: editActionModule.removeSection,
+  renameSection: editActionModule.renameSection,
+  reorderLines: editActionModule.reorderLines,
   updateLine: editActionModule.updateLine,
   suggestWord: editActionModule.suggestWord,
   addVocabulary: editActionModule.addVocabulary,

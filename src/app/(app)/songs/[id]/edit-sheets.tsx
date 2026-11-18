@@ -13,6 +13,7 @@ import {
 } from "@/lib/editing";
 import { CatalogSearch, Cover, PlayerLinks } from "@/components/song-links";
 import { Sheet } from "@/components/sheet";
+import { SECTION_KINDS, sectionLabel } from "@/lib/sections";
 
 const input = "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-base outline-none focus:border-accent";
 const label = "text-sm font-medium text-muted";
@@ -35,7 +36,7 @@ function Buttons({ busy, saveLabel, onSave, onClose, disabled }: { busy: boolean
   );
 }
 
-export function LineSheet({ line, onSave, onClose }: { line: LineFields; onSave: (f: LineFields) => Promise<string | null>; onClose: () => void }) {
+export function LineSheet({ line, onSave, onClose, onAddSection }: { line: LineFields; onSave: (f: LineFields) => Promise<string | null>; onClose: () => void; onAddSection?: () => void }) {
   const [f, setF] = useState(line);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -60,8 +61,77 @@ export function LineSheet({ line, onSave, onClose }: { line: LineFields; onSave:
         <span className={label}>Hebrew (fix typos only)</span>
         <input lang="he" dir="rtl" maxLength={MAX_HEBREW} value={f.hebrew} onChange={(e) => setF({ ...f, hebrew: e.target.value })} className={`${input} hebrew text-xl`} />
       </label>
+      {onAddSection && (
+        <button type="button" onClick={onAddSection} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-dashed border-border text-sm font-semibold text-accent hover:bg-surface-2">
+          <span aria-hidden="true">+</span> Add section above this line
+        </button>
+      )}
       {error && <p className="text-sm text-danger">{error}</p>}
       <Buttons busy={busy} saveLabel="Save" onSave={save} onClose={onClose} />
+    </Sheet>
+  );
+}
+
+// Pick a name (and a number) for a section header: used both to add a new one and to rename one.
+export function SectionSheet({
+  title,
+  saveLabel,
+  initialKind,
+  initialNumber,
+  onSave,
+  onClose,
+}: {
+  title: string;
+  saveLabel: string;
+  initialKind: string | null;
+  initialNumber: number;
+  onSave: (label: string) => Promise<string | null>;
+  onClose: () => void;
+}) {
+  const [kind, setKind] = useState<string | null>(initialKind);
+  const [number, setNumber] = useState(initialNumber);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function save() {
+    if (!kind) return;
+    setBusy(true);
+    setError("");
+    const err = await onSave(sectionLabel(kind, number));
+    setBusy(false);
+    if (err) setError(err);
+  }
+  return (
+    <Sheet title={title} onClose={onClose}>
+      <div role="group" aria-label="Section name" className="flex flex-wrap gap-2">
+        {SECTION_KINDS.map((k) => (
+          <button
+            key={k}
+            type="button"
+            aria-pressed={kind === k}
+            onClick={() => {
+              setKind(k);
+              setNumber(k === "Verse" ? number || 1 : 0);
+            }}
+            className={`h-11 rounded-full border px-3.5 text-sm font-semibold ${kind === k ? "border-accent bg-accent text-accent-contrast" : "border-border hover:bg-surface-2"}`}
+          >
+            {k}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-muted">Number (for verses)</span>
+        <span className="flex items-center gap-1.5">
+          <button type="button" aria-label="Lower number" onClick={() => setNumber((n) => Math.max(0, n - 1))} className="h-11 w-11 rounded-xl border border-border text-xl hover:bg-surface-2">
+            -
+          </button>
+          <span className="min-w-7 text-center text-lg font-bold">{number || "-"}</span>
+          <button type="button" aria-label="Raise number" onClick={() => setNumber((n) => Math.min(9, n + 1))} className="h-11 w-11 rounded-xl border border-border text-xl hover:bg-surface-2">
+            +
+          </button>
+        </span>
+      </div>
+      {error && <p className="text-sm text-danger">{error}</p>}
+      <Buttons busy={busy} saveLabel={saveLabel} onSave={save} onClose={onClose} disabled={!kind} />
     </Sheet>
   );
 }

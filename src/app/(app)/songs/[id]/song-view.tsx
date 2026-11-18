@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StatusBadge } from "@/components/status-badge";
 import { fixLinePunctuation, isSectionLabel } from "@/lib/lyrics";
 import { buildLyricItems } from "@/lib/lyric-repeats";
+import { moveInList, startDrag } from "@/lib/drag-reorder";
+import { describeSection } from "@/lib/sections";
 import { hebrewText } from "@/lib/modules";
 import { cleanToken, splitTokens, type EditActions, type PendingSuggestion, type SongDetails, type VocabDraft } from "@/lib/editing";
 import type { WordStatus } from "@/lib/study";
 import { useEditMode } from "@/components/edit-mode";
-import { AddWordSheet, DetailsSheet, LineSheet, RemoveWordSheet, SuggestSheet } from "./edit-sheets";
+import { AddWordSheet, DetailsSheet, LineSheet, RemoveWordSheet, SectionSheet, SuggestSheet } from "./edit-sheets";
 
 export type SongLine = { id: string; hebrew: string; transliteration: string | null; english: string | null; vocalized?: string | null };
 export type SongWord = {
@@ -34,10 +36,33 @@ type Sheet =
   | { kind: "remove"; id: string }
   | { kind: "details" }
   | { kind: "suggest"; id: string }
+  | { kind: "section"; mode: "add"; beforeId: string }
+  | { kind: "section"; mode: "rename"; id: string }
   | null;
 
 // Compares Hebrew words ignoring vowel marks and punctuation.
 const bareHebrew = (text: string) => cleanToken(text).replace(/[\u0591-\u05C7]/g, "");
+
+const gripIcon = (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+    <circle cx="9" cy="6" r="1.6" />
+    <circle cx="15" cy="6" r="1.6" />
+    <circle cx="9" cy="12" r="1.6" />
+    <circle cx="15" cy="12" r="1.6" />
+    <circle cx="9" cy="18" r="1.6" />
+    <circle cx="15" cy="18" r="1.6" />
+  </svg>
+);
+const trashIcon = (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+  </svg>
+);
+const chevronIcon = (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
 
 function RepeatIcon({ size }: { size: number }) {
   return (
@@ -88,6 +113,16 @@ export function SongView({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [wordsOpen, setWordsOpen] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
+  // Dragging a section header: the rows by id, the current order, and which header is being dragged.
+  const rowRefs = useRef(new Map<string, HTMLElement>());
+  const latest = useRef(initialLines);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const keyBase = useRef<string[] | null>(null);
+  const keySnapshot = useRef<SongLine[] | null>(null);
+  const keyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    latest.current = lines;
+  }, [lines]);
   const editMode = isOwner && editing;
   const suggestMode = canSuggest && !isOwner && editing;
   const vocabOpen = wordsOpen || editMode;
@@ -143,6 +178,109 @@ export function SongView({
     });
     return null;
   }
+
+  // ---- section headers (Verse, Chorus...) --------------------------------
+  const sectionName = (l: SongLine) => l.english || l.hebrew.replace(/^\[|\]$/g, "");
+  const insertBefore = (ls: SongLine[], beforeId: string | null, made: SongLine) => {
+    const next = [...ls];
+    const i = beforeId ? next.findIndex((l) => l.id === beforeId) : -1;
+    next.splice(i < 0 ? next.length : i, 0, made);
+    return next;
+  };
+
+  async function addSection(beforeId: string, label: string) {
+    const r = await actions.addSection(songId, beforeId, label);
+    if (!r.ok) return r.error;
+    setLines((ls) => insertBefore(ls, beforeId, { id: r.id, hebrew: r.hebrew, english: r.english, transliteration: null }));
+    setSheet(null);
+    showToast(`Added ${r.english ?? r.hebrew}`, async () => {
+      const back = await actions.removeSection(songId, r.id);
+      if (back.ok) setLines((ls) => ls.filter((l) => l.id !== r.id));
+    });
+    return null;
+  }
+
+  async function renameSection(line: SongLine, label: string) {
+    const r = await actions.renameSection(songId, line.id, label);
+    if (!r.ok) return r.error;
+    setLines((ls) => ls.map((l) => (l.id === line.id ? { ...l, hebrew: label, english: r.english } : l)));
+    setSheet(null);
+    showToast("Section renamed", async () => {
+      const back = await actions.renameSection(songId, line.id, r.previous);
+      if (back.ok) setLines((ls) => ls.map((l) => (l.id === line.id ? { ...l, hebrew: r.previous, english: back.english } : l)));
+    });
+    return null;
+  }
+
+  async function removeSection(line: SongLine) {
+    const r = await actions.removeSection(songId, line.id);
+    if (!r.ok) {
+      showToast(r.error);
+      return;
+    }
+    setLines((ls) => ls.filter((l) => l.id !== line.id));
+    showToast(`Removed ${sectionName(line)}`, async () => {
+      const back = await actions.addSection(songId, r.beforeLineId, r.hebrew);
+      if (back.ok) setLines((ls) => insertBefore(ls, r.beforeLineId, { id: back.id, hebrew: back.hebrew, english: back.english, transliteration: null }));
+    });
+  }
+
+  const lineIds = () => latest.current.map((l) => l.id);
+  function moveRow(id: string, target: number) {
+    setLines((ls) => moveInList(ls, id, target));
+  }
+  async function saveOrder(before: string[], snapshot: SongLine[]) {
+    const after = lineIds();
+    if (after.join() === before.join()) return;
+    const r = await actions.reorderLines(songId, after).catch(() => ({ ok: false as const, error: "Couldn't save the new order. Please try again." }));
+    if (!r.ok) {
+      setLines(snapshot);
+      showToast(r.error);
+      return;
+    }
+    showToast("Section moved", async () => {
+      const back = await actions.reorderLines(songId, before);
+      if (back.ok) {
+        const place = new Map(before.map((id, i) => [id, i]));
+        setLines((ls) => [...ls].sort((a, b) => (place.get(a.id) ?? 0) - (place.get(b.id) ?? 0)));
+      }
+    });
+  }
+  function dragSection(e: React.PointerEvent, line: SongLine) {
+    const snapshot = latest.current;
+    startDrag(e, line.id, {
+      refs: rowRefs.current,
+      getIds: lineIds,
+      onMove: moveRow,
+      onActive: setDragId,
+      onDrop: (before) => void saveOrder(before, snapshot),
+    });
+  }
+  // Arrow keys on the grip move the header one place; saved a moment after the last press.
+  function keyMoveSection(e: React.KeyboardEvent, id: string) {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    const ids = lineIds();
+    const from = ids.indexOf(id);
+    const target = e.key === "ArrowUp" ? Math.max(0, from - 1) : Math.min(ids.length - 1, from + 1);
+    if (target === from) return;
+    if (!keyBase.current) {
+      keyBase.current = ids;
+      keySnapshot.current = latest.current;
+    }
+    moveRow(id, target);
+    if (keyTimer.current) clearTimeout(keyTimer.current);
+    keyTimer.current = setTimeout(() => {
+      const base = keyBase.current ?? ids;
+      const snapshot = keySnapshot.current ?? latest.current;
+      keyBase.current = null;
+      void saveOrder(base, snapshot);
+    }, 700);
+  }
+  const setRowRef = (id: string) => (el: HTMLElement | null) => {
+    if (el) rowRefs.current.set(id, el);
+    else rowRefs.current.delete(id);
+  };
 
   // ---- add a word --------------------------------------------------------
   function tapToken(line: SongLine, token: string) {
@@ -239,6 +377,7 @@ export function SongView({
   }
 
   const sheetLine = sheet && "id" in sheet && sheet.kind !== "remove" ? lineById(sheet.id) : null;
+  const sectionLine = sheet?.kind === "section" && sheet.mode === "rename" ? lineById(sheet.id) : null;
   const removing = sheet?.kind === "remove" ? words.find((w) => w.id === sheet.id) : null;
 
   return (
@@ -378,6 +517,38 @@ export function SongView({
         ) : (
         <ul className="flex flex-col gap-2">
           {lines.map((line) => {
+            if (isSectionLabel(line.hebrew) && editMode) {
+              const name = sectionName(line);
+              return (
+                <li
+                  key={line.id}
+                  ref={setRowRef(line.id)}
+                  className={`flex items-center gap-1 rounded-xl border bg-surface-2 p-1 ${dragId === line.id ? "border-accent opacity-80" : "border-border"}`}
+                >
+                  <button
+                    type="button"
+                    aria-label={`Move ${name}. Drag, or use the up and down arrow keys`}
+                    onPointerDown={(e) => dragSection(e, line)}
+                    onKeyDown={(e) => keyMoveSection(e, line.id)}
+                    className="flex h-11 w-11 shrink-0 cursor-grab touch-none items-center justify-center text-muted active:cursor-grabbing"
+                  >
+                    {gripIcon}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSheet({ kind: "section", mode: "rename", id: line.id })}
+                    aria-label={`Rename ${name}`}
+                    className="flex h-11 min-w-0 flex-1 items-center gap-1.5 text-start font-bold text-accent"
+                  >
+                    <span className="truncate">{name}</span>
+                    {chevronIcon}
+                  </button>
+                  <button type="button" onClick={() => void removeSection(line)} aria-label={`Remove ${name}`} className="flex h-11 w-11 shrink-0 items-center justify-center text-danger">
+                    {trashIcon}
+                  </button>
+                </li>
+              );
+            }
             if (isSectionLabel(line.hebrew)) {
               return (
                 <li key={line.id} className="flex items-baseline gap-2 px-1 pt-4 text-sm font-medium text-accent">
@@ -408,7 +579,7 @@ export function SongView({
             }
             if (editMode) {
               return (
-                <li key={line.id} className="flex flex-col gap-2 rounded-xl border border-accent/40 bg-surface px-4 py-3">
+                <li key={line.id} ref={setRowRef(line.id)} className="flex flex-col gap-2 rounded-xl border border-accent/40 bg-surface px-4 py-3">
                   <span lang="he" className="hebrew flex flex-wrap justify-end gap-x-2 text-xl">
                     {splitTokens(fixLinePunctuation(line.hebrew)).map((t, i) => {
                       const known = words.some((w) => t.token && (w.surface_form === t.token || w.lemma === t.token));
@@ -506,6 +677,20 @@ export function SongView({
         <LineSheet
           line={{ english: sheetLine.english ?? "", transliteration: sheetLine.transliteration ?? "", hebrew: sheetLine.hebrew }}
           onSave={(f) => saveLine(sheetLine.id, f)}
+          onClose={() => setSheet(null)}
+          onAddSection={() => setSheet({ kind: "section", mode: "add", beforeId: sheetLine.id })}
+        />
+      )}
+      {sheet?.kind === "section" && sheet.mode === "add" && (
+        <SectionSheet title="Add a section above this line" saveLabel="Add section" initialKind="Chorus" initialNumber={0} onSave={(label) => addSection(sheet.beforeId, label)} onClose={() => setSheet(null)} />
+      )}
+      {sheet?.kind === "section" && sheet.mode === "rename" && sectionLine && (
+        <SectionSheet
+          title="Rename section"
+          saveLabel="Save"
+          initialKind={describeSection(sectionLine.hebrew).kind}
+          initialNumber={describeSection(sectionLine.hebrew).number}
+          onSave={(label) => renameSection(sectionLine, label)}
           onClose={() => setSheet(null)}
         />
       )}

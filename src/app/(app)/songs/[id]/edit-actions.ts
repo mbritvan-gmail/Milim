@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
-import { hasHebrew } from "@/lib/lyrics";
+import { hasHebrew, isSectionLabel, sectionEnglish } from "@/lib/lyrics";
 import { checkSongLinks, isMissingLinkColumn, songLinkColumns } from "@/lib/song-links";
 import {
   MAX_ENGLISH,
@@ -100,6 +100,113 @@ export async function updateLine(songId: string, lineId: string, fields: LineFie
       ok: true,
       previous: { english: before.english ?? "", transliteration: before.transliteration ?? "", hebrew: before.hebrew },
     };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Section headers (Verse, Chorus...). A header is a line of text in square brackets.
+// ---------------------------------------------------------------------------
+const NEEDS_UPDATE = "Moving and adding sections needs the latest database update, which hasn't been run yet.";
+
+// Puts the song's lines in the given order. Only headers may change place: the lyric lines must stay in the same order.
+async function applyOrder(ctx: Ctx, songId: string, ids: string[]): Promise<string | null> {
+  const { error } = await ctx.supabase.rpc("reorder_lines", { p_song_id: songId, p_ids: ids });
+  if (!error) return null;
+  console.error("reorder_lines failed", error);
+  return /reorder_lines|function/i.test(error.message) ? NEEDS_UPDATE : GENERIC;
+}
+
+async function loadOrder(ctx: Ctx, songId: string) {
+  const { data, error } = await ctx.supabase.from("lines").select("id, hebrew, position").eq("song_id", songId).order("position");
+  return error || !data ? null : data;
+}
+
+function validLabel(label: string) {
+  const text = label.trim();
+  return isSectionLabel(text) && text.length <= 42 ? text : null;
+}
+
+export async function addSection(songId: string, beforeLineId: string | null, label: string) {
+  return guarded<{ id: string; hebrew: string; english: string | null }>(async () => {
+    const text = validLabel(label);
+    if (!text) return fail("That isn't a section name.");
+    const ctx = await ownerContext(songId);
+    if ("error" in ctx) return fail(ctx.error);
+    const rows = await loadOrder(ctx, songId);
+    if (!rows) return fail(GENERIC);
+    if (beforeLineId && !rows.some((r) => r.id === beforeLineId)) return fail("We couldn't find that line.");
+    const english = sectionEnglish(text);
+    const { data: made, error } = await ctx.supabase
+      .from("lines")
+      .insert({ song_id: songId, position: (rows.length ? Math.max(...rows.map((r) => r.position)) : -1) + 1, hebrew: text, english })
+      .select("id")
+      .single();
+    if (error || !made) {
+      console.error("addSection insert failed", error);
+      return fail(GENERIC);
+    }
+    const ids = rows.map((r) => r.id);
+    ids.splice(beforeLineId ? ids.indexOf(beforeLineId) : ids.length, 0, made.id);
+    const problem = await applyOrder(ctx, songId, ids);
+    if (problem) {
+      await ctx.supabase.from("lines").delete().eq("id", made.id).eq("song_id", songId);
+      return fail(problem);
+    }
+    return { ok: true, id: made.id as string, hebrew: text, english };
+  });
+}
+
+export async function removeSection(songId: string, lineId: string) {
+  return guarded<{ hebrew: string; beforeLineId: string | null }>(async () => {
+    const ctx = await ownerContext(songId);
+    if ("error" in ctx) return fail(ctx.error);
+    const rows = await loadOrder(ctx, songId);
+    const at = rows ? rows.findIndex((r) => r.id === lineId) : -1;
+    if (!rows || at < 0) return fail("We couldn't find that section.");
+    if (!isSectionLabel(rows[at].hebrew)) return fail("That line isn't a section header.");
+    const { error } = await ctx.supabase.from("lines").delete().eq("id", lineId).eq("song_id", songId);
+    if (error) {
+      console.error("removeSection failed", error);
+      return fail(GENERIC);
+    }
+    return { ok: true, hebrew: rows[at].hebrew, beforeLineId: rows[at + 1]?.id ?? null };
+  });
+}
+
+export async function renameSection(songId: string, lineId: string, label: string) {
+  return guarded<{ english: string | null; previous: string }>(async () => {
+    const text = validLabel(label);
+    if (!text) return fail("That isn't a section name.");
+    const ctx = await ownerContext(songId);
+    if ("error" in ctx) return fail(ctx.error);
+    const { data: before } = await ctx.supabase.from("lines").select("hebrew").eq("id", lineId).eq("song_id", songId).maybeSingle();
+    if (!before) return fail("We couldn't find that section.");
+    if (!isSectionLabel(before.hebrew)) return fail("That line isn't a section header.");
+    const english = sectionEnglish(text);
+    const { error } = await ctx.supabase.from("lines").update({ hebrew: text, english }).eq("id", lineId).eq("song_id", songId);
+    if (error) {
+      console.error("renameSection failed", error);
+      return fail(GENERIC);
+    }
+    return { ok: true, english, previous: before.hebrew as string };
+  });
+}
+
+// Saves a new order after headers were dragged. The lyric lines themselves must not have changed places.
+export async function reorderLines(songId: string, orderedIds: string[]) {
+  return guarded<object>(async () => {
+    const ctx = await ownerContext(songId);
+    if ("error" in ctx) return fail(ctx.error);
+    const rows = await loadOrder(ctx, songId);
+    if (!rows) return fail(GENERIC);
+    const lyricsBefore = rows.filter((r) => !isSectionLabel(r.hebrew)).map((r) => r.id).join();
+    const kind = new Map(rows.map((r) => [r.id, isSectionLabel(r.hebrew)]));
+    const lyricsAfter = orderedIds.filter((id) => kind.get(id) === false).join();
+    if (orderedIds.length !== rows.length || new Set(orderedIds).size !== rows.length || orderedIds.some((id) => !kind.has(id)) || lyricsBefore !== lyricsAfter) {
+      return fail("That order isn't valid. Please reload the song.");
+    }
+    const problem = await applyOrder(ctx, songId, orderedIds);
+    return problem ? fail(problem) : { ok: true };
   });
 }
 
@@ -418,6 +525,10 @@ export async function reopenSuggestion(
 
 // A compile-time check that these actions match the shape the screens expect.
 const _check: EditActions = {
+  addSection,
+  removeSection,
+  renameSection,
+  reorderLines,
   updateLine,
   suggestWord,
   addVocabulary,
