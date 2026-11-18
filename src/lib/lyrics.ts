@@ -45,6 +45,20 @@ export function sectionEnglish(label: string): string | null {
   return hasHebrew(inner) ? null : inner;
 }
 
+// A section header written without brackets: a line that is nothing but a section name, such as "Chorus",
+// "Verse 1", "Pre-Chorus:", "(Bridge)", "פזמון" or "בית א'". Only exact section names count, so a real lyric line is
+// never mistaken for one. Returns the header in the stored form with brackets ("[Verse 1]"), or null.
+const BARE_ENGLISH = /^(pre[\s-]?chorus|post[\s-]?chorus|chorus|verse|bridge|intro|outro|hook|refrain|solo|interlude)(\s*\d+)?$/i;
+const BARE_HEBREW = /^(קדם[\s-]?פ(?:י)?זמון|בתר[\s-]?פ(?:י)?זמון|פ(?:י)?זמון|גשר|פתיחה|אינטרו|סיום|אאוטרו|סולו|אינטרלוד)(\s*\d+)?$|^בית\s*(?:[א-ד]['׳]?|\d+)$/;
+export function bareSectionLabel(text: string): string | null {
+  const inner = text
+    .trim()
+    .replace(/^\(\s*(.*?)\s*\)$/, "$1")
+    .replace(/\s*:$/, "")
+    .trim();
+  return inner.length <= 40 && (BARE_ENGLISH.test(inner) || BARE_HEBREW.test(inner)) ? `[${inner}]` : null;
+}
+
 export type LyricItem = { text: string; section: boolean };
 
 // Lyrics copied from some websites or PDFs arrive with end-of-sentence punctuation at the front of the
@@ -67,7 +81,9 @@ export function parseLyrics(raw: string): LyricItem[] {
   for (const line of raw.split(/\r?\n/)) {
     const text = fixLinePunctuation(line.replace(/\s+/g, " ").trim());
     if (!text) continue;
+    const bare = isSectionLabel(text) ? null : bareSectionLabel(text);
     if (isSectionLabel(text)) items.push({ text, section: true });
+    else if (bare) items.push({ text: bare, section: true });
     else if (hasHebrew(text)) items.push({ text, section: false });
   }
   return items;
