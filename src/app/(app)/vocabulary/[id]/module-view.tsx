@@ -398,13 +398,13 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
           {added ? (
             <>
               <Link
-                href={`/flashcards?module=${moduleId}`}
+                href={`/study?module=${moduleId}`}
                 className="flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong"
               >
                 {toLearn > 0 ? `Start flashcards (${toLearn} to learn)` : "All learned. Review the cards"}
               </Link>
               {toLearn > 0 && learned > 0 && (
-                <Link href={`/flashcards?module=${moduleId}&scope=all`} className="text-center text-xs text-muted underline underline-offset-2 hover:text-foreground">
+                <Link href={`/study?module=${moduleId}&scope=all`} className="text-center text-xs text-muted underline underline-offset-2 hover:text-foreground">
                   Review all {words.length} words
                 </Link>
               )}

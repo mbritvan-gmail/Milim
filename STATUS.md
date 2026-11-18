@@ -74,7 +74,7 @@ All scripts live in `supabase/migrations/`. The user has run them as features sh
   puts it back to Learning with progress cleared. No calendar / spaced-repetition boxes any more.
 - Dictionary `/dictionary`: filter chips (All / New / Learning / Learned) both filter the list and choose what to study; the Study button sits right under
   the chips. English left, Hebrew right (blue). Tapping a word opens its card `/dictionary/[id]` (I know this / Reset to Learning).
-- Study `/flashcards` (not in the tab bar): `?filter=new|learning|learned|all`, `?song=ID&scope=unlearned|learned`. Tap the card to reveal.
+- Study `/study` (a pop-up over the page you were on; old `/flashcards?...` links redirect here): `?filter=new|learning|learned|all`, `?song=ID&scope=unlearned|learned`. Tap the card to reveal.
   Still learning (yellow) / Got it / I know this (not shown for Learned words). Within a session a missed card returns after 6 other cards and a correct-but-not-yet-learned one after 10 (or goes to the end of a short queue); the session ends when
   everything is learned or the person leaves with the X. Undo (circle, top) restores the card, the queue and the database row. Direction pill: Hebrew to English,
   English to Hebrew, Mixed. No pronunciation on the front of a Hebrew-first card. Summary counts each word once (first answer).
@@ -100,7 +100,7 @@ All scripts live in `supabase/migrations/`. The user has run them as features sh
 
 ## Home screen and modules (built)
 - Signed-in landing is `/home`: three tiles, Songs / Flash Cards / Dictionary, no extra text. The bottom bar on every signed-in screen is Back / Home / Settings (the per-page gear and the old Songs / Library / Dictionary tabs are gone).
-- Songs has two views, **My songs** and **Public library** (`/songs`, `/library`). `/flashcards` with nothing chosen is the Flash Cards home (New / Still learning / Learned / All, with counts).
+- Songs has two views, **My songs** and **Public library** (`/songs`, `/library`). `/flashcards` is the Flash Cards home, a standalone page like Songs and Vocabulary (study sessions open over it as pop-ups at `/study`; its X returns to it) (New / Still learning / Learned / All, with counts).
 - Light / dark theme: Settings > Appearance (System / Light / Dark, default Dark). Stored per device in localStorage (key `milim-theme`) and applied by a head script before paint. The sign-in screen stays dark. To make it follow the person across devices, add a profile column later.
 
 ## Songs cleanup (built)
@@ -121,7 +121,7 @@ All scripts live in `supabase/migrations/`. The user has run them as features sh
 - Old songs' verbs may still be stored as sung forms (not infinitive) until re-added; a one-off cleanup could normalize them.
 
 ## Pop-up screens (built)
-- Settings, a Dictionary word, a vocabulary module, a study session / the Flash Cards start screen and a quiz open as full-screen pop-ups over the page you were on, with an X (also Escape and the browser Back button). Built with Next.js intercepting + parallel routes: `src/app/(app)/@modal/(.)settings`, `(.)flashcards`, `(.)dictionary/[id]`, `(.)songs/[id]/quiz`, the shared `src/components/overlay.tsx`, and the `modal` slot in `src/app/(app)/layout.tsx`.
+- Settings, a Dictionary word, a vocabulary module, a study session (`@modal/(.)study`) and a quiz open as full-screen pop-ups over the page you were on, with an X (also Escape and the browser Back button). Built with Next.js intercepting + parallel routes: `src/app/(app)/@modal/(.)settings`, `(.)flashcards`, `(.)dictionary/[id]`, `(.)songs/[id]/quiz`, the shared `src/components/overlay.tsx`, and the `modal` slot in `src/app/(app)/layout.tsx`.
 - Opening the same address directly (refresh, shared link) shows the normal full page. Pages are reused, not copied.
 - Inside a pop-up, "Back to ..." buttons close it (`CloseOrLink`); the study screen's own exit X is hidden there. When a pop-up closes, the page underneath refreshes (`StaleRefresher`).
 - The quiz start (a server action redirect) and the quiz's Retake (now `router.refresh()`) are not yet checked live.
@@ -134,7 +134,7 @@ All scripts live in `supabase/migrations/`. The user has run them as features sh
 ## Vocabulary modules (built; REQUIRES `supabase/migrations/20261122000000_vocabulary_modules.sql`; not yet live-tested)
 - Home has a fourth icon, **Vocabulary** (`/vocabulary`): list of modules (yours, public ones, ones you added) with Added / Not added and a learned progress bar. The ⋯ menu has **New module**.
 - New module (`/vocabulary/new`): title + pasted Hebrew words (one per line or commas, up to 100) + Public (default) / Private. Claude (`defineWords`) fills in lemma, nikud, pronunciation, English, part of speech, gender and plural; words are saved as shared dictionary words (new nullable columns `vocalized`, `gender`, `plural` on `vocab_entries`; existing words get blanks filled by `fill_word_extras`).
-- Module page (`/vocabulary/[id]`): read-only preview (nikud / pronunciation follow the settings), **Add module** puts its words in the Dictionary (`user_modules`), then **Start flashcards** (`/flashcards?module=ID`, `&scope=all` to review everything). Owners get Edit like songs: rename, remove a word (confirm + Undo), add more words by pasting, Make public (one-way), Remove module (delete private / archive public / remove from list).
+- Module page (`/vocabulary/[id]`): read-only preview (nikud / pronunciation follow the settings), **Add module** puts its words in the Dictionary (`user_modules`), then **Start flashcards** (`/study?module=ID`, `&scope=all` to review everything). Owners get Edit like songs: rename, remove a word (confirm + Undo), add more words by pasting, Make public (one-way), Remove module (delete private / archive public / remove from list).
 - Owners can reorder a module's words in Edit mode: drag the grip on the right of a row (or focus it and use the up / down arrow keys); the order is saved straight away (`reorderModuleWords`).
 - The Vocabulary list's hamburger menu has **New module** and **Edit** (minus to remove with confirmation, **Make public** on your own private modules). A module's pop-up has its X beside Edit.
 - Same rules as songs: public is permanent, public modules are archived not deleted. Dictionary = songs + added modules (`master_dictionary` view). Not built yet: suggestions from other people, nikud for song words, "N new words" version updates, a "From the X module" line on cards, nikud in the Dictionary list rows.

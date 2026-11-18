@@ -1,107 +1,42 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { loadSettings } from "@/lib/settings";
-import { isStudyFilter, newSessionId, type SessionCard, type StudyFilter } from "@/lib/study";
-import { cardsForFilter, cardsForModule, cardsForSong } from "@/lib/study-data";
-import { StudyRunner } from "./study-runner";
-import { CloseOrLink } from "@/components/overlay";
+import type { StudyFilter } from "@/lib/study";
 import { readAllRows } from "@/lib/paged";
 import { loadLearnedIds, loadSources, type Source } from "@/lib/word-sources";
 import { StudyPicker, type PickOption } from "./study-picker";
 
-export const metadata = { title: "Study · milim" };
-
-// Working out a verb's forms the first time can take a little while.
-export const maxDuration = 60;
+export const metadata = { title: "Flash Cards · milim" };
 
 type SearchParams = Promise<{ filter?: string; song?: string; module?: string; scope?: string }>;
 
-export default function StudyPage({ searchParams }: { searchParams: SearchParams }) {
+// The Flash Cards home: a page of its own, like Songs and Vocabulary. A study session opens over it as a pop-up
+// (`/study`), so closing a session returns here.
+export default function FlashcardsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-6">
-      <Suspense fallback={<p className="text-center text-muted">Loading cards…</p>}>
-        <StudyBody searchParams={searchParams} />
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-8">
+      <Suspense fallback={<p className="text-center text-muted">Loading…</p>}>
+        <FlashcardsBody searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const NAMES: Record<StudyFilter, string> = {
-  new: "new words",
-  learning: "learning words",
-  learned: "learned words",
-  all: "words",
-};
-
-async function StudyBody({ searchParams }: { searchParams: SearchParams }) {
-  const { filter: rawFilter, song, module: moduleId, scope: rawScope } = await searchParams;
+async function FlashcardsBody({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-
-  // With nothing chosen yet, this is the Flash Cards home: pick which words to study.
-  if (!rawFilter && !song && !moduleId) return <FlashcardsHub userId={user.id} />;
-
-  const settings = await loadSettings(supabase, user.id);
-
-  let cards: SessionCard[] = [];
-  let studyName = "words";
-  let backHref = "/dictionary";
-  let backLabel = "Back to the Dictionary";
-
-  if (moduleId) {
-    if (!uuid.test(moduleId)) notFound();
-    const scope = rawScope === "learned" ? "learned" : rawScope === "all" ? "all" : "unlearned";
-    const result = await cardsForModule(supabase, moduleId, scope);
-    if (!result) notFound();
-    cards = result.cards;
-    studyName = scope === "learned" ? "this Pack's learned words" : "this Pack";
-    backHref = `/vocabulary/${moduleId}`;
-    backLabel = "Back to the Pack";
-  } else if (song) {
-    if (!uuid.test(song)) notFound();
-    const scope = rawScope === "learned" ? "learned" : rawScope === "all" ? "all" : "unlearned";
-    const result = await cardsForSong(supabase, song, scope);
-    if (!result) notFound();
-    cards = result.cards;
-    studyName = scope === "learned" ? "this song's learned words" : "this song";
-    backHref = `/songs/${song}`;
-    backLabel = "Back to the song";
-  } else {
-    const filter: StudyFilter = isStudyFilter(rawFilter) ? rawFilter : "new";
-    cards = await cardsForFilter(supabase, filter);
-    studyName = NAMES[filter];
+  // Old study links (/flashcards?filter=...) now live at /study.
+  if (params.filter || params.song || params.module) {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) if (v) q.set(k, v);
+    redirect(`/study?${q.toString()}`);
   }
-
-  if (cards.length === 0) {
-    return (
-      <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-6 text-center">
-        <p className="text-lg font-medium">Nothing left in {studyName}.</p>
-        <CloseOrLink href={backHref} className="flex h-11 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong">
-          {backLabel}
-        </CloseOrLink>
-      </div>
-    );
-  }
-
-  return (
-    <StudyRunner
-      key={newSessionId()}
-      cards={cards}
-      learnAfter={settings.learnAfter}
-      defaultDirection={settings.direction}
-      showTranslit={settings.showTranslit}
-      showNikud={settings.showNikud}
-      backHref={backHref}
-      backLabel={backLabel}
-      studyName={studyName}
-    />
-  );
+  return <FlashcardsHub userId={user.id} />;
 }
 
 // Counts how many words are in each group and links to a study session for it.
@@ -141,8 +76,7 @@ async function FlashcardsHub({ userId }: { userId: string }) {
             <li key={g.filter}>
               {g.count > 0 ? (
                 <Link
-                  href={`/flashcards?filter=${g.filter}`}
-                  replace
+                  href={`/study?filter=${g.filter}`}
                   className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-4 hover:bg-surface-2"
                 >
                   <span className="font-medium">{g.label}</span>

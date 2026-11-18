@@ -26,8 +26,8 @@ export function StudyPicker({ songs, packs }: { songs: PickOption[]; packs: Pick
 
   const href = picked
     ? picked.kind === "song"
-      ? `/flashcards?song=${picked.option.id}&scope=${picked.option.unlearned > 0 ? "unlearned" : "all"}`
-      : `/flashcards?module=${picked.option.id}&scope=${picked.option.unlearned > 0 ? "unlearned" : "all"}`
+      ? `/study?song=${picked.option.id}&scope=${picked.option.unlearned > 0 ? "unlearned" : "all"}`
+      : `/study?module=${picked.option.id}&scope=${picked.option.unlearned > 0 ? "unlearned" : "all"}`
     : "";
   const count = picked ? (picked.option.unlearned > 0 ? picked.option.unlearned : picked.option.total) : 0;
 

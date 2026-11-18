@@ -183,7 +183,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
                 <p className="text-base font-bold leading-snug">{toLearn === 0 ? "All words learned" : `${toLearn} ${toLearn === 1 ? "word" : "words"} to learn`}</p>
                 {learnedCount > 0 ? (
                   <Link
-                    href={`/flashcards?song=${song.id}&scope=learned`}
+                    href={`/study?song=${song.id}&scope=learned`}
                     className="inline-block py-1 text-[13px] text-[var(--sp-accent)] underline underline-offset-2"
                   >
                     Review the {learnedCount} learned {learnedCount === 1 ? "word" : "words"}
@@ -193,7 +193,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
                 )}
               </div>
               {toLearn > 0 && (
-                <Link href={`/flashcards?song=${song.id}&scope=unlearned`} aria-label={`Study ${toLearn} ${toLearn === 1 ? "word" : "words"}`} className="sp-primary">
+                <Link href={`/study?song=${song.id}&scope=unlearned`} aria-label={`Study ${toLearn} ${toLearn === 1 ? "word" : "words"}`} className="sp-primary">
                   Study
                 </Link>
               )}
