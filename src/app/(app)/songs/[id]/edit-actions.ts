@@ -132,24 +132,44 @@ export async function addNikud(songId: string) {
 
     const texts = [...lines.map((l) => l.hebrew), ...wordEntries.map((w) => w.lemma)];
     const usage = { input: 0, output: 0 };
-    const pointed = await getAIProvider().addNikud({
-      texts,
-      onUsage: (u) => {
-        usage.input += u.input;
-        usage.output += u.output;
-      },
-    });
+    const ai = getAIProvider();
+    // Ask for each text up to three times: an occasional answer comes back changed or in the wrong shape.
+    const answers: (string | null)[] = texts.map(() => null);
+    const plainOf = (i: number) => (i < lines.length ? lines[i].hebrew : wordEntries[i - lines.length].lemma);
+    let lastError = "";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const todo = answers.map((a, i) => (a === null ? i : -1)).filter((i) => i >= 0);
+      if (todo.length === 0) break;
+      try {
+        const got = await ai.addNikud({
+          texts: todo.map((i) => texts[i]),
+          onUsage: (u) => {
+            usage.input += u.input;
+            usage.output += u.output;
+          },
+        });
+        todo.forEach((i, k) => {
+          if (isPointedVersion(plainOf(i), got[k])) answers[i] = got[k].trim();
+        });
+      } catch (error) {
+        lastError = error instanceof AIError ? error.message : GENERIC;
+      }
+    }
 
     const out: NikudResult = { lines: [], words: [], skipped: 0, usage };
     lines.forEach((l, i) => {
-      if (isPointedVersion(l.hebrew, pointed[i])) out.lines.push({ id: l.id, vocalized: pointed[i].trim() });
+      const text = answers[i];
+      if (text) out.lines.push({ id: l.id, vocalized: text });
     });
     wordEntries.forEach((w, i) => {
-      const text = pointed[lines.length + i];
-      if (isPointedVersion(w.lemma, text)) out.words.push({ id: w.id, vocalized: text.trim() });
+      const text = answers[lines.length + i];
+      if (text) out.words.push({ id: w.id, vocalized: text });
     });
     out.skipped = texts.length - out.lines.length - out.words.length;
-    if (out.lines.length === 0 && out.words.length === 0) return fail("Claude's answer didn't match the lyrics, so nothing was changed. Please try again.");
+    if (out.lines.length === 0 && out.words.length === 0) {
+      const failure = { ok: false as const, error: lastError || "Claude's answer didn't match the lyrics, so nothing was changed. Please try again.", usage };
+      return failure;
+    }
 
     const results = await Promise.all(out.lines.map((l) => ctx.supabase.from("lines").update({ vocalized: l.vocalized }).eq("id", l.id).eq("song_id", songId)));
     if (results.some((r) => r.error)) {
