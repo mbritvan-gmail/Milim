@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { CloseButton, CloseOrLink } from "@/components/overlay";
 import { plainHebrew, type LetterCard } from "@/lib/alef-bet/letters";
+import { exampleClipId, nameClipId, soundClipId } from "@/lib/alef-bet/audio-clips";
 import { markCardSeen } from "../actions";
+import { SpeakerButton } from "./speaker-button";
 
 // How big the glyphs in the Print / Script panels are: one letter is large, a letter with its final form
 // or a pair of vowel signs a little smaller.
@@ -60,11 +62,11 @@ export function CardRunner({
     <div className="mx-auto flex min-h-full w-full max-w-md flex-1 flex-col gap-3 px-4 pb-6 pt-4">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <CloseButton fallbackHref={backHref} />
+          <span className="w-10" />
           <p className="text-sm text-muted">
             {groupName} · {card.kind === "letter" ? "Letter" : "Sign"} {index + 1} of {cards.length}
           </p>
-          <span className="w-10" />
+          <CloseButton fallbackHref={backHref} />
         </div>
         <div
           className="h-1.5 overflow-hidden rounded-full bg-border"
@@ -95,9 +97,12 @@ export function CardRunner({
         )}
       </div>
 
-      <div className="flex items-baseline gap-2.5 px-1">
+      <div className="flex items-center gap-2.5 px-1">
         <h1 className="text-3xl font-semibold">{card.name}</h1>
         <span className="text-sm text-muted">{card.nameNote ? `${card.kind === "letter" ? "letter name" : "sound"} · ${card.nameNote}` : card.kind === "letter" ? "letter name" : "vowel sound"}</span>
+        <span className="ml-auto">
+          <SpeakerButton clipId={nameClipId(card)} label={`Hear the name: ${card.name}`} />
+        </span>
       </div>
 
       <ul className="flex flex-col gap-2">
@@ -112,6 +117,9 @@ export function CardRunner({
               </p>
               {sound.note && <p className="text-xs text-muted">{sound.note}</p>}
             </div>
+            <span className="ml-auto">
+              <SpeakerButton clipId={soundClipId(card, i)} label={`Hear the sound: ${sound.say}`} />
+            </span>
           </li>
         ))}
       </ul>
@@ -127,6 +135,9 @@ export function CardRunner({
             {showTranslit && <i className="text-muted">{ex.translit}</i>}
             {showTranslit && " · "}
             {ex.english}
+          </span>
+          <span className="ml-auto">
+            <SpeakerButton clipId={exampleClipId(card)} label={`Hear the word: ${ex.translit}`} />
           </span>
         </div>
       </div>
@@ -148,7 +159,7 @@ export function CardRunner({
             onClick={() => setIndex(index - 1)}
             className="h-13 rounded-2xl border border-border px-5 font-medium hover:bg-surface"
           >
-            Back
+            Previous
           </button>
         )}
         {isLast ? (
