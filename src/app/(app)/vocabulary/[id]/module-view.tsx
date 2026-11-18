@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { EditButton, EditModeProvider, useEditMode } from "@/components/edit-mode";
 import { Sheet } from "@/components/sheet";
-import { CloseButton, useOverlay } from "@/components/overlay";
+import { CloseButton } from "@/components/overlay";
 import { StatusBadge } from "@/components/status-badge";
 import { genderLabel, hebrewText } from "@/lib/modules";
 import type { WordStatus } from "@/lib/study";
@@ -52,7 +52,6 @@ type Sheets = { kind: "remove-word"; word: ModuleRow } | { kind: "rename" } | { 
 
 function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initialPublic, added: initialAdded, archived, by, words: initialWords, showTranslit, showNikud, learnAfter, actions }: Props) {
   const router = useRouter();
-  const inOverlay = useOverlay() !== null;
   const { editing, showToast } = useEditMode();
   const [title, setTitle] = useState(initialTitle);
   const [words, setWords] = useState(initialWords);
@@ -309,6 +308,36 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
         </div>
       )}
 
+      {!editMode && words.length > 0 && (
+        <div className={`flex flex-col gap-2`}>
+          {added ? (
+            <>
+              <Link
+                href={`/study?module=${moduleId}`}
+                className="flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong"
+              >
+                {toLearn > 0 ? `Start flashcards (${toLearn} to learn)` : "All learned. Review the cards"}
+              </Link>
+              {toLearn > 0 && learned > 0 && (
+                <Link href={`/study?module=${moduleId}&scope=all`} className="text-center text-xs text-muted underline underline-offset-2 hover:text-foreground">
+                  Review all {words.length} words
+                </Link>
+              )}
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={add}
+              disabled={busy}
+              className="h-12 rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong disabled:opacity-60"
+            >
+              {busy ? "Adding…" : `Add Pack (${words.length} ${words.length === 1 ? "word" : "words"})`}
+            </button>
+          )}
+          {problem && !sheet && <p className="text-center text-sm text-danger">{problem}</p>}
+        </div>
+      )}
+
       {added && words.length > 0 && (
         <p className="flex items-center gap-3 text-sm text-muted">
           <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
@@ -393,35 +422,6 @@ function ModuleScreen({ moduleId, title: initialTitle, isOwner, isPublic: initia
         </ul>
       )}
 
-      {!editMode && words.length > 0 && (
-        <div className={`sticky ${inOverlay ? "bottom-4" : "bottom-24"} flex flex-col gap-2 pt-1`}>
-          {added ? (
-            <>
-              <Link
-                href={`/study?module=${moduleId}`}
-                className="flex h-12 items-center justify-center rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong"
-              >
-                {toLearn > 0 ? `Start flashcards (${toLearn} to learn)` : "All learned. Review the cards"}
-              </Link>
-              {toLearn > 0 && learned > 0 && (
-                <Link href={`/study?module=${moduleId}&scope=all`} className="text-center text-xs text-muted underline underline-offset-2 hover:text-foreground">
-                  Review all {words.length} words
-                </Link>
-              )}
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={add}
-              disabled={busy}
-              className="h-12 rounded-xl bg-accent font-semibold text-accent-contrast hover:bg-accent-strong disabled:opacity-60"
-            >
-              {busy ? "Adding…" : `Add Pack (${words.length} ${words.length === 1 ? "word" : "words"})`}
-            </button>
-          )}
-          {problem && !sheet && <p className="text-center text-sm text-danger">{problem}</p>}
-        </div>
-      )}
 
       {sheet?.kind === "rename" && (
         <Sheet title="Rename Pack" onClose={() => !busy && setSheet(null)}>
