@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RotatingBackground } from "@/components/rotating-background";
+import { AlefGlyph } from "@/components/alef-glyph";
 
 export const metadata = { title: "Home · milim" };
 
@@ -64,6 +65,13 @@ const MODULES = [
         <path d="M12 6.5v13" />
       </svg>
     ),
+  },
+  {
+    href: "/alef-bet",
+    label: "Alef-bet",
+    tint: { rgb: "189,174,242", dark: "#BDAEF2", deep: "#6A4FC2" },
+    // The only tile with a Hebrew letter: a bold alef set in type.
+    svg: <AlefGlyph />,
   },
 ];
 

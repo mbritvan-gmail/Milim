@@ -291,3 +291,13 @@ body {
 .sp-chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 9999px; background: var(--sp-accent-tint); color: var(--sp-accent-ink); padding: 4px 10px; font-size: 12px; font-weight: 600; }
 .sp-gdiv { height: 1px; margin: 6px 18px 0; background: var(--sp-group-line); }
 .song-page :focus-visible { outline: 2px solid var(--sp-accent); outline-offset: 2px; }
+
+/* Alef-bet trainer: the Home tile shows a bold alef set in type (font loaded in components/alef-glyph.tsx).
+   The color comes from the tile, so it follows the dark and light themes like the other icons. */
+.alefbet-glyph {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1;
+  color: inherit;
+  padding-top: 0;
+}
