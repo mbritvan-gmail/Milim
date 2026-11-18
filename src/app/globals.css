@@ -136,35 +136,35 @@ body {
 
 /* Home screen: smoked-glass tiles (tinted per module) and a glass bottom bar. */
 :root {
-  --tint-a: 0.34;
+  --tint-a: 0.22;
   --sheen: 0.12;
-  --tile-base: rgba(22, 28, 44, 0.36);
+  --tile-base: rgba(22, 28, 44, 0.09);
   --tile-border: rgba(255, 255, 255, 0.22);
   --tile-shadow: rgba(10, 14, 24, 0.3);
-  --nav-glass-bg: rgba(18, 24, 38, 0.46);
+  --nav-glass-bg: rgba(18, 24, 38, 0.14);
   --nav-glass-border: rgba(255, 255, 255, 0.16);
   --nav-glass-fg: rgba(255, 255, 255, 0.75);
   --nav-glass-active: #ffffff;
 }
 :root[data-theme="light"] {
-  --tint-a: 0.5;
+  --tint-a: 0.28;
   --sheen: 0.3;
-  --tile-base: rgba(255, 255, 255, 0.2);
+  --tile-base: rgba(255, 255, 255, 0.03);
   --tile-border: rgba(255, 255, 255, 0.62);
   --tile-shadow: rgba(20, 30, 50, 0.2);
-  --nav-glass-bg: rgba(255, 255, 255, 0.34);
+  --nav-glass-bg: rgba(255, 255, 255, 0.1);
   --nav-glass-border: rgba(255, 255, 255, 0.55);
   --nav-glass-fg: rgba(20, 30, 50, 0.72);
   --nav-glass-active: #14203a;
 }
 @media (prefers-color-scheme: light) {
   :root[data-theme="system"] {
-    --tint-a: 0.5;
+    --tint-a: 0.28;
     --sheen: 0.3;
-    --tile-base: rgba(255, 255, 255, 0.2);
+    --tile-base: rgba(255, 255, 255, 0.03);
     --tile-border: rgba(255, 255, 255, 0.62);
     --tile-shadow: rgba(20, 30, 50, 0.2);
-    --nav-glass-bg: rgba(255, 255, 255, 0.34);
+    --nav-glass-bg: rgba(255, 255, 255, 0.1);
     --nav-glass-border: rgba(255, 255, 255, 0.55);
     --nav-glass-fg: rgba(20, 30, 50, 0.72);
     --nav-glass-active: #14203a;
