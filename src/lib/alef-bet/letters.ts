@@ -213,3 +213,44 @@ export function startIndexFor(group: Group, seenIds: Iterable<string>): number {
 const NIKUD = /[֑-ׇ]/g;
 /** A Hebrew word without vowel marks (and without dots on letters). */
 export const plainHebrew = (text: string) => text.replace(NIKUD, "");
+
+// ---------------------------------------------------------------------------
+// Sound clips: which clips the cards can play, and what a voice should say for each. The list is used by
+// the generation script (scripts/alef-bet-audio) so the two always agree. Clip ids: "<card>-name",
+// "<card>-sound-<n>" (n counts the card's sound rows from 1) and "word-<translit>".
+// ---------------------------------------------------------------------------
+export const nameClipId = (card: LetterCard) => `${card.id}-name`;
+export const soundClipId = (card: LetterCard, index: number) => `${card.id}-sound-${index + 1}`;
+export const exampleClipId = (card: LetterCard) => `word-${card.example.translit}`;
+
+// How each letter name is said, with nikud so a voice reads it correctly.
+const NAME_SPEAK: Record<string, string> = {
+  alef: "אָלֶף", bet: "בֵּית", gimel: "גִּימֶל", dalet: "דָּלֶת", he: "הֵא", vav: "וָו", zayin: "זַיִן", khet: "חֵית",
+  tet: "טֵית", yod: "יוֹד", kaf: "כַּף", lamed: "לָמֶד", mem: "מֵם", nun: "נוּן", samekh: "סָמֶךְ", ayin: "עַיִן",
+  pe: "פֵּא", tsadi: "צָדִי", kuf: "קוֹף", resh: "רֵישׁ", shin: "שִׁין", tav: "תָּיו",
+};
+
+const FINAL_TO_BASE: Record<string, string> = { "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" };
+
+// A bare consonant can't be said, so a letter's sound is a short syllable: the letter plus "a" (ba, va, ga).
+// A final form says the same syllable as its base letter. A vowel sign is already on ל, so it is said as is.
+export function soundSpeak(card: LetterCard, index: number): string {
+  const form = card.sounds[index].form;
+  if (card.kind === "vowel") return form;
+  const base = [...form].map((ch) => FINAL_TO_BASE[ch] ?? ch).join("");
+  const cluster = base.slice(0, 1) + "ַ" + base.slice(1);
+  return cluster;
+}
+
+export type Clip = { id: string; text: string; kind: "name" | "sound" | "word" };
+
+/** Every clip the cards can play, once each, with the text a voice should say. */
+export function allClips(): Clip[] {
+  const out = new Map<string, Clip>();
+  for (const card of ALL_CARDS) {
+    if (card.kind === "letter") out.set(nameClipId(card), { id: nameClipId(card), text: NAME_SPEAK[card.id], kind: "name" });
+    card.sounds.forEach((_, i) => out.set(soundClipId(card, i), { id: soundClipId(card, i), text: soundSpeak(card, i), kind: "sound" }));
+    out.set(exampleClipId(card), { id: exampleClipId(card), text: card.example.hebrew, kind: "word" });
+  }
+  return [...out.values()];
+}

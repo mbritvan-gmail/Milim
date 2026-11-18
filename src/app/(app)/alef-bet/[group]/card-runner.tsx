@@ -37,7 +37,6 @@ export function CardRunner({
   const [index, setIndex] = useState(Math.min(Math.max(startIndex, 0), cards.length - 1));
   const [saveProblem, setSaveProblem] = useState(false);
   const card = cards[index];
-  const next = cards[index + 1];
   const isLast = index === cards.length - 1;
 
   // A card counts as seen as soon as it is on screen.
@@ -56,7 +55,6 @@ export function CardRunner({
   const ex = card.example;
   const lead = withNikud ? ex.lead : plainHebrew(ex.lead);
   const rest = withNikud ? ex.hebrew.slice(ex.lead.length) : plainHebrew(ex.hebrew.slice(ex.lead.length));
-  const nextLabel = next ? (next.kind === "letter" ? next.print.split(" ")[0] : next.name) : "";
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-1 flex-col gap-3 px-4 pb-6 pt-4">
@@ -175,7 +173,7 @@ export function CardRunner({
             onClick={() => setIndex(index + 1)}
             className="h-13 flex-1 rounded-2xl bg-accent text-base font-semibold text-accent-contrast hover:bg-accent-strong"
           >
-            Next: <span lang="he">{nextLabel}</span>
+            Next
           </button>
         )}
       </div>

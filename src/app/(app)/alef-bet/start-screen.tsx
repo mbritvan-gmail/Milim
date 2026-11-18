@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CARDS, VOWEL_CARDS, nextGroup, progressFor, wordsUnlocked, type GroupProgress } from "@/lib/alef-bet/letters";
 
 // The Alef-bet start screen: groups in alphabet order and how many cards of each have been seen.
-export function StartScreen({ seen, notSaved }: { seen: Set<string>; notSaved: boolean }) {
+export function StartScreen({ seen, notSaved, basicWordsPackId }: { seen: Set<string>; notSaved: boolean; basicWordsPackId: string | null }) {
   const progress = progressFor(seen);
   const next = nextGroup(progress);
   const unlocked = wordsUnlocked(progress);
@@ -49,7 +49,17 @@ export function StartScreen({ seen, notSaved }: { seen: Set<string>; notSaved: b
             </span>
           </Link>
         ) : (
-          <p className="text-sm text-success">You have seen every card. Basic words are open.</p>
+          <>
+            <p className="text-sm text-success">You have seen every card. Basic words are open.</p>
+            {basicWordsPackId && (
+              <Link
+                href={`/vocabulary/${basicWordsPackId}`}
+                className="flex h-12 items-center justify-center rounded-xl bg-accent px-3 text-base font-semibold text-accent-contrast hover:bg-accent-strong"
+              >
+                Open Basic words
+              </Link>
+            )}
+          </>
         )}
       </section>
 
@@ -93,16 +103,25 @@ export function StartScreen({ seen, notSaved }: { seen: Set<string>; notSaved: b
         })}
 
         <li>
-          <div className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 ${unlocked ? "border-accent bg-surface" : "border-border bg-surface opacity-85"}`}>
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border text-[13px] font-semibold text-muted">
-              {progress.length + 1}
-            </span>
-            <span className={`flex-1 text-base font-semibold ${unlocked ? "" : "text-muted"}`}>Basic words</span>
-            <span className="whitespace-nowrap rounded-full border border-border px-2.5 py-0.5 text-xs font-semibold text-muted">
-              {unlocked ? "Coming soon" : "Locked"}
-            </span>
-          </div>
+          {(() => {
+            const row = (
+              <div className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 ${unlocked && basicWordsPackId ? "border-accent bg-surface hover:bg-surface-2" : "border-border bg-surface opacity-85"}`}>
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border text-[13px] font-semibold text-muted">
+                  {progress.length + 1}
+                </span>
+                <span className={`flex-1 text-base font-semibold ${unlocked ? "" : "text-muted"}`}>Basic words</span>
+                <span className={`whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${unlocked && basicWordsPackId ? "border-accent text-accent" : "border-border text-muted"}`}>
+                  {!unlocked ? "Locked" : basicWordsPackId ? "Open" : "Not set up"}
+                </span>
+              </div>
+            );
+            // Basic words is a normal Word Pack: its page has Add, then Start flash cards.
+            return unlocked && basicWordsPackId ? <Link href={`/vocabulary/${basicWordsPackId}`}>{row}</Link> : row;
+          })()}
           {!unlocked && <p className="px-1 pt-1.5 text-xs text-muted">Opens once you have seen every card.</p>}
+          {unlocked && !basicWordsPackId && (
+            <p className="px-1 pt-1.5 text-xs text-muted">The public Word Pack called &ldquo;Basic words&rdquo; wasn&apos;t found.</p>
+          )}
         </li>
       </ul>
     </>

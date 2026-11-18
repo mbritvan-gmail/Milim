@@ -22,9 +22,13 @@ async function AlefBetBody() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const seenRes = await supabase.from("alef_cards_seen").select("card_id");
+  const [seenRes, packRes] = await Promise.all([
+    supabase.from("alef_cards_seen").select("card_id"),
+    // Basic words is an ordinary public Word Pack titled "Basic words" (the oldest one if there are several).
+    supabase.from("modules").select("id").eq("visibility", "public").is("archived_at", null).ilike("title", "basic words").order("created_at").limit(1),
+  ]);
   const notSaved = Boolean(seenRes.error);
   const seen = new Set(seenRes.error ? [] : (seenRes.data ?? []).map((r) => r.card_id as string));
 
-  return <StartScreen seen={seen} notSaved={notSaved} />;
+  return <StartScreen seen={seen} notSaved={notSaved} basicWordsPackId={(packRes.data?.[0]?.id as string | undefined) ?? null} />;
 }
