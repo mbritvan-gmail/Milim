@@ -39,12 +39,6 @@ export function SongPlayer({ spotify, youtube, preferred }: { spotify: Media | n
         allowFullScreen
         className={`w-full rounded-xl border-0 ${media.type === "spotify" ? "h-[152px]" : "aspect-video"}`}
       />
-      <p className="-mt-3 text-sm text-muted">
-        {media.type === "spotify" ? "The player here may play only a 30-second preview. " : "Plays the whole song. "}
-        <a href={media.url} target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-4">
-          Open {media.type === "spotify" ? "the full song in Spotify" : "in YouTube"} ↗
-        </a>
-      </p>
     </>
   );
 }
