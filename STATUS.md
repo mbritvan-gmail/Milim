@@ -18,10 +18,14 @@ Last updated: 2026-11-18. Branch: `claude/milim-handoff-review-pmh51c`. Live pre
 **Recently finished (2026-11):** smoked-glass Home with new glyphs and Frank Ruhl Libre title; lyrics-first song page (repeats collapse via `src/lib/lyric-repeats.ts`, Lyrics size setting Small/Medium/Large); songs get nikud automatically when added (`src/app/(app)/songs/new/actions.ts` + `src/lib/nikud-run.ts`); the Edit-mode Add nikud button and the bulk buttons were removed.
 
 **Next up (pick with the user)**
-1. Automatic nikud catch-up for songs you own that are missing it (agreed design: runs only when the owner opens such a song, one attempt of at most 3 tries and a 45s cap, at most once per song per day per device, silent on failure). Needed because the manual button is gone.
+1. (Built, awaiting a live test: see "Nikud catch-up" below.)
 2. Dictionary rework alongside flash cards.
 3. Before sharing widely: report/takedown path, terms note, sign-up control (invite only), Anthropic spend limit, Deezer terms check.
 4. Notifications (suggestions, filled requests); pronouns/prepositions forms; "N new words" pack updates; nikud in Dictionary rows.
+
+## Nikud catch-up (built; no new SQL; not yet live-tested with the AI)
+- When the owner opens a song that still lacks nikud on any lyric line or Song Vocabulary word, `NikudCatchUp` (`src/components/nikud-catchup.tsx`, invisible) quietly calls the existing `addNikud` action (up to 3 tries, 45s cap, via `pointAll`) and refreshes the page if anything was added. Failure is silent.
+- At most one attempt per song per day per device (localStorage key `milim-nikud-catchup:<songId>`, rule in `src/lib/nikud-catchup.ts`); if the device can't store it, no automatic attempt. Not run for non-owners, while the nikud column is missing, or (the refresh) while the owner is already editing.
 
 ## SQL scripts (user)
 All scripts live in `supabase/migrations/`. The user has run them as features shipped (the latest, `20261204000000_lyrics_size.sql`, is run). If a feature says it needs a database update, ask which script and have them run it; each is safe to run again.
