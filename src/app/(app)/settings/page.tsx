@@ -50,6 +50,7 @@ async function SettingsBody() {
         initialLyricsSize={settings.lyricsSize}
         email={user.email ?? ""}
       />
+      {nikud && "error" in nikud && <p className="text-sm text-danger">Nikud tool: {nikud.error}</p>}
       {nikud && !("error" in nikud) && <NikudTool key={nikud.missing.map((m) => m.id).join(",")} total={nikud.total} missing={nikud.missing} />}
     </>
   );

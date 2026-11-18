@@ -42,7 +42,7 @@ export async function loadNikudStatus(): Promise<NikudToolStatus | { error: stri
     const songs = await readAll<{ id: string; title: string }>((a, b) => supabase.from("songs").select("id, title").order("id").range(a, b));
     const lines = await readAll<{ song_id: string; hebrew: string }>((a, b) => supabase.from("lines").select("song_id, hebrew").is("vocalized", null).order("id").range(a, b));
     const words = await readAll<{ song_id: string }>((a, b) =>
-      supabase.from("song_words").select("song_id, vocab_entries!inner(vocalized)").is("vocab_entries.vocalized", null).order("id").range(a, b),
+      supabase.from("song_words").select("song_id, vocab_entries!inner(vocalized)").is("vocab_entries.vocalized", null).order("song_id").order("vocab_entry_id").range(a, b),
     );
     const missing = new Set<string>();
     for (const l of lines) if (!isSectionLabel(l.hebrew) && hasHebrew(l.hebrew)) missing.add(l.song_id);
@@ -50,7 +50,8 @@ export async function loadNikudStatus(): Promise<NikudToolStatus | { error: stri
     return { total: songs.length, missing: songs.filter((s) => missing.has(s.id)).map((s) => ({ id: s.id, title: s.title })) };
   } catch (error) {
     console.error("loadNikudStatus failed", error);
-    return { error: "Couldn't check the songs. Has the latest database update been run?" };
+    const detail = error instanceof Error ? ` (${error.message.slice(0, 120)})` : "";
+    return { error: `Couldn't check the songs.${detail}` };
   }
 }
 
