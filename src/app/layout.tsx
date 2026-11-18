@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Assistant, Inter } from "next/font/google";
+import { Assistant, Heebo, Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -11,6 +11,13 @@ const inter = Inter({
 const hebrewFont = Assistant({
   variable: "--font-hebrew-face",
   subsets: ["hebrew", "latin"],
+});
+
+// The Home screen title. A named web font so it looks the same on every device (system fonts differ).
+const titleFont = Heebo({
+  variable: "--font-title",
+  subsets: ["hebrew"],
+  weight: "800",
 });
 
 export const metadata: Metadata = {
@@ -28,7 +35,7 @@ const THEME_SCRIPT = `try{var t=localStorage.getItem("milim-theme");document.doc
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning className={`${inter.variable} ${hebrewFont.variable} h-full antialiased`}>
+    <html lang="en" data-theme="dark" suppressHydrationWarning className={`${inter.variable} ${hebrewFont.variable} ${titleFont.variable} h-full antialiased`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
