@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Assistant, Heebo, Inter } from "next/font/google";
+import { Assistant, Frank_Ruhl_Libre, Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -14,10 +14,10 @@ const hebrewFont = Assistant({
 });
 
 // The Home screen title. A named web font so it looks the same on every device (system fonts differ).
-const titleFont = Heebo({
+const titleFont = Frank_Ruhl_Libre({
   variable: "--font-title",
   subsets: ["hebrew"],
-  weight: "800",
+  weight: "900",
 });
 
 export const metadata: Metadata = {
