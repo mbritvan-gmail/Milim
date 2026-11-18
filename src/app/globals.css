@@ -295,8 +295,8 @@ body {
 /* Alef-bet trainer: the Home tile shows a bold alef set in type (font loaded in components/alef-glyph.tsx).
    The color comes from the tile, so it follows the dark and light themes like the other icons. */
 .alefbet-glyph {
-  font-size: 52px;
-  font-weight: 800;
+  font-size: 44px;
+  font-weight: 400;
   line-height: 1;
   color: inherit;
   padding-top: 0;

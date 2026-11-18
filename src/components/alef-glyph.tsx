@@ -1,10 +1,10 @@
 import { Heebo } from "next/font/google";
 
 // The Alef-bet tile on Home shows a bold alef set in type (not a drawn icon like the other tiles).
-// Heebo 800 is self-hosted by next/font and only loads where this component is used.
+// Heebo 400 is self-hosted by next/font and only loads where this component is used.
 const heebo = Heebo({
   subsets: ["hebrew"],
-  weight: "800",
+  weight: "400",
   display: "swap",
 });
 
