@@ -181,3 +181,9 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 - Friends-and-family scale for now. Tighten rules (vocab insert policy, moderation) before a wider rollout.
 - Do not share the Supabase `sb_secret_...` key anywhere. It isn't needed yet.
 - Dashboard menu names in Supabase and Vercel change often; when unsure, send a screenshot.
+
+## Home redesign (smoked glass)
+- Home tiles: dark smoked glass with a per-module tint (Songs blue, Vocabulary green, Flash Cards amber, Dictionary coral), 3 across with the last row centered, more transparent; lighter frosted tiles with deeper icon colors in the light theme.
+- Title מילים uses the system font; labels have a soft dark halo for legibility on bright photos.
+- Bottom bar is glass on Home only (light glass in light theme); other screens keep the standard bar.
+- CSS lives in `globals.css` (`.module-tile`, `.module-label`, `--tile-*`/`--nav-glass-*` variables). No SQL needed.
