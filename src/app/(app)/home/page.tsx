@@ -71,7 +71,7 @@ export default function HomePage() {
     <div className="relative -mb-24 flex flex-1 flex-col pb-24">
       <RotatingBackground fade={false} showCredit={false} />
       <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-10 px-4 py-8">
-        <h1 className="hebrew text-center text-5xl font-extrabold leading-none text-white [font-family:system-ui,-apple-system,'Segoe UI',sans-serif] drop-shadow-[0_2px_18px_rgba(10,20,40,0.45)]">מילים</h1>
+        <h1 dir="rtl" lang="he" className="text-center text-5xl font-extrabold leading-none text-white [font-family:system-ui,-apple-system,'Segoe UI',sans-serif] drop-shadow-[0_2px_18px_rgba(10,20,40,0.45)]">מילים</h1>
         {/* Smoked-glass tiles, 3 across with the last row centered. */}
         <div className="flex w-[min(318px,100%)] flex-wrap justify-center gap-x-[27px] gap-y-7">
           {MODULES.map((m) => (
