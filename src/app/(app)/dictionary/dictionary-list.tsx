@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { StatusBadge } from "@/components/status-badge";
+import { SearchBox } from "@/components/search-box";
+import { Sheet } from "@/components/sheet";
+import { isWordSortKey, sortWords, WORD_SORTS, type WordSortKey } from "@/lib/dictionary-sort";
 import { matchesFilter, type StudyFilter, type WordStatus } from "@/lib/study";
 import { markWordKnown, resetWord } from "./actions";
 
@@ -26,6 +29,35 @@ const CHIPS: { id: StudyFilter; label: string }[] = [
   { id: "learned", label: "Learned" },
 ];
 
+// The chosen sort is remembered on this device (and for this visit even if the device can't store it).
+const SORT_KEY = "milim-dictionary-sort";
+const SORT_EVENT = "milim-dictionary-sort-change";
+let sortInMemory: WordSortKey | null = null;
+function readSort(): WordSortKey {
+  if (sortInMemory) return sortInMemory;
+  try {
+    const v = localStorage.getItem(SORT_KEY);
+    if (isWordSortKey(v)) return v;
+  } catch {
+    // No storage: fall back to the default.
+  }
+  return "english";
+}
+function subscribeSort(cb: () => void) {
+  window.addEventListener(SORT_EVENT, cb);
+  return () => window.removeEventListener(SORT_EVENT, cb);
+}
+
+function rememberSort(key: WordSortKey) {
+  sortInMemory = key;
+  try {
+    localStorage.setItem(SORT_KEY, key);
+  } catch {
+    // Not remembered for next time, still works now.
+  }
+  window.dispatchEvent(new Event(SORT_EVENT));
+}
+
 export function DictionaryList({
   initialWords,
   showTranslit,
@@ -41,6 +73,13 @@ export function DictionaryList({
   const [filter, setFilter] = useState<StudyFilter>("all");
   const [query, setQuery] = useState("");
   const [problem, setProblem] = useState("");
+  const [sortOpen, setSortOpen] = useState(false);
+  const sort = useSyncExternalStore(subscribeSort, readSort, () => "english" as WordSortKey);
+
+  function chooseSort(key: WordSortKey) {
+    rememberSort(key);
+    setSortOpen(false);
+  }
 
   const counts = useMemo(
     () => ({
@@ -54,12 +93,15 @@ export function DictionaryList({
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return words.filter((w) => {
-      if (!matchesFilter(w.status, filter)) return false;
-      if (!q) return true;
-      return w.lemma.includes(q) || w.english.toLowerCase().includes(q) || (w.transliteration ?? "").toLowerCase().includes(q);
-    });
-  }, [words, filter, query]);
+    return sortWords(
+      words.filter((w) => {
+        if (!matchesFilter(w.status, filter)) return false;
+        if (!q) return true;
+        return w.lemma.includes(q) || w.english.toLowerCase().includes(q) || (w.transliteration ?? "").toLowerCase().includes(q);
+      }),
+      sort,
+    );
+  }, [words, filter, query, sort]);
 
   function change(vocabId: string, next: Pick<DictionaryWord, "status" | "count">, save: Promise<boolean>) {
     setProblem("");
@@ -94,14 +136,20 @@ export function DictionaryList({
         ))}
       </div>
 
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search Hebrew or English"
-        aria-label="Search words"
-        className="h-11 w-full rounded-xl border border-border bg-surface px-4 text-base placeholder:text-muted focus:border-accent focus:outline-none"
-      />
+      <div className="flex gap-2">
+        <SearchBox value={query} onChange={setQuery} placeholder="Search Hebrew or English" label="Search words" />
+        <button
+          type="button"
+          onClick={() => setSortOpen(true)}
+          aria-label="Sort words"
+          className="flex h-11 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-surface px-3 text-sm font-semibold hover:bg-surface-2"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" />
+          </svg>
+          {WORD_SORTS.find((o) => o.id === sort)?.short}
+        </button>
+      </div>
 
       {problem && <p className="rounded-xl border border-danger/40 bg-surface p-3 text-sm text-danger">{problem}</p>}
 
@@ -149,6 +197,30 @@ export function DictionaryList({
             </li>
           ))}
         </ul>
+      )}
+
+      {sortOpen && (
+        <Sheet title="Sort words" onClose={() => setSortOpen(false)}>
+          <div className="flex flex-col gap-1">
+            {WORD_SORTS.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => chooseSort(o.id)}
+                aria-pressed={sort === o.id}
+                className={`flex h-12 items-center justify-between rounded-xl px-4 text-left ${sort === o.id ? "bg-surface-2 font-semibold" : "hover:bg-surface-2"}`}
+              >
+                {o.label}
+                {sort === o.id && (
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M5 12l5 5 9-10" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted">Words are sorted inside whichever filter is chosen. Your choice is remembered on this device.</p>
+        </Sheet>
       )}
     </div>
   );
