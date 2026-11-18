@@ -11,6 +11,8 @@ const field =
 export type FilledRequest = {
   id: string;
   requesterName: string | null;
+  /** True when the person filling it is the one who asked. */
+  mine?: boolean;
   title: string;
   artist: string;
   album: string;
@@ -34,7 +36,15 @@ export function NewSongForm({ request = null }: { request?: FilledRequest | null
         <>
           <input type="hidden" name="request_id" value={request.id} />
           <p className="rounded-xl border border-accent bg-accent/10 p-3 text-sm leading-relaxed">
-            <strong>Filling a request from {request.requesterName ?? "someone"}.</strong> The song will be public and yours, and {request.requesterName ?? "they"} get it in their list.
+            {request.mine ? (
+              <>
+                <strong>Adding the lyrics for your request.</strong> The song will be public and yours.
+              </>
+            ) : (
+              <>
+                <strong>Filling a request from {request.requesterName ?? "someone"}.</strong> The song will be public and yours, and {request.requesterName ?? "they"} get it in their list.
+              </>
+            )}
           </p>
         </>
       )}

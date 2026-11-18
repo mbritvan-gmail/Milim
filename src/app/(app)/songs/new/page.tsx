@@ -33,6 +33,9 @@ async function Body({ searchParams }: { searchParams: Promise<{ request?: string
   let notice = "";
   if (requestId && uuid.test(requestId)) {
     const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     const { data } = await supabase
       .from("song_requests")
       .select("id, title, artist, album, cover_url, spotify_url, youtube_url, status, requester_id")
@@ -45,6 +48,7 @@ async function Body({ searchParams }: { searchParams: Promise<{ request?: string
       request = {
         id: data.id,
         requesterName: who?.display_name ?? null,
+        mine: Boolean(user && user.id === data.requester_id),
         title: data.title,
         artist: data.artist ?? "",
         album: data.album ?? "",

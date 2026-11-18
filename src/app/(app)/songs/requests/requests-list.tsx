@@ -60,21 +60,20 @@ export function RequestsList({ requests: initial, cancel = cancelRequest }: { re
                 <span className="truncate text-xs text-muted">
                   Requested by {r.mine ? "you" : (r.requesterName ?? "someone")} · {ago(r.createdAt)}
                 </span>
+                {r.mine && (
+                  <button
+                    type="button"
+                    disabled={busyId === r.id}
+                    onClick={() => doCancel(r.id)}
+                    className="mt-1 self-start text-xs font-semibold text-muted underline underline-offset-2 hover:text-danger disabled:opacity-60"
+                  >
+                    {busyId === r.id ? "Cancelling…" : "Cancel request"}
+                  </button>
+                )}
               </span>
-              {r.mine ? (
-                <button
-                  type="button"
-                  disabled={busyId === r.id}
-                  onClick={() => doCancel(r.id)}
-                  className="h-9 shrink-0 rounded-xl border border-border px-3 text-sm font-semibold hover:bg-surface-2 disabled:opacity-60"
-                >
-                  {busyId === r.id ? "…" : "Cancel"}
-                </button>
-              ) : (
-                <Link href={`/songs/new?request=${r.id}`} className="flex h-9 shrink-0 items-center rounded-xl bg-accent px-3 text-sm font-semibold text-accent-contrast hover:bg-accent-strong">
-                  Add lyrics
-                </Link>
-              )}
+              <Link href={`/songs/new?request=${r.id}`} className="flex h-9 shrink-0 items-center rounded-xl bg-accent px-3 text-sm font-semibold text-accent-contrast hover:bg-accent-strong">
+                Add lyrics
+              </Link>
             </li>
           ))}
         </ul>
