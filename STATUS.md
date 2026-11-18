@@ -132,7 +132,7 @@ All scripts live in `supabase/migrations/`. The user has run them as features sh
 
 ## Nikud for songs (built; REQUIRES `supabase/migrations/20261124000000_song_nikud.sql`; not yet live-tested with the AI)
 - When a song is added, Claude adds nikud to every lyric line (`lines.vocalized`) and every Song Vocabulary word (`vocab_entries.vocalized`, via `fill_word_extras`); an answer is only accepted if it is the original text with vowel marks added (`isPointedVersion`), so the words can never change.
-- Lyrics, Song Vocabulary, flashcards and the Dictionary word page follow the Show nikud switch where nikud exists; edit mode keeps plain text. Editing a line's Hebrew clears that line's saved nikud. New songs are not given nikud automatically yet.
+- Lyrics, Song Vocabulary, flashcards and the Dictionary word page follow the Show nikud switch where nikud exists; edit mode keeps plain text. Editing a line's Hebrew clears that line's saved nikud.
 
 ## Song groups, search, sort and reorder (built; REQUIRES `supabase/migrations/20261126000000_song_groups.sql`)
 - Songs hamburger menu: Add song / **Create group** / Edit. Groups are named folders (a song is in one group or none); songs not in a group show under "Not in a group" once a group exists. Groups collapse; empty groups stay.
