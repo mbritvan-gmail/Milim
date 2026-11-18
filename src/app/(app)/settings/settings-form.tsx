@@ -5,6 +5,7 @@ import { applyTheme, readTheme, THEME_EVENT, type ThemeChoice } from "@/lib/them
 import { saveSettings, type SettingsChange } from "./actions";
 import type { Direction } from "@/lib/study";
 import type { LyricsSize } from "@/lib/settings";
+import { NikudAll } from "./nikud-all";
 
 const DIRECTIONS: { id: Direction; label: string }[] = [
   { id: "he-en", label: "Hebrew → English" },
@@ -241,6 +242,8 @@ export function SettingsForm({
           <p className="text-xs text-muted">How big the lyrics are on a song page. Smaller shows more lines at once.</p>
         </div>
       </section>
+
+      <NikudAll />
 
       <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
         <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Account</h2>

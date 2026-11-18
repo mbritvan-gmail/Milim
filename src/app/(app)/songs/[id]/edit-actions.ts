@@ -131,9 +131,16 @@ export async function addNikud(songId: string) {
     if (lines.length === 0 && wordEntries.length === 0) return fail("This song already has nikud.");
 
     const texts = [...lines.map((l) => l.hebrew), ...wordEntries.map((w) => w.lemma)];
-    const pointed = await getAIProvider().addNikud({ texts });
+    const usage = { input: 0, output: 0 };
+    const pointed = await getAIProvider().addNikud({
+      texts,
+      onUsage: (u) => {
+        usage.input += u.input;
+        usage.output += u.output;
+      },
+    });
 
-    const out: NikudResult = { lines: [], words: [], skipped: 0 };
+    const out: NikudResult = { lines: [], words: [], skipped: 0, usage };
     lines.forEach((l, i) => {
       if (isPointedVersion(l.hebrew, pointed[i])) out.lines.push({ id: l.id, vocalized: pointed[i].trim() });
     });

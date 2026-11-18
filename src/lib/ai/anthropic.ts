@@ -462,7 +462,7 @@ export class AnthropicProvider implements AIProvider {
     }
   }
 
-  async addNikud({ texts }: AddNikudInput): Promise<string[]> {
+  async addNikud({ texts, onUsage }: AddNikudInput): Promise<string[]> {
     const BATCH = 20;
     const batches: string[][] = [];
     for (let i = 0; i < texts.length; i += BATCH) batches.push(texts.slice(i, i + BATCH));
@@ -480,6 +480,7 @@ export class AnthropicProvider implements AIProvider {
             },
             { signal },
           );
+          onUsage?.({ input: response.usage.input_tokens, output: response.usage.output_tokens });
           const items = response.parsed_output?.items;
           if (response.stop_reason === "refusal" || !items || items.length !== batch.length) {
             throw new AIError("Claude couldn't add nikud to that.");

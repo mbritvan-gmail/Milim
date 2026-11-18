@@ -42,7 +42,7 @@ import type { WordForms } from "../word-forms";
 export type InflectInput = { lemma: string; english: string; kind: "noun" | "adjective" };
 export type { WordForms };
 import type { ModuleWordResult } from "../modules";
-export type AddNikudInput = { texts: string[] };
+export type AddNikudInput = { texts: string[]; /** Called with the tokens each request used, so a batch run can report its cost. */ onUsage?: (usage: { input: number; output: number }) => void };
 export type DefineWordsInput = { title: string; words: string[] };
 export type { ModuleWordResult };
 
