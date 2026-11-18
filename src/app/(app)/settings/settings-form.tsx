@@ -202,24 +202,6 @@ export function SettingsForm({
             <span className={`block h-6 w-6 rounded-full bg-background transition-transform ${showTranslit ? "translate-x-5" : ""}`} />
           </button>
         </div>
-        <div className="flex flex-col gap-2 border-t border-border pt-3">
-          <p className="font-medium">Lyrics size</p>
-          <Segment
-            label="Lyrics size"
-            options={[
-              { id: "small", label: "Small" },
-              { id: "medium", label: "Medium" },
-              { id: "large", label: "Large" },
-            ]}
-            value={lyricsSize}
-            onChange={(sz) => {
-              const before = lyricsSize;
-              setLyricsSize(sz);
-              void change({ lyricsSize: sz }, () => setLyricsSize(before));
-            }}
-          />
-          <p className="text-xs text-muted">How big the lyrics are on a song page. Smaller shows more lines at once.</p>
-        </div>
         <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
           <div>
             <p className="font-medium">Show nikud</p>
@@ -239,6 +221,24 @@ export function SettingsForm({
           >
             <span className={`block h-6 w-6 rounded-full bg-background transition-transform ${showNikud ? "translate-x-5" : ""}`} />
           </button>
+        </div>
+        <div className="flex flex-col gap-2 border-t border-border pt-3">
+          <p className="font-medium">Lyrics size</p>
+          <Segment
+            label="Lyrics size"
+            options={[
+              { id: "small", label: "Small" },
+              { id: "medium", label: "Medium" },
+              { id: "large", label: "Large" },
+            ]}
+            value={lyricsSize}
+            onChange={(sz) => {
+              const before = lyricsSize;
+              setLyricsSize(sz);
+              void change({ lyricsSize: sz }, () => setLyricsSize(before));
+            }}
+          />
+          <p className="text-xs text-muted">How big the lyrics are on a song page. Smaller shows more lines at once.</p>
         </div>
       </section>
 
