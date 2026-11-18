@@ -463,6 +463,15 @@ export function SongsList({
                 ),
               },
               {
+                href: "/songs/request",
+                label: "Request song",
+                icon: (
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 21s-7-4.5-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.5-9 9-9 9z" />
+                  </svg>
+                ),
+              },
+              {
                 label: "Create group",
                 onSelect: () => open({ kind: "create-group" }),
                 icon: (

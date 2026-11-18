@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
@@ -43,7 +44,9 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
   const title = String(formData.get("title") ?? "").trim();
   const artist = String(formData.get("artist") ?? "").trim();
   const lyrics = String(formData.get("lyrics") ?? "");
-  const makePublic = formData.get("visibility") === "public";
+  const requestId = String(formData.get("request_id") ?? "").trim();
+  // A song that fills a request is always public.
+  const makePublic = formData.get("visibility") === "public" || Boolean(requestId);
 
   if (!title) return { error: "Please give the song a title." };
   if (title.length > 120 || artist.length > 120) return { error: "Title and artist must be under 120 characters." };
@@ -55,6 +58,13 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
   const lines = items.filter((i) => !i.section).map((i) => i.text);
   if (lines.length === 0) return { error: "Paste some Hebrew lyrics (we couldn't find any Hebrew text)." };
   if (lines.length > MAX_LINES) return { error: `Too many lines (max ${MAX_LINES}). Try one song at a time.` };
+
+  if (requestId) {
+    // Make sure the request is still open before spending time on the AI.
+    const { data: req, error: reqError } = await supabase.from("song_requests").select("status").eq("id", requestId).maybeSingle();
+    if (reqError) return { error: "Song requests need the latest database update, which hasn't been run yet." };
+    if (!req || req.status !== "open") return { error: "That request was already filled or cancelled. Go back to the Requests tab to pick another." };
+  }
 
   const links = readSongLinks(formData);
   if ("error" in links) return { error: links.error };
@@ -165,6 +175,14 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
     if (error instanceof AIError) return { error: error.message };
     console.error("createSong failed", error);
     return { error: "Something went wrong while saving your song. Please try again." };
+  }
+
+  // Mark the request as filled and put the song in the requester's list. The song is already saved and
+  // public, so if someone filled the request a moment earlier the song simply stays in the library.
+  if (requestId) {
+    const { error: fulfillError } = await supabase.rpc("fulfill_song_request", { p_request_id: requestId, p_song_id: songId });
+    if (fulfillError) console.error("fulfill_song_request failed", fulfillError);
+    revalidatePath("/songs/requests");
   }
 
   return { songId };

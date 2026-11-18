@@ -7,17 +7,37 @@ import { CatalogSearch, Cover, PlayerLinks } from "@/components/song-links";
 const field =
   "w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-foreground placeholder:text-muted focus:border-accent focus:outline-none";
 
-export function NewSongForm() {
+// A song request being filled in: its details come from the request, and the song is added as public.
+export type FilledRequest = {
+  id: string;
+  requesterName: string | null;
+  title: string;
+  artist: string;
+  album: string;
+  coverUrl: string | null;
+  spotifyUrl: string;
+  youtubeUrl: string;
+};
+
+export function NewSongForm({ request = null }: { request?: FilledRequest | null }) {
   const [state, action, pending] = useActionState<CreateSongState, FormData>(createSong, {});
-  const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
-  const [album, setAlbum] = useState("");
-  const [coverUrl, setCoverUrl] = useState<string | null>(null);
-  const [spotifyUrl, setSpotifyUrl] = useState("");
-  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [title, setTitle] = useState(request?.title ?? "");
+  const [artist, setArtist] = useState(request?.artist ?? "");
+  const [album, setAlbum] = useState(request?.album ?? "");
+  const [coverUrl, setCoverUrl] = useState<string | null>(request?.coverUrl ?? null);
+  const [spotifyUrl, setSpotifyUrl] = useState(request?.spotifyUrl ?? "");
+  const [youtubeUrl, setYoutubeUrl] = useState(request?.youtubeUrl ?? "");
 
   return (
     <form action={action} className="flex flex-col gap-5">
+      {request && (
+        <>
+          <input type="hidden" name="request_id" value={request.id} />
+          <p className="rounded-xl border border-accent bg-accent/10 p-3 text-sm leading-relaxed">
+            <strong>Filling a request from {request.requesterName ?? "someone"}.</strong> The song will be public and yours, and {request.requesterName ?? "they"} get it in their list.
+          </p>
+        </>
+      )}
       {coverUrl || album ? (
         <div className="flex items-center gap-3 rounded-2xl border border-accent bg-surface p-3">
           <Cover url={coverUrl} size={64} />
@@ -26,18 +46,20 @@ export function NewSongForm() {
             <span className="truncate text-sm">{artist}</span>
             {album && <span className="truncate text-xs text-muted">{album}</span>}
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setCoverUrl(null);
-              setAlbum("");
-            }}
-            className="shrink-0 px-1 text-sm font-semibold text-accent"
-          >
-            Change
-          </button>
+          {!request && (
+            <button
+              type="button"
+              onClick={() => {
+                setCoverUrl(null);
+                setAlbum("");
+              }}
+              className="shrink-0 px-1 text-sm font-semibold text-accent"
+            >
+              Change
+            </button>
+          )}
         </div>
-      ) : (
+      ) : request ? null : (
         <CatalogSearch
           onPick={(m) => {
             setTitle(m.title);
@@ -96,6 +118,12 @@ export function NewSongForm() {
         <p className="text-xs text-muted">One line per row. Put section names in brackets, like [Chorus] or [בית 2]. Only lines with Hebrew are used.</p>
       </div>
 
+      {request ? (
+        <p className="rounded-xl border border-border bg-surface p-3 text-sm text-muted">
+          Requested songs are always public: <input type="hidden" name="visibility" value="public" />
+          <strong className="text-foreground">everyone can find and add this song.</strong>
+        </p>
+      ) : (
       <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
         <legend className="px-1 text-sm text-muted">Who can see this song?</legend>
         <label className="flex items-start gap-3">
@@ -115,6 +143,7 @@ export function NewSongForm() {
           </span>
         </label>
       </fieldset>
+      )}
 
       {state.error && (
         <p role="alert" className="rounded-xl border border-danger/40 bg-surface p-3 text-sm text-danger">
@@ -127,7 +156,7 @@ export function NewSongForm() {
         disabled={pending}
         className="h-12 rounded-xl bg-accent font-semibold text-accent-contrast transition-colors hover:bg-accent-strong disabled:opacity-60"
       >
-        {pending ? "Translating… this can take up to a minute" : "Translate and save"}
+        {pending ? "Translating… this can take up to a minute" : request ? "Translate and add for this request" : "Translate and save"}
       </button>
     </form>
   );

@@ -3,6 +3,7 @@
 Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-pmh51c`. Live preview: https://milim-seven.vercel.app
 
 ## TO DO FIRST (user)
+- Run `supabase/migrations/20261202000000_song_requests.sql` (song requests). Until then the Requests tab says it needs the database update.
 - Run `supabase/migrations/20261130000000_song_links.sql` (two player links per song, album art, preferred player). Until then songs keep their single link, the song search still works but art isn't saved, and the player setting says it needs the update.
 - Run `supabase/migrations/20261128000000_module_order.sql` (your own order for vocabulary modules). Until then reordering modules says it needs the database update; everything else works.
 - Run `supabase/migrations/20261126000000_song_groups.sql` (song groups and your own song order). Until then the Songs list works as before, without groups.
@@ -132,6 +133,12 @@ Last updated: 2026-11-16 (login verified). Branch: `claude/milim-handoff-review-
 
 ## About page
 - Home's bottom bar shows **About** where Back would be (Back is irrelevant on Home). `/about` (opens as a pop-up with an X) has what's in milim, a few things to know, the photo credits (from `src/lib/login-photos.ts`, so new photos are credited automatically) and thanks. The Home screen no longer shows a photo credit; the sign-in screen still does.
+
+## Song requests (built; REQUIRES `supabase/migrations/20261202000000_song_requests.sql`)
+- Songs menu > **Request song** (`/songs/request`): search the song (Deezer), optionally add Spotify / YouTube links, request it. If the song is already in the library (or already requested) it offers to add / open it instead. Requests are public; no upvotes, no limits; the author can cancel while open.
+- **Requests** tab (third tab beside My songs and Public library, `/songs/requests`): open requests with **Add lyrics** (or Cancel for your own); **Done** lists requests filled in the last 14 days (your own ready one is highlighted, with Open).
+- **Add lyrics** from a request opens `/songs/new?request=ID` prefilled (title, artist, album, cover art, links); the song is always public and owned by the filler; on save the database function `fulfill_song_request` marks the request filled and adds the song to the requester's list (a row for another user, hence the function). If someone else filled it first, the song is still added to the library.
+- Not built: notifications (the requester finds out on the Requests tab), fading done requests beyond 14 days is just a filter.
 
 ## Naming
 - Vocabulary modules are called **Word Packs** ("Pack", capitalized) everywhere users see them; "modules" is reserved for the Home screen sections (Songs, Vocabulary, Flash Cards, Dictionary). Code, routes and database tables keep the name `modules`.
