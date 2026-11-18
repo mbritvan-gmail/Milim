@@ -20,7 +20,6 @@ import * as editActionModule from "./edit-actions";
 
 // Server actions handed to the screen as a plain object (so tests can swap in stand-ins).
 const editActions: EditActions = {
-  addNikud: editActionModule.addNikud,
   updateLine: editActionModule.updateLine,
   suggestWord: editActionModule.suggestWord,
   addVocabulary: editActionModule.addVocabulary,
@@ -81,6 +80,7 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   const song = songRes.data;
   if (!song) notFound();
 
+  const isOwner = song.owner_id === user.id;
   const nikudByLine = new Map((nikudRes.error ? [] : (nikudRes.data ?? [])).map((r) => [r.id as string, (r.vocalized as string | null) ?? null]));
   const lines: SongLine[] = (linesRes.data ?? []).map((l) => ({ ...l, vocalized: nikudByLine.get(l.id) ?? null }));
   const entries = (wordsRes.data ?? []).flatMap((row) => {
@@ -109,7 +109,6 @@ async function SongBody({ params }: { params: Promise<{ id: string }> }) {
   const youtubeMedia = parseMedia(youtubeUrl);
   const coverUrl: string | null = extra?.cover_url ?? null;
   const album: string | null = extra?.album ?? null;
-  const isOwner = song.owner_id === user.id;
   const inMyList = Boolean(mineRes.data);
   // The sharer's name is a separate, optional lookup, so it can never break the page.
   let sharedBy: string | null = null;
