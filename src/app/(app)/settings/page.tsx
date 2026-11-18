@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadSettings } from "@/lib/settings";
 import { fingerprint } from "@/lib/study";
 import { SettingsForm } from "./settings-form";
+import { PageClose } from "@/components/overlay";
 
 export const metadata = { title: "Settings · milim" };
 
@@ -30,8 +31,9 @@ async function SettingsBody() {
 
   return (
     <>
-      <header className="flex flex-col gap-1">
+      <header className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Settings</h1>
+        <PageClose href="/home" />
       </header>
       <SettingsForm
         key={fingerprint([settings.learnAfter, settings.direction, settings.showTranslit, settings.showNikud, settings.preferredPlayer, settings.lyricsSize])}

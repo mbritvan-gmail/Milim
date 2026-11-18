@@ -76,6 +76,18 @@ export function CloseButton({ fallbackHref, className }: { fallbackHref?: string
   );
 }
 
+// An X for a screen that is usually a pop-up but can also be opened as a full page (a refresh or a direct
+// link). In the pop-up the top bar already has the X, so this renders nothing there.
+export function PageClose({ href }: { href: string }) {
+  const overlay = useOverlay();
+  if (overlay) return null;
+  return (
+    <Link href={href} aria-label="Close" className={closeClass}>
+      ×
+    </Link>
+  );
+}
+
 // Inside a pop-up, "go back" buttons close it; on a normal page they are ordinary links.
 export function CloseOrLink({
   href,

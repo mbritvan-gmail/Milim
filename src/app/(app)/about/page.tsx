@@ -1,4 +1,5 @@
 import { LOGIN_PHOTOS } from "@/lib/login-photos";
+import { PageClose } from "@/components/overlay";
 
 export const metadata = { title: "About · milim" };
 
@@ -12,6 +13,9 @@ const FEATURES = [
 export default function AboutPage() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8">
+      <div className="flex justify-end empty:hidden">
+        <PageClose href="/home" />
+      </div>
       <header className="flex flex-col items-center gap-1 text-center">
         <h1 className="hebrew text-5xl font-bold text-accent">מילים</h1>
         <p className="text-xl font-semibold">milim</p>
