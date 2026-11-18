@@ -196,30 +196,6 @@ export function SongView({
     return null;
   }
 
-  // ---- nikud -------------------------------------------------------------
-  const [nikudBusy, setNikudBusy] = useState(false);
-  const missingNikud = lyricLines.some((l) => !l.vocalized) || words.some((w) => !w.vocalized);
-
-  async function addNikud() {
-    setNikudBusy(true);
-    const r = await actions.addNikud(songId).catch(() => ({ ok: false as const, error: "Couldn't add nikud. Please try again." }));
-    setNikudBusy(false);
-    if (!r.ok) {
-      showToast(r.error);
-      return;
-    }
-    const byLine = new Map(r.lines.map((l) => [l.id, l.vocalized]));
-    const byWord = new Map(r.words.map((w) => [w.id, w.vocalized]));
-    setLines((ls) => ls.map((l) => (byLine.has(l.id) ? { ...l, vocalized: byLine.get(l.id) ?? null } : l)));
-    setWords((ws) => ws.map((w) => (byWord.has(w.id) ? { ...w, vocalized: byWord.get(w.id) ?? null } : w)));
-    const parts = [r.lines.length ? `${r.lines.length} ${r.lines.length === 1 ? "line" : "lines"}` : "", r.words.length ? `${r.words.length} ${r.words.length === 1 ? "word" : "words"}` : ""].filter(Boolean);
-    showToast(
-      r.skipped > 0
-        ? `Added nikud to ${parts.join(" and ")}. ${r.skipped} couldn't be done; tap Add nikud again.`
-        : `Added nikud to ${parts.join(" and ")}`,
-    );
-  }
-
   // ---- song details ------------------------------------------------------
   async function saveDetails(d: SongDetails) {
     const r = await actions.updateSongDetails(songId, d);
@@ -309,16 +285,6 @@ export function SongView({
             <>
               <p className="text-sm text-muted">Tap a Hebrew word to add it to the Song Vocabulary.</p>
               <div className="flex flex-wrap gap-2">
-                {missingNikud && (
-                  <button
-                    type="button"
-                    onClick={addNikud}
-                    disabled={nikudBusy}
-                    className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-surface-2 disabled:opacity-60"
-                  >
-                    {nikudBusy ? "Adding nikud…" : "Add nikud"}
-                  </button>
-                )}
                 <button type="button" onClick={() => setSheet({ kind: "details" })} className="rounded-full border border-border px-3 py-1.5 text-sm hover:bg-surface-2">
                   Title, artist &amp; link
                 </button>

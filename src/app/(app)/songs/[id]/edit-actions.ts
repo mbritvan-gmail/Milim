@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
 import { hasHebrew, isSectionLabel } from "@/lib/lyrics";
-import { isPointedVersion } from "@/lib/nikud";
+import { pointAll } from "@/lib/nikud-run";
 import { checkSongLinks, isMissingLinkColumn, songLinkColumns } from "@/lib/song-links";
 import {
   MAX_ENGLISH,
@@ -131,30 +131,7 @@ export async function addNikud(songId: string) {
     if (lines.length === 0 && wordEntries.length === 0) return fail("This song already has nikud.");
 
     const texts = [...lines.map((l) => l.hebrew), ...wordEntries.map((w) => w.lemma)];
-    const usage = { input: 0, output: 0 };
-    const ai = getAIProvider();
-    // Ask for each text up to three times: an occasional answer comes back changed or in the wrong shape.
-    const answers: (string | null)[] = texts.map(() => null);
-    const plainOf = (i: number) => (i < lines.length ? lines[i].hebrew : wordEntries[i - lines.length].lemma);
-    let lastError = "";
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const todo = answers.map((a, i) => (a === null ? i : -1)).filter((i) => i >= 0);
-      if (todo.length === 0) break;
-      try {
-        const got = await ai.addNikud({
-          texts: todo.map((i) => texts[i]),
-          onUsage: (u) => {
-            usage.input += u.input;
-            usage.output += u.output;
-          },
-        });
-        todo.forEach((i, k) => {
-          if (isPointedVersion(plainOf(i), got[k])) answers[i] = got[k].trim();
-        });
-      } catch (error) {
-        lastError = error instanceof AIError ? error.message : GENERIC;
-      }
-    }
+    const { answers, usage, lastError } = await pointAll(getAIProvider(), texts);
 
     const out: NikudResult = { lines: [], words: [], skipped: 0, usage };
     lines.forEach((l, i) => {

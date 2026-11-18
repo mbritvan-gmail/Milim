@@ -36,7 +36,7 @@ export type DefineWordInput = { word: string; line: string; title?: string };
 export type DefineWordResult = { lemma: string; transliteration: string; english: string; part_of_speech: string };
 
 import type { ConjugationData } from "../conjugation";
-export type ConjugateInput = { lemma: string; english: string };
+export type ConjugateInput = { lemma: string; english: string; onUsage?: (usage: { input: number; output: number }) => void };
 export type { ConjugationData };
 import type { WordForms } from "../word-forms";
 export type InflectInput = { lemma: string; english: string; kind: "noun" | "adjective" };

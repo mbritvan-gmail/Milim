@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAIProvider, AIError } from "@/lib/ai";
+import { pointAll } from "@/lib/nikud-run";
 import { MAX_LINES, MAX_LYRICS_CHARS, parseLyrics, sectionEnglish } from "@/lib/lyrics";
 import { CatalogError, searchSongs, type SongMatch } from "@/lib/deezer";
 import { isMissingLinkColumn, readSongLinks, songLinkColumns } from "@/lib/song-links";
@@ -104,6 +105,16 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
       }
     }
 
+    // Nikud for every line and vocabulary word, asked for while the song is being saved. It is a bonus: if it
+    // fails the song is still saved, and Settings has a button that fills in anything missing later.
+    const lemmas = [...new Set(analysis.vocab.map((w) => w.lemma))];
+    const lyricTexts = rows.filter((_, i) => positionOfLyric.includes(i)).map((r) => r.hebrew);
+    const nikudTexts = [...lyricTexts, ...lemmas];
+    const nikudPromise = pointAll(getAIProvider(), nikudTexts).catch((error) => {
+      console.error("createSong nikud failed", error);
+      return null;
+    });
+
     // Always create as private first, so a failure part-way can be cleaned up
     // (public songs can't be deleted). Make it public only at the very end.
     const base = { owner_id: user.id, title, artist: artist || null, visibility: "private" };
@@ -125,6 +136,7 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
         .select("id, position");
       if (linesError || !lineRows) throw new Error(`lines insert: ${linesError?.message}`);
       const lineIdByPosition = new Map(lineRows.map((r) => [r.position, r.id]));
+      let entryRows: { id: string; lemma: string }[] = [];
 
       if (analysis.vocab.length > 0) {
         const { error: vocabError } = await supabase.from("vocab_entries").upsert(
@@ -144,6 +156,7 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
           .in("lemma", [...new Set(analysis.vocab.map((w) => w.lemma))]);
         if (lookupError || !entries) throw new Error(`vocab lookup: ${lookupError?.message}`);
         const idByKey = new Map(entries.map((e) => [`${e.lemma}|${e.english}`, e.id]));
+        entryRows = entries;
 
         const songWords = new Map<string, { song_id: string; vocab_entry_id: string; surface_form: string; line_id: string | null; source: string }>();
         for (const w of analysis.vocab) {
@@ -161,6 +174,30 @@ async function runCreateSong(formData: FormData): Promise<CreateSongOutcome> {
           const { error: swError } = await supabase.from("song_words").insert([...songWords.values()]);
           if (swError) throw new Error(`song_words insert: ${swError.message}`);
         }
+      }
+
+      // Save the nikud (best effort; never fails the song).
+      try {
+        const nikud = await nikudPromise;
+        if (nikud) {
+          const { answers, usage } = nikud;
+          console.log(`createSong: nikud texts=${nikudTexts.length} accepted=${answers.filter(Boolean).length} tokens in=${usage.input} out=${usage.output}`);
+          await Promise.all(
+            lyricTexts.map((_, i) => {
+              const text = answers[i];
+              const lineId = lineIdByPosition.get(positionOfLyric[i]);
+              return text && lineId ? supabase.from("lines").update({ vocalized: text }).eq("id", lineId).eq("song_id", songId) : null;
+            }),
+          );
+          const byLemma = new Map(lemmas.map((l, i) => [l, answers[lyricTexts.length + i]]));
+          const items = entryRows.flatMap((e) => {
+            const text = byLemma.get(e.lemma);
+            return text ? [{ id: e.id, vocalized: text, gender: "", plural: "" }] : [];
+          });
+          if (items.length > 0) await supabase.rpc("fill_word_extras", { p_items: items });
+        }
+      } catch (error) {
+        console.error("createSong nikud save failed", error);
       }
 
       if (makePublic) {

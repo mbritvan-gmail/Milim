@@ -6,7 +6,7 @@ import { AIError } from "@/lib/ai/types";
 import { ConjugationSchema, looksComplete } from "@/lib/conjugation";
 import { WordFormsSchema, adjectiveLooksComplete, formsKind, nounLooksComplete, type WordForms } from "@/lib/word-forms";
 
-export type FormsResult = { ok: true; forms: WordForms } | { ok: false; error: string };
+export type FormsResult = { ok: true; forms: WordForms; /** Tokens Claude used for this word (0 when it was already saved). */ usage?: { input: number; output: number } } | { ok: false; error: string };
 
 function isComplete(w: WordForms): boolean {
   if (w.kind === "verb") return looksComplete(w.data);
@@ -40,8 +40,16 @@ export async function getWordForms(vocabId: string): Promise<FormsResult> {
 
     const provider = getAIProvider();
     let forms: WordForms;
+    const usage = { input: 0, output: 0 };
     if (kind === "verb") {
-      const data = await provider.conjugateVerb({ lemma: word.lemma, english: word.english });
+      const data = await provider.conjugateVerb({
+        lemma: word.lemma,
+        english: word.english,
+        onUsage: (u) => {
+          usage.input += u.input;
+          usage.output += u.output;
+        },
+      });
       forms = { kind: "verb", data: ConjugationSchema.parse(data) };
     } else {
       forms = await provider.inflectWord({ lemma: word.lemma, english: word.english, kind });
@@ -51,7 +59,7 @@ export async function getWordForms(vocabId: string): Promise<FormsResult> {
       // Still show the forms even if saving them failed (for example, the database script wasn't run).
       console.error("word_forms save failed", error);
     }
-    return { ok: true, forms };
+    return { ok: true, forms, usage };
   } catch (error) {
     if (error instanceof AIError) return { ok: false, error: error.message };
     console.error("getWordForms crashed", error);

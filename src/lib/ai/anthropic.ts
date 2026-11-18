@@ -366,7 +366,7 @@ export class AnthropicProvider implements AIProvider {
     }
   }
 
-  async conjugateVerb({ lemma, english }: ConjugateInput): Promise<ConjugationData> {
+  async conjugateVerb({ lemma, english, onUsage }: ConjugateInput): Promise<ConjugationData> {
     const signal = AbortSignal.timeout(50_000);
     try {
       const response = await this.client.messages.parse(
@@ -379,6 +379,7 @@ export class AnthropicProvider implements AIProvider {
         },
         { signal },
       );
+      onUsage?.({ input: response.usage.input_tokens, output: response.usage.output_tokens });
       if (response.stop_reason === "refusal" || !response.parsed_output) {
         throw new AIError("Claude couldn't conjugate that verb.");
       }
