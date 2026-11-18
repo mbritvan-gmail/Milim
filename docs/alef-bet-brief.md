@@ -9,7 +9,10 @@ This is a feature brief: it says what to build and why, what already exists to b
 **Branch.** Start from the latest work, branch `claude/milim-handoff-review-pmh51c` (it has everything described in `STATUS.md`; `main` may be behind). Create your own branch from it, `claude/alef-bet-trainer` unless the session assigns another name, and push only there. Do not push to the handoff branch or `main`. Do not open a pull request unless asked.
 
 **Another session is working on the Songs module at the same time.** Do not edit:
-- `src/app/(app)/songs/**`, `src/components/song-*.tsx`, `src/lib/lyric-repeats.ts`, `src/lib/nikud-run.ts`, `src/lib/lyrics.ts`
+- `src/app/(app)/songs/**`, `src/components/song-*.tsx`, `src/lib/lyric-repeats.ts`, `src/lib/nikud-run.ts`, `src/lib/nikud-admin.ts`, `src/lib/lyrics.ts`
+- Settings: `src/app/(app)/settings/**` and `src/lib/settings.ts` (the other session is changing them now; the trainer needs no new settings)
+- the AI provider code in `src/lib/ai/**` (the trainer does not need AI; audio generation is a separate script, see section 7)
+- any other code related to songs (that session is cleaning it up)
 - the `.song-page` rules in `src/app/globals.css`
 
 If your work needs a change to flashcards, the dictionary, `vocab_entries`, or any existing table, **stop and ask the owner first**; the other session may be changing the same thing. Keep changes to shared files minimal and additive:
