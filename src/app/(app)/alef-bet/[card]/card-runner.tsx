@@ -113,20 +113,13 @@ export function CardRunner({
         <p className="rounded-xl border border-border px-3.5 py-2.5 text-[13px] leading-snug text-muted">{card.note}</p>
       )}
 
+      {/* Hebrew reads right to left, so Next is on the left and Previous on the right. Same size; at the first card
+          Previous is dimmed rather than removed so the buttons never move. */}
       <div className="mt-auto flex gap-2 pt-2">
-        {index > 0 && (
-          <button
-            type="button"
-            onClick={() => setIndex(index - 1)}
-            className="h-13 rounded-2xl border border-border px-5 font-medium hover:bg-surface"
-          >
-            Previous
-          </button>
-        )}
         {isLast ? (
           <CloseOrLink
             href={backHref}
-            className="flex h-13 flex-1 items-center justify-center rounded-2xl bg-accent text-base font-semibold text-accent-contrast hover:bg-accent-strong"
+            className="flex h-13 flex-1 items-center justify-center rounded-2xl border border-transparent bg-accent text-base font-semibold text-accent-contrast hover:bg-accent-strong"
           >
             Done
           </CloseOrLink>
@@ -134,11 +127,19 @@ export function CardRunner({
           <button
             type="button"
             onClick={() => setIndex(index + 1)}
-            className="h-13 flex-1 rounded-2xl bg-accent text-base font-semibold text-accent-contrast hover:bg-accent-strong"
+            className="h-13 flex-1 rounded-2xl border border-transparent bg-accent text-base font-semibold text-accent-contrast hover:bg-accent-strong"
           >
             Next
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => setIndex(index - 1)}
+          disabled={index === 0}
+          className="h-13 flex-1 rounded-2xl border border-border text-base font-semibold hover:bg-surface disabled:opacity-35 disabled:hover:bg-transparent"
+        >
+          Previous
+        </button>
       </div>
     </div>
   );
