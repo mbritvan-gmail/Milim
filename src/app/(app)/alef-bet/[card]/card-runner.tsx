@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CloseButton, CloseOrLink } from "@/components/overlay";
-import { plainHebrew, type LetterCard } from "@/lib/alef-bet/letters";
+import { plainHebrew, positionLabel, type LetterCard } from "@/lib/alef-bet/letters";
 import { exampleClipId, nameClipId, soundClipId } from "@/lib/alef-bet/audio-clips";
-import { markCardSeen } from "../actions";
 import { SpeakerButton } from "./speaker-button";
 
 // How big the glyphs in the Print / Script panels are: one letter is large, a letter with its final form
@@ -17,8 +16,6 @@ function glyphSize(card: LetterCard) {
 export function CardRunner({
   cards,
   startIndex,
-  groupNumber,
-  groupName,
   showNikud,
   showTranslit,
   scriptClass,
@@ -26,8 +23,6 @@ export function CardRunner({
 }: {
   cards: LetterCard[];
   startIndex: number;
-  groupNumber: number;
-  groupName: string;
   showNikud: boolean;
   showTranslit: boolean;
   /** className of the handwriting font (loaded on the server). */
@@ -35,20 +30,8 @@ export function CardRunner({
   backHref: string;
 }) {
   const [index, setIndex] = useState(Math.min(Math.max(startIndex, 0), cards.length - 1));
-  const [saveProblem, setSaveProblem] = useState(false);
   const card = cards[index];
   const isLast = index === cards.length - 1;
-
-  // A card counts as seen as soon as it is on screen.
-  useEffect(() => {
-    let current = true;
-    markCardSeen(card.id)
-      .then((ok) => current && !ok && setSaveProblem(true))
-      .catch(() => current && setSaveProblem(true));
-    return () => {
-      current = false;
-    };
-  }, [card.id]);
 
   // The vowel signs are the lesson, so they always show with their marks; words follow the setting.
   const withNikud = showNikud || card.kind === "vowel";
@@ -58,24 +41,10 @@ export function CardRunner({
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-1 flex-col gap-3 px-4 pb-6 pt-4">
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <span className="w-10" />
-          <p className="text-sm text-muted">
-            {groupName} · {card.kind === "letter" ? "Letter" : "Sign"} {index + 1} of {cards.length}
-          </p>
-          <CloseButton fallbackHref={backHref} />
-        </div>
-        <div
-          className="h-1.5 overflow-hidden rounded-full bg-border"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={cards.length}
-          aria-valuenow={index + 1}
-          aria-label={`Group ${groupNumber} progress`}
-        >
-          <div className="h-full bg-accent transition-all" style={{ width: `${((index + 1) / cards.length) * 100}%` }} />
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        <span className="w-10" />
+        <p className="text-sm text-muted">{positionLabel(card)}</p>
+        <CloseButton fallbackHref={backHref} />
       </div>
 
       <div className={`grid gap-2.5 ${card.script ? "grid-cols-2" : "grid-cols-1"}`}>
@@ -144,12 +113,6 @@ export function CardRunner({
         <p className="rounded-xl border border-border px-3.5 py-2.5 text-[13px] leading-snug text-muted">{card.note}</p>
       )}
 
-      {saveProblem && (
-        <p role="alert" className="rounded-xl border border-warn/50 bg-surface p-3 text-sm text-warn">
-          Your progress couldn&apos;t be saved right now. The cards still work.
-        </p>
-      )}
-
       <div className="mt-auto flex gap-2 pt-2">
         {index > 0 && (
           <button
@@ -165,7 +128,7 @@ export function CardRunner({
             href={backHref}
             className="flex h-13 flex-1 items-center justify-center rounded-2xl bg-accent text-base font-semibold text-accent-contrast hover:bg-accent-strong"
           >
-            Finish {groupName.toLowerCase()}
+            Done
           </CloseOrLink>
         ) : (
           <button
