@@ -66,9 +66,8 @@ if (!key || !region) {
 const escapeXml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 async function speak(voiceName, clip) {
-  // With a pronunciation hint (clip.ipa) the voice is told which sounds to make for this text.
-  const inner = clip.ipa ? `<phoneme alphabet="ipa" ph="${escapeXml(clip.ipa)}">${escapeXml(clip.text)}</phoneme>` : escapeXml(clip.text);
-  const ssml = `<speak version="1.0" xml:lang="he-IL"><voice name="${voiceName}"><prosody rate="-15%">${inner}</prosody></voice></speak>`;
+  // The voice is only given the Hebrew text (letters with their vowel marks), nothing else.
+  const ssml = `<speak version="1.0" xml:lang="he-IL"><voice name="${voiceName}"><prosody rate="-15%">${escapeXml(clip.text)}</prosody></voice></speak>`;
   const res = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
     method: "POST",
     headers: {
@@ -87,6 +86,9 @@ let manifest = {};
 try {
   manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 } catch {}
+// Forget clips that are no longer part of the list (for example after ids change).
+const knownIds = new Set(everyClip.map((c) => c.id));
+for (const voice of Object.keys(manifest)) for (const id of Object.keys(manifest[voice])) if (!knownIds.has(id)) delete manifest[voice][id];
 
 let made = 0;
 let failed = 0;

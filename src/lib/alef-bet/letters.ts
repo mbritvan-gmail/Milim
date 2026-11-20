@@ -13,6 +13,8 @@ export type Sound = {
   like: string;
   /** A short note ("with a dot inside"). */
   note: string;
+  /** A final form says the same as an earlier row of its card: the index of that row (it has no clips of its own). */
+  as?: number;
 };
 
 export type Example = {
@@ -63,7 +65,7 @@ const L = (
   note: extra.note,
 });
 
-const s = (form: string, say: string, like: string, note: string): Sound => ({ form, say, like, note });
+const s = (form: string, say: string, like: string, note: string, as?: number): Sound => ({ form, say, like, note, ...(as === undefined ? {} : { as }) });
 const ex = (hebrew: string, lead: string, translit: string, english: string): Example => ({ hebrew, lead, translit, english });
 
 export const CARDS: LetterCard[] = [
@@ -83,13 +85,13 @@ export const CARDS: LetterCard[] = [
   L("yod", "י", "yod", [s("י", "y", "as in yes", "also writes the vowels “i” and “e” (see Vowels)")], ex("יָד", "יָ", "yad", "hand")),
   L("kaf", "כ",
     "kaf",
-    [s("כ" + DAGESH, "k", "as in kite", "with a dot inside"), s("כ", "kh", "like the “ch” in Bach", "no dot"), s("ך", "kh", "same sound", "final form: only at the end of a word")],
+    [s("כ" + DAGESH, "k", "as in kite", "with a dot inside"), s("כ", "kh", "like the “ch” in Bach", "no dot"), s("ך", "kh", "same sound", "final form: only at the end of a word", 1)],
     ex("כֶּלֶב", "כֶּ", "kelev", "dog"),
     { final: "ך", nameNote: "also “khaf”", note: "Heads up: כ without the dot says “kh”, just like ח (khet)." },
   ),
   L("lamed", "ל", "lamed", [s("ל", "l", "as in lamp", "")], ex("לֶחֶם", "לֶ", "lekhem", "bread")),
-  L("mem", "מ", "mem", [s("מ", "m", "as in mom", ""), s("ם", "m", "same sound", "final form: only at the end of a word")], ex("מַיִם", "מַ", "mayim", "water"), { final: "ם" }),
-  L("nun", "נ", "nun", [s("נ", "n", "as in net", ""), s("ן", "n", "same sound", "final form: only at the end of a word")], ex("נֵר", "נֵ", "ner", "candle"), { final: "ן" }),
+  L("mem", "מ", "mem", [s("מ", "m", "as in mom", ""), s("ם", "m", "same sound", "final form: only at the end of a word", 0)], ex("מַיִם", "מַ", "mayim", "water"), { final: "ם" }),
+  L("nun", "נ", "nun", [s("נ", "n", "as in net", ""), s("ן", "n", "same sound", "final form: only at the end of a word", 0)], ex("נֵר", "נֵ", "ner", "candle"), { final: "ן" }),
   L("samekh", "ס", "samekh", [s("ס", "s", "as in sun", "")], ex("סוּס", "סוּ", "sus", "horse"), {
     note: "Heads up: ס says “s”, just like שׂ (sin).",
   }),
@@ -98,11 +100,11 @@ export const CARDS: LetterCard[] = [
   }),
   L("pe", "פ",
     "pe",
-    [s("פ" + DAGESH, "p", "as in pen", "with a dot inside"), s("פ", "f", "as in fan", "no dot"), s("ף", "f", "same sound", "final form: only at the end of a word")],
+    [s("פ" + DAGESH, "p", "as in pen", "with a dot inside"), s("פ", "f", "as in fan", "no dot"), s("ף", "f", "same sound", "final form: only at the end of a word", 1)],
     ex("פֶּה", "פֶּ", "pe", "mouth"),
     { final: "ף", nameNote: "also “fe”" },
   ),
-  L("tsadi", "צ", "tsadi", [s("צ", "ts", "as in cats", ""), s("ץ", "ts", "same sound", "final form: only at the end of a word")], ex("צָב", "צָ", "tsav", "turtle"), { final: "ץ" }),
+  L("tsadi", "צ", "tsadi", [s("צ", "ts", "as in cats", ""), s("ץ", "ts", "same sound", "final form: only at the end of a word", 0)], ex("צָב", "צָ", "tsav", "turtle"), { final: "ץ" }),
   L("kuf", "ק", "kuf", [s("ק", "k", "as in kite", "")], ex("קָפֶה", "קָ", "kafe", "coffee"), {
     note: "Heads up: ק says “k”, just like כ with a dot.",
   }),
@@ -156,43 +158,73 @@ export const plainHebrew = (text: string) => text.replace(NIKUD, "");
 
 // ---------------------------------------------------------------------------
 // Sound clips: which clips the cards can play, and what a voice should say for each. The list is used by
-// the generation script (scripts/alef-bet-audio) so the two always agree. Clip ids: "<card>-name",
-// "<card>-sound-<n>" (n counts the card's sound rows from 1) and "word-<translit>".
+// the generation script (scripts/alef-bet-audio) so the two always agree. Nothing is spelled out or explained to
+// the voice: it is only given Hebrew letters with their vowel marks.
+//   name  "<card>-name"                 the letter with the two dots (shva) under it
+//   sound "<card>-sound-<n>-<vowel>"    the consonant sound n of a letter card with the vowel a, e, i, o or u
+//         "<card>-sound-<n>"            a vowel card's own sign (no picker)
+//   word  "word-<translit>"             the example word
 // ---------------------------------------------------------------------------
-export const nameClipId = (card: LetterCard) => `${card.id}-name`;
-export const soundClipId = (card: LetterCard, index: number) => `${card.id}-sound-${index + 1}`;
-export const exampleClipId = (card: LetterCard) => `word-${card.example.translit}`;
-
-// How each letter name is said. Chosen by ear (owner, 2026-11): most names sound right from the bare letter alone;
-// a few letters (bet, vav, lamed, ayin, resh) read as the one-letter word they can be at the start of a word
-// ("in", "and", "to"...) unless a pronunciation hint is given. The hint is in IPA (standard phonetic symbols).
-const NAME_HINT: Record<string, string> = {
-  bet: "ˈbet", vav: "ˈvav", lamed: "ˈlamed", ayin: "ˈajin", resh: "ˈʁeʃ",
-};
+export const VOWEL_OPTIONS = [
+  { id: "a", sign: "\u05B7" }, // patach
+  { id: "e", sign: "\u05B5" }, // tsere
+  { id: "i", sign: "\u05B4" }, // hiriq
+  { id: "o", sign: "\u05B9" }, // holam
+  { id: "u", sign: "\u05BB" }, // kubutz
+] as const;
+export type VowelId = (typeof VOWEL_OPTIONS)[number]["id"];
+export const DEFAULT_VOWEL: VowelId = "a";
 
 const FINAL_TO_BASE: Record<string, string> = { "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" };
+const isFinalRow = (sound: Sound) => sound.as !== undefined;
 
-// A bare consonant can't be said, so a letter's sound is a short syllable: the letter plus "a" (ba, va, ga).
-// A final form says the same syllable as its base letter. A vowel sign is already on alef, so it is said as is.
-export function soundSpeak(card: LetterCard, index: number): string {
+export const nameClipId = (card: LetterCard) => `${card.id}-name`;
+export const exampleClipId = (card: LetterCard) => `word-${card.example.translit}`;
+/** A letter card's sound rows depend on the chosen vowel; a final form plays the clip of the row it repeats. */
+export const soundClipId = (card: LetterCard, index: number, vowel: VowelId = DEFAULT_VOWEL) =>
+  card.kind === "vowel" ? `${card.id}-sound-${index + 1}` : `${card.id}-sound-${(card.sounds[index].as ?? index) + 1}-${vowel}`;
+
+const signOf = (vowel: VowelId) => VOWEL_OPTIONS.find((v) => v.id === vowel)!.sign;
+// The consonant, its dot if it has one, and the vowel mark (the vowel mark goes right after the letter).
+const withVowel = (form: string, vowel: VowelId) => form.slice(0, 1) + signOf(vowel) + form.slice(1);
+
+/** What is shown for a sound row: the letter (with its dot) carrying the chosen vowel. A final form is shown as it is. */
+export function soundGlyph(card: LetterCard, index: number, vowel: VowelId): string {
+  const sound = card.sounds[index];
+  return card.kind === "vowel" || isFinalRow(sound) ? sound.form : withVowel(sound.form, vowel);
+}
+
+/** The syllable in Latin letters ("ba", "be", "kha"); a silent letter just gives the vowel ("a"). */
+export function syllableLabel(card: LetterCard, index: number, vowel: VowelId): string {
+  const sound = card.sounds[index];
+  if (card.kind === "vowel") return sound.say;
+  return sound.say === "(silent)" ? vowel : `${sound.say}${vowel}`;
+}
+
+/** The text a voice reads for a sound row: the letter (final forms: their base letter) with the vowel mark. */
+function soundSpeak(card: LetterCard, index: number, vowel: VowelId): string {
   const form = card.sounds[index].form;
   if (card.kind === "vowel") return form;
   const base = [...form].map((ch) => FINAL_TO_BASE[ch] ?? ch).join("");
-  const cluster = base.slice(0, 1) + "ַ" + base.slice(1);
-  return cluster;
+  return withVowel(base, vowel);
 }
 
-/** `text` is what is shown to a reviewer; when `ipa` is set, a voice is told to pronounce that text as those sounds. */
-export type Clip = { id: string; text: string; kind: "name" | "sound" | "word"; ipa?: string };
+export type Clip = { id: string; text: string; kind: "name" | "sound" | "word" };
 
 /** Every clip the cards can play, once each, with the text a voice should say. */
 export function allClips(): Clip[] {
   const out = new Map<string, Clip>();
   for (const card of ALL_CARDS) {
     if (card.kind === "letter") {
-      out.set(nameClipId(card), { id: nameClipId(card), text: card.print.split(" ")[0], kind: "name", ...(NAME_HINT[card.id] ? { ipa: NAME_HINT[card.id] } : {}) });
+      // The letter name: the letter with the two dots under it.
+      out.set(nameClipId(card), { id: nameClipId(card), text: card.print.split(" ")[0] + "\u05B0", kind: "name" });
+      card.sounds.forEach((sound, i) => {
+        if (isFinalRow(sound)) return;
+        for (const v of VOWEL_OPTIONS) out.set(soundClipId(card, i, v.id), { id: soundClipId(card, i, v.id), text: soundSpeak(card, i, v.id), kind: "sound" });
+      });
+    } else {
+      card.sounds.forEach((_, i) => out.set(soundClipId(card, i), { id: soundClipId(card, i), text: soundSpeak(card, i, DEFAULT_VOWEL), kind: "sound" }));
     }
-    card.sounds.forEach((_, i) => out.set(soundClipId(card, i), { id: soundClipId(card, i), text: soundSpeak(card, i), kind: "sound" }));
     out.set(exampleClipId(card), { id: exampleClipId(card), text: card.example.hebrew, kind: "word" });
   }
   return [...out.values()];

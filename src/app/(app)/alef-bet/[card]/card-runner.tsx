@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { CloseButton, CloseOrLink } from "@/components/overlay";
-import { plainHebrew, positionLabel, type LetterCard } from "@/lib/alef-bet/letters";
+import { DEFAULT_VOWEL, VOWEL_OPTIONS, plainHebrew, positionLabel, soundClipId, soundGlyph, syllableLabel, type LetterCard, type VowelId } from "@/lib/alef-bet/letters";
 import type { SpeechVoice } from "@/lib/settings";
-import { exampleClipId, nameClipId, soundClipId } from "@/lib/alef-bet/audio-clips";
+import { exampleClipId, nameClipId } from "@/lib/alef-bet/audio-clips";
 import { SpeakerButton } from "./speaker-button";
 
 // How big the glyphs in the Print / Script panels are: one letter is large, a letter with its final form
@@ -34,6 +34,8 @@ export function CardRunner({
   backHref: string;
 }) {
   const [index, setIndex] = useState(Math.min(Math.max(startIndex, 0), cards.length - 1));
+  // The vowel the sounds are shown and played with. It stays as chosen while moving between letters.
+  const [vowel, setVowel] = useState<VowelId>(DEFAULT_VOWEL);
   const card = cards[index];
   const isLast = index === cards.length - 1;
 
@@ -76,23 +78,45 @@ export function CardRunner({
         </span>
       </div>
 
+      {card.kind === "letter" && (
+        <div role="group" aria-label="Vowel for the sounds" className="flex items-center gap-2 px-1">
+          <span className="text-sm text-muted">Vowel</span>
+          <div className="flex flex-1 gap-1.5">
+            {VOWEL_OPTIONS.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => setVowel(v.id)}
+                aria-pressed={vowel === v.id}
+                className={`h-10 flex-1 rounded-full border text-base font-semibold transition-colors ${vowel === v.id ? "border-transparent bg-accent text-accent-contrast" : "border-border text-muted hover:bg-surface hover:text-foreground"}`}
+              >
+                {v.id}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <ul className="flex flex-col gap-2">
-        {card.sounds.map((sound, i) => (
-          <li key={i} className="flex items-center gap-3.5 rounded-xl border border-border bg-surface px-3.5 py-2">
-            <span lang="he" className="hebrew w-14 shrink-0 text-center text-4xl font-bold leading-none text-accent">
-              {sound.form}
-            </span>
-            <div className="flex flex-col">
-              <p className="text-[17px] font-semibold">
-                {sound.say} <span className="font-normal text-muted">{sound.like}</span>
-              </p>
-              {sound.note && <p className="text-xs text-muted">{sound.note}</p>}
-            </div>
-            <span className="ml-auto">
-              <SpeakerButton voice={voice} clipId={soundClipId(card, i)} label={`Hear the sound: ${sound.say}`} />
-            </span>
-          </li>
-        ))}
+        {card.sounds.map((sound, i) => {
+          const syllable = syllableLabel(card, i, vowel);
+          return (
+            <li key={i} className="flex items-center gap-3.5 rounded-xl border border-border bg-surface px-3.5 py-2">
+              <span lang="he" className="hebrew w-14 shrink-0 text-center text-4xl font-bold leading-none text-accent">
+                {soundGlyph(card, i, vowel)}
+              </span>
+              <div className="flex flex-col">
+                <p className="text-[17px] font-semibold">
+                  {syllable} <span className="font-normal text-muted">{card.kind === "letter" ? `${sound.say} ${sound.like}` : sound.like}</span>
+                </p>
+                {sound.note && <p className="text-xs text-muted">{sound.note}</p>}
+              </div>
+              <span className="ml-auto">
+                <SpeakerButton voice={voice} clipId={soundClipId(card, i, vowel)} label={`Hear the sound: ${syllable}`} />
+              </span>
+            </li>
+          );
+        })}
       </ul>
 
       <div className="flex flex-col gap-0.5 rounded-xl bg-surface-2 px-3.5 py-2.5">
