@@ -33,13 +33,14 @@ async function SettingsBody() {
         <PageClose href="/home" />
       </header>
       <SettingsForm
-        key={fingerprint([settings.learnAfter, settings.direction, settings.showTranslit, settings.showNikud, settings.preferredPlayer, settings.lyricsSize])}
+        key={fingerprint([settings.learnAfter, settings.direction, settings.showTranslit, settings.showNikud, settings.preferredPlayer, settings.lyricsSize, settings.speechVoice])}
         initialLearnAfter={settings.learnAfter}
         initialDirection={settings.direction}
         initialShowTranslit={settings.showTranslit}
         initialShowNikud={settings.showNikud}
         initialPreferredPlayer={settings.preferredPlayer}
         initialLyricsSize={settings.lyricsSize}
+        initialSpeechVoice={settings.speechVoice}
         email={user.email ?? ""}
       />
     </>

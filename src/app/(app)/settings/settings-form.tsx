@@ -4,7 +4,7 @@ import { useState, useSyncExternalStore } from "react";
 import { applyTheme, readTheme, THEME_EVENT, type ThemeChoice } from "@/lib/theme";
 import { saveSettings, type SettingsChange } from "./actions";
 import type { Direction } from "@/lib/study";
-import type { LyricsSize } from "@/lib/settings";
+import type { LyricsSize, SpeechVoice } from "@/lib/settings";
 
 const DIRECTIONS: { id: Direction; label: string }[] = [
   { id: "he-en", label: "Hebrew → English" },
@@ -63,6 +63,7 @@ export function SettingsForm({
   initialShowNikud,
   initialPreferredPlayer,
   initialLyricsSize,
+  initialSpeechVoice,
   email,
 }: {
   initialLearnAfter: number;
@@ -71,6 +72,7 @@ export function SettingsForm({
   initialShowNikud: boolean;
   initialPreferredPlayer: "spotify" | "youtube";
   initialLyricsSize: LyricsSize;
+  initialSpeechVoice: SpeechVoice;
   email: string;
 }) {
   const [learnAfter, setLearnAfter] = useState(initialLearnAfter);
@@ -79,6 +81,7 @@ export function SettingsForm({
   const [showNikud, setShowNikud] = useState(initialShowNikud);
   const [player, setPlayer] = useState(initialPreferredPlayer);
   const [lyricsSize, setLyricsSize] = useState(initialLyricsSize);
+  const [speechVoice, setSpeechVoice] = useState(initialSpeechVoice);
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "dark" as ThemeChoice);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
@@ -239,6 +242,29 @@ export function SettingsForm({
             }}
           />
           <p className="text-xs text-muted">How big the lyrics are on a song page. Smaller shows more lines at once.</p>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
+        <h2 className="flex items-center justify-between gap-2 text-xs font-medium uppercase tracking-wide text-muted">
+          Sound <AppliesTo>Whole app</AppliesTo>
+        </h2>
+        <div className="flex flex-col gap-2">
+          <p className="font-medium">Voice</p>
+          <Segment
+            label="Voice"
+            options={[
+              { id: "female", label: "Female" },
+              { id: "male", label: "Male" },
+            ]}
+            value={speechVoice}
+            onChange={(v) => {
+              const before = speechVoice;
+              setSpeechVoice(v);
+              void change({ speechVoice: v }, () => setSpeechVoice(before));
+            }}
+          />
+          <p className="text-xs text-muted">Used for spoken words.</p>
         </div>
       </section>
 

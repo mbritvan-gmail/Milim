@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isDirection } from "@/lib/study";
-import { isLyricsSize } from "@/lib/settings";
+import { isLyricsSize, isSpeechVoice } from "@/lib/settings";
 
-export type SettingsChange = { learnAfter?: number; direction?: string; showTranslit?: boolean; showNikud?: boolean; preferredPlayer?: string; lyricsSize?: string };
+export type SettingsChange = { learnAfter?: number; direction?: string; showTranslit?: boolean; showNikud?: boolean; preferredPlayer?: string; lyricsSize?: string; speechVoice?: string };
 
 // Save one or more settings. Returns an error message, or null when everything was saved.
 export async function saveSettings(change: SettingsChange): Promise<string | null> {
@@ -42,6 +42,10 @@ export async function saveSettings(change: SettingsChange): Promise<string | nul
       if (!isLyricsSize(change.lyricsSize)) return "Unknown size.";
       profile.lyrics_size = change.lyricsSize;
     }
+    if (change.speechVoice !== undefined) {
+      if (!isSpeechVoice(change.speechVoice)) return "Unknown voice.";
+      profile.speech_voice = change.speechVoice;
+    }
     if (Object.keys(profile).length > 0) {
       const { error } = await supabase.from("profiles").update(profile).eq("id", user.id);
       if (error) {
@@ -51,6 +55,9 @@ export async function saveSettings(change: SettingsChange): Promise<string | nul
         }
         if (change.lyricsSize !== undefined && /lyrics_size/i.test(error.message)) {
           return "Couldn't save that yet. The latest database update (the lyrics size script) hasn't been run.";
+        }
+        if (change.speechVoice !== undefined && /speech_voice/i.test(error.message)) {
+          return "Couldn't save that yet. The latest database update (the voice script) hasn't been run.";
         }
         if (change.showNikud !== undefined && /show_nikud/i.test(error.message)) {
           return "Couldn't save that yet. The latest database update (the conjugation script) hasn't been run.";

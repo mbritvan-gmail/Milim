@@ -42,6 +42,9 @@ Last updated: 2026-11-18. Branch: `claude/milim-handoff-review-pmh51c`. Live pre
 - Decided against, for now: a "just 20 cards" session size, keeping a Pack's own order, and reviewing learned words over time. Idea for later: a goal-based learning plan built from the person's songs and Packs (flashcards, questions, reviews of learned words).
 - Checked: spacing, undo and ordering with unit tests; the SQL transitions on a real Postgres; lint and build. Not yet seen in the live app.
 
+## Voice setting (built; REQUIRES `supabase/migrations/20261212000000_speech_voice.sql`)
+- Settings > **Sound** (marked Whole app) has **Voice** (Female / Male), saved to `profiles.speech_voice` (default `female`). Read it anywhere with `loadSettings(...).speechVoice` (`SpeechVoice`, `isSpeechVoice` in `src/lib/settings.ts`); older databases without the column fall back to `female`. Saving without the column shows a friendly "voice script hasn't been run" message. Meant for every spoken-word feature, so the name is generic.
+
 ## SQL scripts (user)
 All scripts live in `supabase/migrations/`. The user has run them as features shipped (the latest, `20261204000000_lyrics_size.sql`, is run). If a feature says it needs a database update, ask which script and have them run it; each is safe to run again.
 
