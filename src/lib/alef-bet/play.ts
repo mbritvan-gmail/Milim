@@ -5,6 +5,13 @@
 let current: HTMLAudioElement | null = null;
 let run = 0;
 
+// Stops whatever is playing (when the card changes or closes).
+export function stopClips() {
+  run++;
+  current?.pause();
+  current = null;
+}
+
 export function playClips(sources: string[]) {
   current?.pause();
   const mine = ++run;

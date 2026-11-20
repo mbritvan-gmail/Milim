@@ -68,6 +68,7 @@ export async function updateLine(songId: string, lineId: string, fields: LineFie
     const transliteration = fields.transliteration.trim();
     const hebrew = fields.hebrew.trim().replace(/\s+/g, " ");
     if (!hasHebrew(hebrew)) return fail("The Hebrew line needs some Hebrew text.");
+    if (isSectionLabel(hebrew)) return fail("A lyric line can't be written in square brackets: those mark a section name.");
     if (english.length > MAX_ENGLISH || transliteration.length > MAX_TRANSLIT || hebrew.length > MAX_HEBREW) {
       return fail("That text is too long.");
     }

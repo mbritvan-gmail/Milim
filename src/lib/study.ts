@@ -22,22 +22,6 @@ export function matchesFilter(status: WordStatus, filter: StudyFilter) {
   return filter === "all" || status === filter;
 }
 
-// "Study 4 new words", "Review 40 learned words", ...
-export function studyLabel(filter: StudyFilter, count: number) {
-  if (count === 0) return "Nothing to study here";
-  const n = `${count}`;
-  switch (filter) {
-    case "new":
-      return `Study ${n} new ${count === 1 ? "word" : "words"}`;
-    case "learning":
-      return `Study ${n} learning ${count === 1 ? "word" : "words"}`;
-    case "learned":
-      return `Review ${n} learned ${count === 1 ? "word" : "words"}`;
-    default:
-      return `Review all ${n} ${count === 1 ? "word" : "words"}`;
-  }
-}
-
 // "Learning · 1/2", "Learned", "New". Progress never shows as full while still learning.
 export function statusText(status: WordStatus, count: number, learnAfter: number) {
   if (status === "learned") return "Learned";

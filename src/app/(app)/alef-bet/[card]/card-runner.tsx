@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CloseButton, CloseOrLink } from "@/components/overlay";
 import { nikudRows, plainHebrew, positionLabel, wordClipId, type LetterCard } from "@/lib/alef-bet/letters";
 import type { SpeechVoice } from "@/lib/settings";
 import { clipSrc, nameClipId } from "@/lib/alef-bet/audio-clips";
-import { playClips } from "@/lib/alef-bet/play";
+import { playClips, stopClips } from "@/lib/alef-bet/play";
 import { SpeakerButton } from "./speaker-button";
 
 // How big the glyphs in the Print / Script panels are: one letter is large; a letter with its dotted, undotted and
@@ -44,6 +44,8 @@ export function CardRunner({
 }) {
   const [index, setIndex] = useState(Math.min(Math.max(startIndex, 0), cards.length - 1));
   const card = cards[index];
+  // A clip never carries on over the next card or after the card is closed.
+  useEffect(() => () => stopClips(), [index]);
   const isLast = index === cards.length - 1;
   // A letter whose dot changes its name shows its forms side by side (bet and vet), in print and in script.
   const printText = card.forms ? card.forms.join(" ") : card.print;

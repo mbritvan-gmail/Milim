@@ -1,5 +1,8 @@
 -- Learning model v2
 --
+-- RUN EACH SCRIPT ONCE, IN DATE ORDER. Do not run this one again after 20261210000000_miss_tracking.sql:
+-- it would bring back the old record_answer (no miss tracking) and a second restore_word, which makes Undo fail.
+--
 --   New      = never answered
 --   Learning = answered, but not yet "learned"
 --   Learned  = answered correctly `learn_after` times (a per-person setting, 1 to 3, default 2).

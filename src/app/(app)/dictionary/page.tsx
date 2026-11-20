@@ -5,6 +5,7 @@ import { loadSettings } from "@/lib/settings";
 import { fingerprint, type WordStatus } from "@/lib/study";
 import { readAllRows } from "@/lib/paged";
 import { loadSources, sourceNote, sourcesByWord } from "@/lib/word-sources";
+import { loadNikudFor } from "@/lib/word-extras";
 import { DictionaryList, type DictionaryWord } from "./dictionary-list";
 
 export const metadata = { title: "Dictionary · milim" };
@@ -26,7 +27,7 @@ async function DictionaryBody() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [dictRes, settings, sources, nikudRes] = await Promise.all([
+  const [dictRes, settings, sources] = await Promise.all([
     readAllRows((a, b) =>
       supabase
         .from("master_dictionary")
@@ -36,16 +37,15 @@ async function DictionaryBody() {
     ),
     loadSettings(supabase, user.id),
     loadSources(supabase, user.id),
-    // Which words have nikud saved (the column is newer; if it isn't there yet this just comes back empty).
-    readAllRows<{ id: string; vocalized: string }>((a, b) => supabase.from("vocab_entries").select("id, vocalized").not("vocalized", "is", null).order("id").range(a, b)),
   ]);
   const found = sourcesByWord(sources);
-  const nikud = new Map(nikudRes.data.map((r) => [r.id, r.vocalized]));
 
   const rows = dictRes.data as {
     vocab_entry_id: string; lemma: string; transliteration: string | null; english: string;
     part_of_speech: string | null; correct_count: number | null; status: WordStatus;
   }[];
+  // Which of this person's words have nikud saved (the column is newer; if it isn't there yet this is empty).
+  const nikud = await loadNikudFor(supabase, rows.map((r) => r.vocab_entry_id));
 
   const words: DictionaryWord[] = rows
     .map((r) => ({
