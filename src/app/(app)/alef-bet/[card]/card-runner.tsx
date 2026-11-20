@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { CloseButton, CloseOrLink } from "@/components/overlay";
-import { DEFAULT_VOWEL, VOWEL_OPTIONS, plainHebrew, positionLabel, soundClipId, soundGlyph, syllableLabel, vowelButtonText, vowelLike, type LetterCard, type VowelId } from "@/lib/alef-bet/letters";
+import { DEFAULT_VOWEL, VOWEL_OPTIONS, plainHebrew, positionLabel, soundClipId, soundGlyph, syllableLabel, vowelButtonText, type LetterCard, type VowelId } from "@/lib/alef-bet/letters";
 import type { SpeechVoice } from "@/lib/settings";
-import { exampleClipId, nameClipId } from "@/lib/alef-bet/audio-clips";
+import { clipSrc, exampleClipId, nameClipId } from "@/lib/alef-bet/audio-clips";
+import { playClips } from "@/lib/alef-bet/play";
 import { SpeakerButton } from "./speaker-button";
 
-// How big the glyphs in the Print / Script panels are: one letter is large, a letter with its final form
-// or a pair of vowel signs a little smaller.
-function glyphSize(card: LetterCard) {
+// How big the glyphs in the Print / Script panels are: one letter is large; a letter with its dotted, undotted and
+// final forms (or a pair of vowel signs) is smaller so they all fit side by side.
+function glyphSize(card: LetterCard, text: string) {
   if (card.kind === "vowel") return "text-6xl";
-  return card.print.includes(" ") ? "text-7xl" : "text-[112px]";
+  const count = text.split(/\s+/).length;
+  return count === 1 ? "text-[112px]" : count === 2 ? "text-7xl" : "text-5xl";
 }
 
 export function CardRunner({
@@ -34,9 +36,23 @@ export function CardRunner({
   backHref: string;
 }) {
   const [index, setIndex] = useState(Math.min(Math.max(startIndex, 0), cards.length - 1));
-  // The vowel the sounds are shown and played with. It stays as chosen while moving between letters.
+  // The nikud (vowel mark) the sounds are shown and played with. It stays as chosen while moving between letters.
   const [vowel, setVowel] = useState<VowelId>(DEFAULT_VOWEL);
   const card = cards[index];
+  // A letter whose dot changes its name shows both forms (bet and vet), not just one.
+  const printText = card.forms ? card.forms.join(" ") : card.print;
+  // Tapping a nikud button chooses it and plays the sound straight away: the letter with that nikud (a letter with two
+  // sounds, like bet and vet, plays both in turn).
+  function pickNikud(id: VowelId) {
+    setVowel(id);
+    const sources = card.sounds.flatMap((sound, i) => {
+      if (sound.as !== undefined) return [];
+      const clip = soundClipId(card, i, id);
+      const src = clipSrc(clip, voice) ?? clipSrc(clip, voice === "female" ? "male" : "female");
+      return src ? [src] : [];
+    });
+    if (sources.length) playClips(sources);
+  }
   const isLast = index === cards.length - 1;
 
   // The vowel signs are the lesson, so they always show with their marks; words follow the setting.
@@ -56,14 +72,14 @@ export function CardRunner({
       <div className={`grid gap-2.5 ${card.script ? "grid-cols-2" : "grid-cols-1"}`}>
         <div className="flex flex-col items-center rounded-2xl border border-border bg-surface px-2.5 pb-1.5 pt-2.5">
           <span className="text-[11px] uppercase tracking-wide text-muted">{card.kind === "vowel" ? "Signs" : "Print"}</span>
-          <span lang="he" className={`hebrew whitespace-pre font-bold leading-[1.15] text-accent ${glyphSize(card)}`}>
-            {card.print}
+          <span lang="he" className={`hebrew whitespace-pre font-bold leading-[1.15] text-accent ${glyphSize(card, printText)}`}>
+            {printText}
           </span>
         </div>
         {card.script && (
           <div className="flex flex-col items-center rounded-2xl border border-border bg-surface px-2.5 pb-1.5 pt-2.5">
             <span className="text-[11px] uppercase tracking-wide text-muted">Script</span>
-            <span lang="he" className={`${scriptClass} whitespace-pre leading-[1.15] text-seg-suffix ${glyphSize(card)}`} dir="rtl">
+            <span lang="he" className={`${scriptClass} whitespace-pre leading-[1.15] text-seg-suffix ${glyphSize(card, card.script ?? "")}`} dir="rtl">
               {card.script}
             </span>
           </div>
@@ -90,16 +106,16 @@ export function CardRunner({
       </div>
 
       {card.kind === "letter" && (
-        <div role="group" aria-label="Vowel for the sounds" className="flex items-center gap-2 px-1">
-          <span className="text-sm text-muted">Vowel</span>
+        <div role="group" aria-label="Nikud for the sounds" className="flex items-center gap-2 px-1">
+          <span className="text-sm text-muted">Nikud</span>
           <div className="flex flex-1 gap-1.5">
             {VOWEL_OPTIONS.map((v) => (
               <button
                 key={v.id}
                 type="button"
-                onClick={() => setVowel(v.id)}
+                onClick={() => pickNikud(v.id)}
                 aria-pressed={vowel === v.id}
-                aria-label={`Vowel ${v.id}`}
+                aria-label={`Nikud ${v.id}`}
                 className={`flex h-11 flex-1 items-center justify-center rounded-full border transition-colors ${vowel === v.id ? "border-transparent bg-accent text-accent-contrast" : "border-border hover:bg-surface"}`}
               >
                 <span lang="he" className="hebrew whitespace-pre text-[26px] font-semibold leading-none">
@@ -121,9 +137,6 @@ export function CardRunner({
               </span>
               <div className="flex flex-col">
                 <p className="text-[17px] font-semibold">{syllable}</p>
-                <p className="text-sm text-muted">
-                  {card.kind !== "letter" || sound.as !== undefined ? sound.like : `${sound.say} ${sound.like} · ${vowel} ${vowelLike(vowel)}`}
-                </p>
                 {sound.note && <p className="text-xs text-muted">{sound.note}</p>}
               </div>
               <span className="ml-auto">
@@ -152,9 +165,6 @@ export function CardRunner({
         </div>
       </div>
 
-      {card.note && (
-        <p className="rounded-xl border border-border px-3.5 py-2.5 text-[13px] leading-snug text-muted">{card.note}</p>
-      )}
 
       {/* Hebrew reads right to left, so Next is on the left and Previous on the right. Same size; at the first card
           Previous is dimmed rather than removed so the buttons never move. */}

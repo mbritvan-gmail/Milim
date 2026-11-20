@@ -9,8 +9,6 @@ export type Sound = {
   form: string;
   /** How it sounds, in Latin letters ("b"). */
   say: string;
-  /** An English word with the same sound ("as in bat"). */
-  like: string;
   /** A short note ("with a dot inside"). */
   note: string;
   /** A final form says the same as an earlier row of its card: the index of that row (it has no clips of its own). */
@@ -31,6 +29,8 @@ export type LetterCard = {
   kind: "letter" | "vowel";
   /** Large glyphs in the Print panel ("כ ך"). */
   print: string;
+  /** What the Print panel shows when it should include the dotted and undotted forms (bet and vet); default: `print`. */
+  forms?: string[];
   /** Glyphs in the Script panel; null where script has nothing to show (vowel signs). */
   script: string | null;
   name: string;
@@ -38,8 +38,6 @@ export type LetterCard = {
   name2?: string;
   sounds: Sound[];
   example: Example;
-  /** A heads-up shown under the example, for letters that sound like another letter. */
-  note?: string;
 };
 
 
@@ -53,7 +51,7 @@ const L = (
   name: string,
   sounds: Sound[],
   example: Example,
-  extra: { final?: string; name2?: string; note?: string } = {},
+  extra: { final?: string; name2?: string; forms?: string[] } = {},
 ): LetterCard => ({
   id,
   kind: "letter",
@@ -63,58 +61,48 @@ const L = (
   name2: extra.name2,
   sounds,
   example,
-  note: extra.note,
+  forms: extra.forms,
 });
 
-const s = (form: string, say: string, like: string, note: string, as?: number): Sound => ({ form, say, like, note, ...(as === undefined ? {} : { as }) });
+const s = (form: string, say: string, note: string, as?: number): Sound => ({ form, say, note, ...(as === undefined ? {} : { as }) });
 const ex = (hebrew: string, lead: string, translit: string, english: string): Example => ({ hebrew, lead, translit, english });
 
 export const CARDS: LetterCard[] = [
-  L("alef", "א", "alef", [s("א", "(silent)", "carries a vowel", "at the start of a word, a tiny pause")], ex("אַבָּא", "אַ", "aba", "dad")),
-  L("bet", "ב", "bet", [s("ב" + DAGESH, "b", "as in bat", "with a dot inside"), s("ב", "v", "as in van", "no dot")], ex("בַּיִת", "בַּ", "bayit", "house"), {
+  L("alef", "א", "alef", [s("א", "(silent)", "at the start of a word, a tiny pause")], ex("אַבָּא", "אַ", "aba", "dad")),
+  L("bet", "ב", "bet", [s("ב" + DAGESH, "b", "with a dot inside"), s("ב", "v", "no dot")], ex("בַּיִת", "בַּ", "bayit", "house"), {
     name2: "vet",
-    note: "Heads up: ב without the dot says “v”. Later you will meet ו (vav), which says “v” too.",
+    forms: ["ב" + DAGESH, "ב"],
   }),
-  L("gimel", "ג", "gimel", [s("ג", "g", "as in go", "")], ex("גַּן", "גַּ", "gan", "garden")),
-  L("dalet", "ד", "dalet", [s("ד", "d", "as in dog", "")], ex("דָּג", "דָּ", "dag", "fish")),
-  L("he", "ה", "he", [s("ה", "h", "as in hat", "often silent at the end of a word")], ex("הַר", "הַ", "har", "mountain")),
-  L("vav", "ו", "vav", [s("ו", "v", "as in van", "also writes the vowels “o” and “u” (see Vowels)")], ex("וֶרֶד", "וֶ", "vered", "rose"), {
-    note: "Heads up: ו says “v”, just like ב without a dot.",
-  }),
-  L("zayin", "ז", "zayin", [s("ז", "z", "as in zoo", "")], ex("זְמַן", "זְ", "zman", "time")),
-  L("khet", "ח", "khet", [s("ח", "kh", "like the “ch” in Bach", "a throaty sound")], ex("חָתוּל", "חָ", "khatul", "cat")),
-  L("tet", "ט", "tet", [s("ט", "t", "as in top", "")], ex("טוֹב", "טוֹ", "tov", "good")),
-  L("yod", "י", "yod", [s("י", "y", "as in yes", "also writes the vowels “i” and “e” (see Vowels)")], ex("יָד", "יָ", "yad", "hand")),
+  L("gimel", "ג", "gimel", [s("ג", "g", "")], ex("גַּן", "גַּ", "gan", "garden")),
+  L("dalet", "ד", "dalet", [s("ד", "d", "")], ex("דָּג", "דָּ", "dag", "fish")),
+  L("he", "ה", "he", [s("ה", "h", "often silent at the end of a word")], ex("הַר", "הַ", "har", "mountain")),
+  L("vav", "ו", "vav", [s("ו", "v", "also writes the vowels “o” and “u” (see Vowels)")], ex("וֶרֶד", "וֶ", "vered", "rose")),
+  L("zayin", "ז", "zayin", [s("ז", "z", "")], ex("זְמַן", "זְ", "zman", "time")),
+  L("khet", "ח", "khet", [s("ח", "kh", "a throaty sound")], ex("חָתוּל", "חָ", "khatul", "cat")),
+  L("tet", "ט", "tet", [s("ט", "t", "")], ex("טוֹב", "טוֹ", "tov", "good")),
+  L("yod", "י", "yod", [s("י", "y", "also writes the vowels “i” and “e” (see Vowels)")], ex("יָד", "יָ", "yad", "hand")),
   L("kaf", "כ",
     "kaf",
-    [s("כ" + DAGESH, "k", "as in kite", "with a dot inside"), s("כ", "kh", "like the “ch” in Bach", "no dot"), s("ך", "kh", "same sound", "final form: only at the end of a word", 1)],
+    [s("כ" + DAGESH, "k", "with a dot inside"), s("כ", "kh", "no dot"), s("ך", "kh", "final form: only at the end of a word", 1)],
     ex("כֶּלֶב", "כֶּ", "kelev", "dog"),
-    { final: "ך", name2: "khaf", note: "Heads up: כ without the dot says “kh”, just like ח (khet)." },
+    { final: "ך", name2: "khaf", forms: ["כ" + DAGESH, "כ", "ך"] },
   ),
-  L("lamed", "ל", "lamed", [s("ל", "l", "as in lamp", "")], ex("לֶחֶם", "לֶ", "lekhem", "bread")),
-  L("mem", "מ", "mem", [s("מ", "m", "as in mom", ""), s("ם", "m", "same sound", "final form: only at the end of a word", 0)], ex("מַיִם", "מַ", "mayim", "water"), { final: "ם" }),
-  L("nun", "נ", "nun", [s("נ", "n", "as in net", ""), s("ן", "n", "same sound", "final form: only at the end of a word", 0)], ex("נֵר", "נֵ", "ner", "candle"), { final: "ן" }),
-  L("samekh", "ס", "samekh", [s("ס", "s", "as in sun", "")], ex("סוּס", "סוּ", "sus", "horse"), {
-    note: "Heads up: ס says “s”, just like שׂ (sin).",
-  }),
-  L("ayin", "ע", "ayin", [s("ע", "(silent)", "carries a vowel", "sounds just like א")], ex("עַיִן", "עַ", "ayin", "eye"), {
-    note: "Heads up: ע is silent, just like א (alef).",
-  }),
+  L("lamed", "ל", "lamed", [s("ל", "l", "")], ex("לֶחֶם", "לֶ", "lekhem", "bread")),
+  L("mem", "מ", "mem", [s("מ", "m", ""), s("ם", "m", "final form: only at the end of a word", 0)], ex("מַיִם", "מַ", "mayim", "water"), { final: "ם" }),
+  L("nun", "נ", "nun", [s("נ", "n", ""), s("ן", "n", "final form: only at the end of a word", 0)], ex("נֵר", "נֵ", "ner", "candle"), { final: "ן" }),
+  L("samekh", "ס", "samekh", [s("ס", "s", "")], ex("סוּס", "סוּ", "sus", "horse")),
+  L("ayin", "ע", "ayin", [s("ע", "(silent)", "sounds just like א")], ex("עַיִן", "עַ", "ayin", "eye")),
   L("pe", "פ",
     "pe",
-    [s("פ" + DAGESH, "p", "as in pen", "with a dot inside"), s("פ", "f", "as in fan", "no dot"), s("ף", "f", "same sound", "final form: only at the end of a word", 1)],
+    [s("פ" + DAGESH, "p", "with a dot inside"), s("פ", "f", "no dot"), s("ף", "f", "final form: only at the end of a word", 1)],
     ex("פֶּה", "פֶּ", "pe", "mouth"),
-    { final: "ף", name2: "fe" },
+    { final: "ף", name2: "fe", forms: ["פ" + DAGESH, "פ", "ף"] },
   ),
-  L("tsadi", "צ", "tsadi", [s("צ", "ts", "as in cats", ""), s("ץ", "ts", "same sound", "final form: only at the end of a word", 0)], ex("צָב", "צָ", "tsav", "turtle"), { final: "ץ" }),
-  L("kuf", "ק", "kuf", [s("ק", "k", "as in kite", "")], ex("קָפֶה", "קָ", "kafe", "coffee"), {
-    note: "Heads up: ק says “k”, just like כ with a dot.",
-  }),
-  L("resh", "ר", "resh", [s("ר", "r", "made in the throat", "not rolled")], ex("רֹאשׁ", "רֹ", "rosh", "head")),
-  L("shin", "ש", "shin", [s("ש" + SHIN_DOT, "sh", "as in shop", "dot on the right (shin)"), s("ש" + SIN_DOT, "s", "as in sun", "dot on the left (sin)")], ex("שָׁלוֹם", "שָׁ", "shalom", "hello, peace"), { name2: "sin" }),
-  L("tav", "ת", "tav", [s("ת", "t", "as in top", "")], ex("תּוּת", "תּוּ", "tut", "berry"), {
-    note: "Heads up: ת says “t”, just like ט (tet).",
-  }),
+  L("tsadi", "צ", "tsadi", [s("צ", "ts", ""), s("ץ", "ts", "final form: only at the end of a word", 0)], ex("צָב", "צָ", "tsav", "turtle"), { final: "ץ" }),
+  L("kuf", "ק", "kuf", [s("ק", "k", "")], ex("קָפֶה", "קָ", "kafe", "coffee")),
+  L("resh", "ר", "resh", [s("ר", "r", "not rolled")], ex("רֹאשׁ", "רֹ", "rosh", "head")),
+  L("shin", "ש", "shin", [s("ש" + SHIN_DOT, "sh", "dot on the right (shin)"), s("ש" + SIN_DOT, "s", "dot on the left (sin)")], ex("שָׁלוֹם", "שָׁ", "shalom", "hello, peace"), { name2: "sin", forms: ["ש" + SHIN_DOT, "ש" + SIN_DOT] }),
+  L("tav", "ת", "tav", [s("ת", "t", "")], ex("תּוּת", "תּוּ", "tut", "berry")),
 ];
 
 // Vowel signs, shown on alef. Alef is silent, so each sign on its own gives the pure vowel sound.
@@ -127,17 +115,17 @@ const HOLAM = "\u05B9";
 const KUBUTZ = "\u05BB";
 const SHVA = "\u05B0";
 const on = (sign: string) => "א" + sign;
-const V = (id: string, signs: string, name: string, sounds: Sound[], example: Example, note?: string): LetterCard => ({
-  id, kind: "vowel", print: signs, script: null, name, sounds, example, note,
+const V = (id: string, signs: string, name: string, sounds: Sound[], example: Example): LetterCard => ({
+  id, kind: "vowel", print: signs, script: null, name, sounds, example,
 });
 
 export const VOWEL_CARDS: LetterCard[] = [
-  V("v-a", on(PATACH) + "  " + on(KAMATZ), "a", [s(on(PATACH), "a", "as in Nancy", "patach (a small line)"), s(on(KAMATZ), "a", "as in Nancy", "kamatz (a line with a small stem)")], ex("מַיִם", "מַ", "mayim", "water")),
-  V("v-e", on(TSERE) + "  " + on(SEGOL), "e", [s(on(TSERE), "e", "as in bed", "tsere (two dots side by side)"), s(on(SEGOL), "e", "as in bed", "segol (three dots)")], ex("לֶחֶם", "לֶ", "lekhem", "bread")),
-  V("v-i", on(HIRIQ) + "  א" + HIRIQ + "י", "i", [s(on(HIRIQ), "ee", "as in see", "hiriq (one dot)"), s("א" + HIRIQ + "י", "ee", "as in see", "often written with a yod")], ex("שִׁיר", "שִׁי", "shir", "song")),
-  V("v-o", on(HOLAM) + "  או" + HOLAM, "o", [s(on(HOLAM), "o", "as in more", "holam (a dot on top)"), s("או" + HOLAM, "o", "as in more", "often written with a vav")], ex("טוֹב", "טוֹ", "tov", "good")),
-  V("v-u", on(KUBUTZ) + "  או" + DAGESH, "u", [s(on(KUBUTZ), "u", "as in flute", "kubutz (three dots on a slant)"), s("או" + DAGESH, "u", "as in flute", "shuruk (a vav with a dot)")], ex("סוּס", "סוּ", "sus", "horse")),
-  V("v-shva", on(SHVA), "shva", [s(on(SHVA), "e", "a very short “e”, or silent", "shva (two dots, one above the other)")], ex("זְמַן", "זְ", "zman", "time")),
+  V("v-a", on(PATACH) + "  " + on(KAMATZ), "a", [s(on(PATACH), "a", "patach (a small line)"), s(on(KAMATZ), "a", "kamatz (a line with a small stem)")], ex("מַיִם", "מַ", "mayim", "water")),
+  V("v-e", on(TSERE) + "  " + on(SEGOL), "e", [s(on(TSERE), "e", "tsere (two dots side by side)"), s(on(SEGOL), "e", "segol (three dots)")], ex("לֶחֶם", "לֶ", "lekhem", "bread")),
+  V("v-i", on(HIRIQ) + "  א" + HIRIQ + "י", "i", [s(on(HIRIQ), "ee", "hiriq (one dot)"), s("א" + HIRIQ + "י", "ee", "often written with a yod")], ex("שִׁיר", "שִׁי", "shir", "song")),
+  V("v-o", on(HOLAM) + "  או" + HOLAM, "o", [s(on(HOLAM), "o", "holam (a dot on top)"), s("או" + HOLAM, "o", "often written with a vav")], ex("טוֹב", "טוֹ", "tov", "good")),
+  V("v-u", on(KUBUTZ) + "  או" + DAGESH, "u", [s(on(KUBUTZ), "u", "kubutz (three dots on a slant)"), s("או" + DAGESH, "u", "shuruk (a vav with a dot)")], ex("סוּס", "סוּ", "sus", "horse")),
+  V("v-shva", on(SHVA), "shva", [s(on(SHVA), "e", "shva (two dots, one above the other)")], ex("זְמַן", "זְ", "zman", "time")),
 ];
 
 export const ALL_CARDS: LetterCard[] = [...CARDS, ...VOWEL_CARDS];
@@ -168,12 +156,12 @@ export const plainHebrew = (text: string) => text.replace(NIKUD, "");
 //   word  "word-<translit>"             the example word
 // ---------------------------------------------------------------------------
 export const VOWEL_OPTIONS = [
-  // `sign` is what the clips use; `like` is an English word with that vowel sound, shown next to the syllable.
-  { id: "a", sign: "\u05B7", like: "as in Nancy" }, // patach (and kamatz)
-  { id: "e", sign: "\u05B5", like: "as in bed" }, // tsere (and segol)
-  { id: "i", sign: "\u05B4", like: "as in see" }, // hiriq
-  { id: "o", sign: "\u05B9", like: "as in more" }, // holam
-  { id: "u", sign: "\u05BB", like: "as in flute" }, // kubutz (and shuruk)
+  // `sign` is the vowel mark the clips use.
+  { id: "a", sign: "\u05B7" }, // patach (and kamatz)
+  { id: "e", sign: "\u05B5" }, // tsere (and segol)
+  { id: "i", sign: "\u05B4" }, // hiriq
+  { id: "o", sign: "\u05B9" }, // holam
+  { id: "u", sign: "\u05BB" }, // kubutz (and shuruk)
 ] as const;
 export type VowelId = (typeof VOWEL_OPTIONS)[number]["id"];
 export const DEFAULT_VOWEL: VowelId = "a";
@@ -191,7 +179,6 @@ export function vowelButtonText(card: LetterCard, vowel: VowelId): string {
   return forms.join(" ");
 }
 
-export const vowelLike = (vowel: VowelId) => VOWEL_OPTIONS.find((v) => v.id === vowel)!.like;
 
 const FINAL_TO_BASE: Record<string, string> = { "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" };
 const isFinalRow = (sound: Sound) => sound.as !== undefined;
