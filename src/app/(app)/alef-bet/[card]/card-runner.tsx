@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CloseButton, CloseOrLink } from "@/components/overlay";
-import { nikudRows, plainHebrew, positionLabel, wordClipId, type LetterCard } from "@/lib/alef-bet/letters";
+import { nikudRows, notesFor, plainHebrew, positionLabel, wordClipId, type LetterCard } from "@/lib/alef-bet/letters";
 import type { SpeechVoice } from "@/lib/settings";
 import { clipSrc, nameClipId } from "@/lib/alef-bet/audio-clips";
 import { playClips, stopClips } from "@/lib/alef-bet/play";
@@ -51,6 +51,12 @@ export function CardRunner({
   const printText = card.forms ? card.forms.join(" ") : card.print;
   const scriptText = card.forms ? card.forms.join(" ") : card.script;
 
+  // Keep the web address on the card being shown (replacing the entry, so Back still closes the cards and a reload
+  // stays on this card).
+  useEffect(() => {
+    if (window.location.pathname !== `/alef-bet/${card.id}`) window.history.replaceState(window.history.state, "", `/alef-bet/${card.id}`);
+  }, [card.id]);
+
   function play(clipId: string) {
     const src = clipSrc(clipId, voice) ?? clipSrc(clipId, voice === "female" ? "male" : "female");
     if (src) playClips([src]);
@@ -68,13 +74,8 @@ export function CardRunner({
         <CloseButton fallbackHref={backHref} />
       </div>
 
+      {/* Hebrew order: Print on the right, Script on the left. */}
       <div className={`grid gap-2.5 ${scriptText ? "grid-cols-2" : "grid-cols-1"}`}>
-        <div className="flex flex-col items-center rounded-2xl border border-border bg-surface px-2.5 pb-1.5 pt-2.5">
-          <span className="text-[11px] uppercase tracking-wide text-muted">{card.kind === "vowel" ? "Signs" : "Print"}</span>
-          <span lang="he" className={`hebrew whitespace-pre font-bold leading-[1.15] text-accent ${glyphSize(card, printText)}`}>
-            {printText}
-          </span>
-        </div>
         {scriptText && (
           <div className="flex flex-col items-center rounded-2xl border border-border bg-surface px-2.5 pb-1.5 pt-2.5">
             <span className="text-[11px] uppercase tracking-wide text-muted">Script</span>
@@ -83,26 +84,33 @@ export function CardRunner({
             </span>
           </div>
         )}
+        <div className="flex flex-col items-center rounded-2xl border border-border bg-surface px-2.5 pb-1.5 pt-2.5">
+          <span className="text-[11px] uppercase tracking-wide text-muted">{card.kind === "vowel" ? "Signs" : "Print"}</span>
+          <span lang="he" className={`hebrew whitespace-pre font-bold leading-[1.15] text-accent ${glyphSize(card, printText)}`}>
+            {printText}
+          </span>
+        </div>
       </div>
 
-      {/* A letter whose dot changes its name has two (bet and vet): each with its own speaker. */}
-      <div className="flex items-center gap-2.5 px-1">
-        <h1 className="text-3xl font-semibold">{card.name}</h1>
-        {card.name2 ? (
-          <>
+      {/* The name (or the pair, bet and vet) with a speaker beside each, in Hebrew order: the first on the right. */}
+      {card.kind === "letter" ? (
+        <div className="flex flex-row-reverse items-center justify-start gap-[18px] px-1">
+          {[card.name, ...(card.name2 ? [card.name2] : [])].map((name, i) => (
+            <div key={name} className="flex items-center gap-2">
+              <h1 className={`text-3xl font-semibold ${i === 0 ? "" : "text-muted"}`}>{name}</h1>
+              <SpeakerButton voice={voice} clipId={nameClipId(card, i === 1)} label={`Hear the name: ${name}`} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex items-center gap-2.5 px-1">
+          <h1 className="text-3xl font-semibold">{card.name}</h1>
+          <span className="text-sm text-muted">vowel sound</span>
+          <span className="ml-auto">
             <SpeakerButton voice={voice} clipId={nameClipId(card)} label={`Hear the name: ${card.name}`} />
-            <span className="ml-1 text-3xl font-semibold text-muted">{card.name2}</span>
-            <SpeakerButton voice={voice} clipId={nameClipId(card, true)} label={`Hear the name: ${card.name2}`} />
-          </>
-        ) : (
-          <>
-            <span className="text-sm text-muted">{card.kind === "letter" ? "letter name" : "vowel sound"}</span>
-            <span className="ml-auto">
-              <SpeakerButton voice={voice} clipId={nameClipId(card)} label={`Hear the name: ${card.name}`} />
-            </span>
-          </>
-        )}
-      </div>
+          </span>
+        </div>
+      )}
 
       {card.kind === "letter" ? (
         <section className="flex flex-col gap-2">
@@ -122,7 +130,7 @@ export function CardRunner({
                     type="button"
                     onClick={() => play(cell.clipId)}
                     aria-label={`Hear ${cell.label}`}
-                    className="flex h-[58px] min-w-0 flex-1 items-center justify-between gap-2 px-3.5 hover:bg-surface-2"
+                    className="flex h-[58px] min-w-0 flex-1 items-center justify-end gap-3 pl-3.5 pr-2.5 hover:bg-surface-2"
                   >
                     <span lang="he" className="hebrew whitespace-pre text-[30px] font-bold leading-none tracking-[0.04em]">
                       {cell.glyph}
@@ -149,6 +157,29 @@ export function CardRunner({
             </li>
           ))}
         </ul>
+      )}
+
+      {notesFor(card).length > 0 && (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between px-0.5">
+            <h2 className="text-[17px] font-semibold">Notes</h2>
+            <span lang="he" className="hebrew text-lg font-semibold leading-none text-muted">
+              הערות
+            </span>
+          </div>
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+            {notesFor(card).map((note, i) => (
+              <div key={note.text} className={`flex items-center gap-3 px-3.5 py-2.5 ${i > 0 ? "border-t border-border" : ""}`}>
+                <span className="flex-1 text-sm leading-snug">{note.text}</span>
+                {note.glyph && (
+                  <span lang="he" className="hebrew whitespace-pre text-[28px] font-bold leading-tight">
+                    {note.glyph}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       <section className="flex flex-col gap-2">

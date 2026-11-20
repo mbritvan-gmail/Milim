@@ -20,7 +20,7 @@ export default function AlefBetPage() {
       </Section>
 
       <Section title="Vowels" hebrew="תנועות">
-        <ul className="grid grid-cols-3 gap-2">
+        <ul dir="rtl" className="grid grid-cols-3 gap-2">
           {VOWEL_CARDS.map((card) => (
             <Tile key={card.id} card={card} glyph={card.sounds[0].form} size="text-[32px]" height="h-[72px]" />
           ))}

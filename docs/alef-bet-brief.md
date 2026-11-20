@@ -78,7 +78,7 @@ Do not teach distinctions that modern speakers don't make. Several letters share
 | ה | he | h (often silent at the end of a word) |
 | ו | vav | v (also o or u, see vowel letters) |
 | ז | zayin | z |
-| ח | khet | kh (throaty, like "Bach") |
+| ח | chet | ch (throaty, like "Bach") |
 | ט | tet | t |
 | י | yod | y (also i or e, see vowel letters) |
 | כ / כּ / ך | kaf / khaf | kh / k |
@@ -187,7 +187,7 @@ Illustrative; adapt it to the project's conventions and to the "where letters li
 
 Prefer words already in the dictionary. These are only fallbacks.
 
-אבא aba · בית bayit · גן gan · דג dag · הר har · זמן zman · חתול khatul · טוב tov · יד yad · כלב kelev · לחם lekhem · מים mayim · סוס sus · פה pe · קפה kafe · ראש rosh · שלום shalom · תות tut
+אבא aba · בית bayit · גן gan · דג dag · הר har · זמן zman · חתול chatul · טוב tov · יד yad · כלב kelev · לחם lekhem · מים mayim · סוס sus · פה pe · קפה kafe · ראש rosh · שלום shalom · תות tut
 
 ## 13. Done when
 
