@@ -11,12 +11,14 @@
 //   --only id,id        make just these clips (ids as in the manifest, e.g. bet-sound-1)
 //   --voices hila,avri  which voices (default both)
 //
-// The key is read from the environment and is never written anywhere. After a run it writes:
+// Clips marked with a carrier word need ffmpeg on this computer. The key is read from the environment and is never written anywhere. After a run it writes:
 //   src/lib/alef-bet/audio-manifest.json   which clips exist per voice (the app reads this)
 //   public/audio/alef-bet/review.html      a page to listen to every clip (a Hebrew speaker must do this); delete it afterwards
 //   docs/alef-bet-audio.md                 provider, voices and date (kept for the licence record)
 
-import { mkdir, readFile, writeFile, access } from "node:fs/promises";
+import { mkdir, readFile, writeFile, access, mkdtemp, rm } from "node:fs/promises";
+import { execFileSync, spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { allClips } from "../../src/lib/alef-bet/letters.ts";
@@ -65,9 +67,12 @@ if (!key || !region) {
 
 const escapeXml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+// Only a few clips need more than their plain Hebrew text (see allClips): a pronunciation hint in standard phonetic
+// symbols (clip.ipa), or a carrier word said first and cut off afterwards (clip.carrier, needs ffmpeg).
 async function speak(voiceName, clip) {
-  // The voice is only given the Hebrew text (letters with their vowel marks), nothing else.
-  const ssml = `<speak version="1.0" xml:lang="he-IL"><voice name="${voiceName}"><prosody rate="-15%">${escapeXml(clip.text)}</prosody></voice></speak>`;
+  const body = clip.ipa ? `<phoneme alphabet="ipa" ph="${escapeXml(clip.ipa)}">${escapeXml(clip.text)}</phoneme>` : escapeXml(clip.text);
+  const inner = clip.carrier ? `${escapeXml(clip.carrier)}<break time="600ms"/>${body}` : body;
+  const ssml = `<speak version="1.0" xml:lang="he-IL"><voice name="${voiceName}"><prosody rate="-15%">${inner}</prosody></voice></speak>`;
   const res = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
     method: "POST",
     headers: {
@@ -79,7 +84,27 @@ async function speak(voiceName, clip) {
     body: ssml,
   });
   if (!res.ok) throw new Error(`Azure answered ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  return Buffer.from(await res.arrayBuffer());
+  const audio = Buffer.from(await res.arrayBuffer());
+  return clip.carrier ? cutOffCarrier(audio) : audio;
+}
+
+// Keep what comes after the pause that follows the carrier word, and trim silence from the end.
+async function cutOffCarrier(audio) {
+  const dir = await mkdtemp(path.join(tmpdir(), "alef-"));
+  try {
+    const input = path.join(dir, "in.mp3");
+    const output = path.join(dir, "out.mp3");
+    await writeFile(input, audio);
+    const probe = spawnSync("ffmpeg", ["-hide_banner", "-i", input, "-af", "silencedetect=noise=-32dB:d=0.06", "-f", "null", "-"], { encoding: "utf8" });
+    const starts = [...probe.stderr.matchAll(/silence_start: ([\d.]+)/g)].map((m) => +m[1]);
+    const ends = [...probe.stderr.matchAll(/silence_end: ([\d.]+)/g)].map((m) => +m[1]);
+    const gap = starts.findIndex((start, i) => start > 0.2 && ends[i] !== undefined);
+    if (gap === -1) throw new Error("could not find the pause after the carrier word");
+    execFileSync("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", "-ss", String(Math.max(0, ends[gap] - 0.03)), "-i", input, "-af", "silenceremove=stop_periods=-1:stop_duration=0.3:stop_threshold=-40dB", "-c:a", "libmp3lame", "-b:a", "48k", output]);
+    return await readFile(output);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 let manifest = {};

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CloseButton, CloseOrLink } from "@/components/overlay";
-import { DEFAULT_VOWEL, VOWEL_OPTIONS, plainHebrew, positionLabel, soundClipId, soundGlyph, syllableLabel, type LetterCard, type VowelId } from "@/lib/alef-bet/letters";
+import { DEFAULT_VOWEL, VOWEL_OPTIONS, plainHebrew, positionLabel, soundClipId, soundGlyph, syllableLabel, vowelButtonText, vowelLike, type LetterCard, type VowelId } from "@/lib/alef-bet/letters";
 import type { SpeechVoice } from "@/lib/settings";
 import { exampleClipId, nameClipId } from "@/lib/alef-bet/audio-clips";
 import { SpeakerButton } from "./speaker-button";
@@ -70,12 +70,23 @@ export function CardRunner({
         )}
       </div>
 
+      {/* A letter whose dot changes its name has two (bet and vet): each with its own speaker. */}
       <div className="flex items-center gap-2.5 px-1">
         <h1 className="text-3xl font-semibold">{card.name}</h1>
-        <span className="text-sm text-muted">{card.nameNote ? `${card.kind === "letter" ? "letter name" : "sound"} · ${card.nameNote}` : card.kind === "letter" ? "letter name" : "vowel sound"}</span>
-        <span className="ml-auto">
-          <SpeakerButton voice={voice} clipId={nameClipId(card)} label={`Hear the name: ${card.name}`} />
-        </span>
+        {card.name2 ? (
+          <>
+            <SpeakerButton voice={voice} clipId={nameClipId(card)} label={`Hear the name: ${card.name}`} />
+            <span className="ml-1 text-3xl font-semibold text-muted">{card.name2}</span>
+            <SpeakerButton voice={voice} clipId={nameClipId(card, true)} label={`Hear the name: ${card.name2}`} />
+          </>
+        ) : (
+          <>
+            <span className="text-sm text-muted">{card.kind === "letter" ? "letter name" : "vowel sound"}</span>
+            <span className="ml-auto">
+              <SpeakerButton voice={voice} clipId={nameClipId(card)} label={`Hear the name: ${card.name}`} />
+            </span>
+          </>
+        )}
       </div>
 
       {card.kind === "letter" && (
@@ -92,7 +103,7 @@ export function CardRunner({
                 className={`flex h-11 flex-1 items-center justify-center rounded-full border transition-colors ${vowel === v.id ? "border-transparent bg-accent text-accent-contrast" : "border-border hover:bg-surface"}`}
               >
                 <span lang="he" className="hebrew whitespace-pre text-[26px] font-semibold leading-none">
-                  {v.shown}
+                  {vowelButtonText(card, v.id)}
                 </span>
               </button>
             ))}
@@ -109,8 +120,9 @@ export function CardRunner({
                 {soundGlyph(card, i, vowel)}
               </span>
               <div className="flex flex-col">
-                <p className="text-[17px] font-semibold">
-                  {syllable} <span className="font-normal text-muted">{card.kind === "letter" ? `${sound.say} ${sound.like}` : sound.like}</span>
+                <p className="text-[17px] font-semibold">{syllable}</p>
+                <p className="text-sm text-muted">
+                  {card.kind !== "letter" || sound.as !== undefined ? sound.like : `${sound.say} ${sound.like} · ${vowel} ${vowelLike(vowel)}`}
                 </p>
                 {sound.note && <p className="text-xs text-muted">{sound.note}</p>}
               </div>
