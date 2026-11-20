@@ -37,6 +37,7 @@ async function CardBody({ params }: { params: Promise<{ card: string }> }) {
       startIndex={start}
       showNikud={settings.showNikud}
       showTranslit={settings.showTranslit}
+      voice={settings.speechVoice}
       scriptClass={scriptFont.className}
       backHref="/alef-bet"
     />

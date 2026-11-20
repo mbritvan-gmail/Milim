@@ -2,15 +2,14 @@
 
 import { useRef } from "react";
 import { clipSrc, hasClip } from "@/lib/alef-bet/audio-clips";
-import { useVoice } from "@/lib/alef-bet/use-voice";
+import type { SpeechVoice } from "@/lib/settings";
 
 // Only one clip plays at a time, so tapping another stops the first.
 let playing: HTMLAudioElement | null = null;
 
-// A round speaker button that plays one recorded clip when tapped, in the voice chosen on the Alef-bet page.
+// A round speaker button that plays one recorded clip when tapped, in the person's Voice setting.
 // Never plays by itself. If there is no clip for this id, nothing is shown.
-export function SpeakerButton({ clipId, label }: { clipId: string; label: string }) {
-  const voice = useVoice();
+export function SpeakerButton({ clipId, label, voice }: { clipId: string; label: string; voice: SpeechVoice }) {
   const audio = useRef<{ src: string; el: HTMLAudioElement } | null>(null);
   if (!hasClip(clipId)) return null;
 

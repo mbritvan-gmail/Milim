@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CloseButton, CloseOrLink } from "@/components/overlay";
 import { plainHebrew, positionLabel, type LetterCard } from "@/lib/alef-bet/letters";
+import type { SpeechVoice } from "@/lib/settings";
 import { exampleClipId, nameClipId, soundClipId } from "@/lib/alef-bet/audio-clips";
 import { SpeakerButton } from "./speaker-button";
 
@@ -18,6 +19,7 @@ export function CardRunner({
   startIndex,
   showNikud,
   showTranslit,
+  voice,
   scriptClass,
   backHref,
 }: {
@@ -25,6 +27,8 @@ export function CardRunner({
   startIndex: number;
   showNikud: boolean;
   showTranslit: boolean;
+  /** Which recording the speaker buttons play (the Voice setting). */
+  voice: SpeechVoice;
   /** className of the handwriting font (loaded on the server). */
   scriptClass: string;
   backHref: string;
@@ -68,7 +72,7 @@ export function CardRunner({
         <h1 className="text-3xl font-semibold">{card.name}</h1>
         <span className="text-sm text-muted">{card.nameNote ? `${card.kind === "letter" ? "letter name" : "sound"} · ${card.nameNote}` : card.kind === "letter" ? "letter name" : "vowel sound"}</span>
         <span className="ml-auto">
-          <SpeakerButton clipId={nameClipId(card)} label={`Hear the name: ${card.name}`} />
+          <SpeakerButton voice={voice} clipId={nameClipId(card)} label={`Hear the name: ${card.name}`} />
         </span>
       </div>
 
@@ -85,7 +89,7 @@ export function CardRunner({
               {sound.note && <p className="text-xs text-muted">{sound.note}</p>}
             </div>
             <span className="ml-auto">
-              <SpeakerButton clipId={soundClipId(card, i)} label={`Hear the sound: ${sound.say}`} />
+              <SpeakerButton voice={voice} clipId={soundClipId(card, i)} label={`Hear the sound: ${sound.say}`} />
             </span>
           </li>
         ))}
@@ -104,7 +108,7 @@ export function CardRunner({
             {ex.english}
           </span>
           <span className="ml-auto">
-            <SpeakerButton clipId={exampleClipId(card)} label={`Hear the word: ${ex.translit}`} />
+            <SpeakerButton voice={voice} clipId={exampleClipId(card)} label={`Hear the word: ${ex.translit}`} />
           </span>
         </div>
       </div>
