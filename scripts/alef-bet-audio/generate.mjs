@@ -65,8 +65,10 @@ if (!key || !region) {
 
 const escapeXml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-async function speak(voiceName, text) {
-  const ssml = `<speak version="1.0" xml:lang="he-IL"><voice name="${voiceName}"><prosody rate="-15%">${escapeXml(text)}</prosody></voice></speak>`;
+async function speak(voiceName, clip) {
+  // With a pronunciation hint (clip.ipa) the voice is told which sounds to make for this text.
+  const inner = clip.ipa ? `<phoneme alphabet="ipa" ph="${escapeXml(clip.ipa)}">${escapeXml(clip.text)}</phoneme>` : escapeXml(clip.text);
+  const ssml = `<speak version="1.0" xml:lang="he-IL"><voice name="${voiceName}"><prosody rate="-15%">${inner}</prosody></voice></speak>`;
   const res = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
     method: "POST",
     headers: {
@@ -103,7 +105,7 @@ outer: for (const voice of voices) {
       let audio;
       for (let attempt = 1; ; attempt++) {
         try {
-          audio = await speak(VOICE_NAMES[voice], clip.text);
+          audio = await speak(VOICE_NAMES[voice], clip);
           break;
         } catch (error) {
           if (!/ 429/.test(error.message) || attempt >= 5) throw error;

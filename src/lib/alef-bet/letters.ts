@@ -163,11 +163,11 @@ export const nameClipId = (card: LetterCard) => `${card.id}-name`;
 export const soundClipId = (card: LetterCard, index: number) => `${card.id}-sound-${index + 1}`;
 export const exampleClipId = (card: LetterCard) => `word-${card.example.translit}`;
 
-// How each letter name is said, with nikud so a voice reads it correctly.
-const NAME_SPEAK: Record<string, string> = {
-  alef: "אָלֶף", bet: "בֵּית", gimel: "גִּימֶל", dalet: "דָּלֶת", he: "הֵא", vav: "וָו", zayin: "זַיִן", khet: "חֵית",
-  tet: "טֵית", yod: "יוֹד", kaf: "כַּף", lamed: "לָמֶד", mem: "מֵם", nun: "נוּן", samekh: "סָמֶךְ", ayin: "עַיִן",
-  pe: "פֵּא", tsadi: "צָדִי", kuf: "קוֹף", resh: "רֵישׁ", shin: "שִׁין", tav: "תָּיו",
+// How each letter name is said. Chosen by ear (owner, 2026-11): most names sound right from the bare letter alone;
+// a few letters (bet, vav, lamed, ayin, resh) read as the one-letter word they can be at the start of a word
+// ("in", "and", "to"...) unless a pronunciation hint is given. The hint is in IPA (standard phonetic symbols).
+const NAME_HINT: Record<string, string> = {
+  bet: "ˈbet", vav: "ˈvav", lamed: "ˈlamed", ayin: "ˈajin", resh: "ˈʁeʃ",
 };
 
 const FINAL_TO_BASE: Record<string, string> = { "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" };
@@ -182,13 +182,16 @@ export function soundSpeak(card: LetterCard, index: number): string {
   return cluster;
 }
 
-export type Clip = { id: string; text: string; kind: "name" | "sound" | "word" };
+/** `text` is what is shown to a reviewer; when `ipa` is set, a voice is told to pronounce that text as those sounds. */
+export type Clip = { id: string; text: string; kind: "name" | "sound" | "word"; ipa?: string };
 
 /** Every clip the cards can play, once each, with the text a voice should say. */
 export function allClips(): Clip[] {
   const out = new Map<string, Clip>();
   for (const card of ALL_CARDS) {
-    if (card.kind === "letter") out.set(nameClipId(card), { id: nameClipId(card), text: NAME_SPEAK[card.id], kind: "name" });
+    if (card.kind === "letter") {
+      out.set(nameClipId(card), { id: nameClipId(card), text: card.print.split(" ")[0], kind: "name", ...(NAME_HINT[card.id] ? { ipa: NAME_HINT[card.id] } : {}) });
+    }
     card.sounds.forEach((_, i) => out.set(soundClipId(card, i), { id: soundClipId(card, i), text: soundSpeak(card, i), kind: "sound" }));
     out.set(exampleClipId(card), { id: exampleClipId(card), text: card.example.hebrew, kind: "word" });
   }
