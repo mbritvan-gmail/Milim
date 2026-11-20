@@ -18,4 +18,4 @@ export const clipSrc = (id: string, voice: SpeechVoice): string | null => {
 /** True if either voice has this clip, so the speaker button should show. */
 export const hasClip = (id: string): boolean => clipSrc(id, "female") !== null || clipSrc(id, "male") !== null;
 
-export { nameClipId, soundClipId, exampleClipId } from "./letters";
+export { nameClipId, soundClipId, wordClipId } from "./letters";

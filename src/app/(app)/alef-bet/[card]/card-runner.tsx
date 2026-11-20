@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { CloseButton, CloseOrLink } from "@/components/overlay";
-import { DEFAULT_VOWEL, VOWEL_OPTIONS, plainHebrew, positionLabel, soundClipId, soundGlyph, syllableLabel, vowelButtonText, type LetterCard, type VowelId } from "@/lib/alef-bet/letters";
+import { nikudRows, plainHebrew, positionLabel, wordClipId, type LetterCard } from "@/lib/alef-bet/letters";
 import type { SpeechVoice } from "@/lib/settings";
-import { clipSrc, exampleClipId, nameClipId } from "@/lib/alef-bet/audio-clips";
+import { clipSrc, nameClipId } from "@/lib/alef-bet/audio-clips";
 import { playClips } from "@/lib/alef-bet/play";
 import { SpeakerButton } from "./speaker-button";
 
@@ -15,6 +15,13 @@ function glyphSize(card: LetterCard, text: string) {
   const count = text.split(/\s+/).length;
   return count === 1 ? "text-[112px]" : count === 2 ? "text-7xl" : "text-5xl";
 }
+
+const SPEAKER_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M11 5 6 9H2v6h4l5 4z" />
+    <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+  </svg>
+);
 
 export function CardRunner({
   cards,
@@ -36,30 +43,20 @@ export function CardRunner({
   backHref: string;
 }) {
   const [index, setIndex] = useState(Math.min(Math.max(startIndex, 0), cards.length - 1));
-  // The nikud (vowel mark) the sounds are shown and played with. It stays as chosen while moving between letters.
-  const [vowel, setVowel] = useState<VowelId>(DEFAULT_VOWEL);
   const card = cards[index];
-  // A letter whose dot changes its name shows both forms (bet and vet), not just one.
-  const printText = card.forms ? card.forms.join(" ") : card.print;
-  // Tapping a nikud button chooses it and plays the sound straight away: the letter with that nikud (a letter with two
-  // sounds, like bet and vet, plays both in turn).
-  function pickNikud(id: VowelId) {
-    setVowel(id);
-    const sources = card.sounds.flatMap((sound, i) => {
-      if (sound.as !== undefined) return [];
-      const clip = soundClipId(card, i, id);
-      const src = clipSrc(clip, voice) ?? clipSrc(clip, voice === "female" ? "male" : "female");
-      return src ? [src] : [];
-    });
-    if (sources.length) playClips(sources);
-  }
   const isLast = index === cards.length - 1;
+  // A letter whose dot changes its name shows its forms side by side (bet and vet), in print and in script.
+  const printText = card.forms ? card.forms.join(" ") : card.print;
+  const scriptText = card.forms ? card.forms.join(" ") : card.script;
+
+  function play(clipId: string) {
+    const src = clipSrc(clipId, voice) ?? clipSrc(clipId, voice === "female" ? "male" : "female");
+    if (src) playClips([src]);
+  }
 
   // The vowel signs are the lesson, so they always show with their marks; words follow the setting.
   const withNikud = showNikud || card.kind === "vowel";
-  const ex = card.example;
-  const lead = withNikud ? ex.lead : plainHebrew(ex.lead);
-  const rest = withNikud ? ex.hebrew.slice(ex.lead.length) : plainHebrew(ex.hebrew.slice(ex.lead.length));
+  const show = (text: string) => (withNikud ? text : plainHebrew(text));
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-1 flex-col gap-3 px-4 pb-6 pt-4">
@@ -69,18 +66,18 @@ export function CardRunner({
         <CloseButton fallbackHref={backHref} />
       </div>
 
-      <div className={`grid gap-2.5 ${card.script ? "grid-cols-2" : "grid-cols-1"}`}>
+      <div className={`grid gap-2.5 ${scriptText ? "grid-cols-2" : "grid-cols-1"}`}>
         <div className="flex flex-col items-center rounded-2xl border border-border bg-surface px-2.5 pb-1.5 pt-2.5">
           <span className="text-[11px] uppercase tracking-wide text-muted">{card.kind === "vowel" ? "Signs" : "Print"}</span>
           <span lang="he" className={`hebrew whitespace-pre font-bold leading-[1.15] text-accent ${glyphSize(card, printText)}`}>
             {printText}
           </span>
         </div>
-        {card.script && (
+        {scriptText && (
           <div className="flex flex-col items-center rounded-2xl border border-border bg-surface px-2.5 pb-1.5 pt-2.5">
             <span className="text-[11px] uppercase tracking-wide text-muted">Script</span>
-            <span lang="he" className={`${scriptClass} whitespace-pre leading-[1.15] text-seg-suffix ${glyphSize(card, card.script ?? "")}`} dir="rtl">
-              {card.script}
+            <span lang="he" className={`${scriptClass} whitespace-pre leading-[1.15] text-seg-suffix ${glyphSize(card, scriptText)}`} dir="rtl">
+              {scriptText}
             </span>
           </div>
         )}
@@ -105,66 +102,84 @@ export function CardRunner({
         )}
       </div>
 
-      {card.kind === "letter" && (
-        <div role="group" aria-label="Nikud for the sounds" className="flex items-center gap-2 px-1">
-          <span className="text-sm text-muted">Nikud</span>
-          <div className="flex flex-1 gap-1.5">
-            {VOWEL_OPTIONS.map((v) => (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => pickNikud(v.id)}
-                aria-pressed={vowel === v.id}
-                aria-label={`Nikud ${v.id}`}
-                className={`flex h-11 flex-1 items-center justify-center rounded-full border transition-colors ${vowel === v.id ? "border-transparent bg-accent text-accent-contrast" : "border-border hover:bg-surface"}`}
-              >
-                <span lang="he" className="hebrew whitespace-pre text-[26px] font-semibold leading-none">
-                  {vowelButtonText(card, v.id)}
-                </span>
-              </button>
+      {card.kind === "letter" ? (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between px-0.5">
+            <h2 className="text-[17px] font-semibold">Nikud</h2>
+            <span lang="he" className="hebrew text-lg font-semibold leading-none text-muted">
+              ניקוד
+            </span>
+          </div>
+          {/* The nikud in order, down the page. Tap a cell to hear that letter with that nikud. */}
+          <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+            {nikudRows(card).map((row, r) => (
+              <div key={row.vowel} className={`flex items-center ${r > 0 ? "border-t border-border" : ""}`}>
+                {row.cells.map((cell) => (
+                  <button
+                    key={cell.clipId}
+                    type="button"
+                    onClick={() => play(cell.clipId)}
+                    aria-label={`Hear ${cell.label}`}
+                    className="flex h-[58px] min-w-0 flex-1 items-center justify-between gap-2 px-3.5 hover:bg-surface-2"
+                  >
+                    <span lang="he" className="hebrew whitespace-pre text-[30px] font-bold leading-none tracking-[0.04em]">
+                      {cell.glyph}
+                    </span>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-accent">{SPEAKER_ICON}</span>
+                  </button>
+                ))}
+              </div>
             ))}
           </div>
-        </div>
-      )}
-
-      <ul className="flex flex-col gap-2">
-        {card.sounds.map((sound, i) => {
-          const syllable = syllableLabel(card, i, vowel);
-          return (
+        </section>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {card.sounds.map((sound, i) => (
             <li key={i} className="flex items-center gap-3.5 rounded-xl border border-border bg-surface px-3.5 py-2">
               <span lang="he" className="hebrew w-14 shrink-0 text-center text-4xl font-bold leading-none text-accent">
-                {soundGlyph(card, i, vowel)}
+                {sound.form}
               </span>
               <div className="flex flex-col">
-                <p className="text-[17px] font-semibold">{syllable}</p>
+                <p className="text-[17px] font-semibold">{sound.say}</p>
                 {sound.note && <p className="text-xs text-muted">{sound.note}</p>}
               </div>
               <span className="ml-auto">
-                <SpeakerButton voice={voice} clipId={soundClipId(card, i, vowel)} label={`Hear the sound: ${syllable}`} />
+                <SpeakerButton voice={voice} clipId={`${card.id}-sound-${i + 1}`} label={`Hear the sound: ${sound.say}`} />
               </span>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      )}
 
-      <div className="flex flex-col gap-0.5 rounded-xl bg-surface-2 px-3.5 py-2.5">
-        <span className="text-[11px] uppercase tracking-wide text-muted">Example word</span>
-        <div className="flex items-baseline gap-3">
-          <span lang="he" className="hebrew text-3xl">
-            <span className="font-bold text-accent">{lead}</span>
-            {rest}
-          </span>
-          <span className="text-sm">
-            {showTranslit && <i className="text-muted">{ex.translit}</i>}
-            {showTranslit && " · "}
-            {ex.english}
-          </span>
-          <span className="ml-auto">
-            <SpeakerButton voice={voice} clipId={exampleClipId(card)} label={`Hear the word: ${ex.translit}`} />
+      <section className="flex flex-col gap-2">
+        <div className="flex items-baseline justify-between px-0.5">
+          <h2 className="text-[17px] font-semibold">Example words</h2>
+          <span lang="he" className="hebrew text-lg font-semibold leading-none text-muted">
+            דוגמאות
           </span>
         </div>
-      </div>
-
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+          {card.examples.map((word, i) => (
+            <div key={word.translit} className={`flex items-center gap-3 py-2 pl-3.5 pr-2 ${i > 0 ? "border-t border-border" : ""}`}>
+              <span lang="he" className="hebrew min-w-24 text-3xl leading-snug">
+                {show(word.pre)}
+                <span className="font-bold text-accent">{show(word.hl)}</span>
+                {show(word.post)}
+              </span>
+              <span className="flex-1 text-sm">
+                {showTranslit && (
+                  <>
+                    <i className="text-muted">{word.translit}</i>
+                    {" · "}
+                  </>
+                )}
+                {word.english}
+              </span>
+              <SpeakerButton voice={voice} clipId={wordClipId(word)} label={`Hear the word: ${word.translit}`} />
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Hebrew reads right to left, so Next is on the left and Previous on the right. Same size; at the first card
           Previous is dimmed rather than removed so the buttons never move. */}
