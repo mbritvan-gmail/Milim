@@ -29,16 +29,19 @@ export async function reviewCard(vocabId: string, correct: boolean): Promise<boo
 }
 
 // Undo: put a word back exactly as it was before the last answer.
-export async function restoreWord(vocabId: string, existed: boolean, correctCount: number, learned: boolean): Promise<boolean> {
+export async function restoreWord(vocabId: string, existed: boolean, correctCount: number, learned: boolean, missCount?: number): Promise<boolean> {
   try {
     const supabase = await signedInClient();
     if (!supabase) return false;
-    const { error } = await supabase.rpc("restore_word", {
+    const args = {
       p_vocab_entry_id: vocabId,
       p_existed: existed,
       p_correct_count: Math.max(0, Math.floor(correctCount)),
       p_learned: learned,
-    });
+    };
+    let { error } = await supabase.rpc("restore_word", missCount === undefined ? args : { ...args, p_miss_count: Math.max(0, Math.floor(missCount)) });
+    // The database update that records misses may not have been run yet: undo without it.
+    if (error && missCount !== undefined) ({ error } = await supabase.rpc("restore_word", args));
     if (error) {
       console.error("restoreWord failed", error);
       return false;

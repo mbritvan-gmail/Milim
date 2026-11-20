@@ -91,7 +91,7 @@ export function StudyRunner({
     setSession(result.session);
     setFlipped(false);
     const { vocabId, restore } = result;
-    save(() => restoreWord(vocabId, restore.status !== "new", restore.count, restore.status === "learned"));
+    save(() => restoreWord(vocabId, restore.status !== "new", restore.count, restore.status === "learned", restore.misses));
   }
 
   const header = (

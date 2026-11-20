@@ -1,13 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadWordExtras } from "./word-extras";
 import { readAllRows } from "./paged";
-import { chunk, matchesFilter, shuffle, type SessionCard, type StudyFilter, type WordStatus } from "./study";
+import { chunk, matchesFilter, sessionOrder, type SessionCard, type StudyFilter, type WordStatus } from "./study";
 
 // Loads the cards for a study session. A web address can only hold so many ids, so anything
 // looked up by a long list of ids is fetched in chunks.
 const CHUNK = 60;
 
-type BaseCard = Omit<SessionCard, "context"> & { lineId: string | null; songId: string | null };
+type BaseCard = Omit<SessionCard, "context" | "misses"> & { lineId: string | null; songId: string | null };
 type VocabRow = { id: string; lemma: string; transliteration: string | null; english: string; part_of_speech: string | null };
 
 function statusOf(row: { learned_at: string | null } | undefined): WordStatus {
@@ -15,8 +15,18 @@ function statusOf(row: { learned_at: string | null } | undefined): WordStatus {
   return row.learned_at ? "learned" : "learning";
 }
 
+// How often the person has missed each word lately. Best effort: if the database update that records misses
+// hasn't been run yet, every word simply counts as zero.
+async function loadMisses(supabase: SupabaseClient): Promise<Map<string, number>> {
+  const { data } = await readAllRows<{ vocab_entry_id: string; miss_count: number }>((a, b) =>
+    supabase.from("user_words").select("vocab_entry_id, miss_count").gt("miss_count", 0).order("vocab_entry_id").range(a, b),
+  );
+  return new Map(data.map((r) => [r.vocab_entry_id, r.miss_count]));
+}
+
 // Attach a lyric line (and the song it comes from) to each card, as a reminder of where the word was heard.
 async function withContext(supabase: SupabaseClient, base: BaseCard[]): Promise<SessionCard[]> {
+  const misses = await loadMisses(supabase);
   const extras = await loadWordExtras(supabase, base.map((c) => c.vocabId));
   const lineByVocab = new Map<string, { lineId: string; songId: string | null }>();
   for (const c of base) if (c.lineId) lineByVocab.set(c.vocabId, { lineId: c.lineId, songId: c.songId });
@@ -51,17 +61,21 @@ async function withContext(supabase: SupabaseClient, base: BaseCard[]): Promise<
     for (const s of data ?? []) titleById.set(s.id, s.title);
   }
 
-  return base.map(({ lineId, songId, ...card }) => {
+  // Random order, but words the person has missed lately tend to come first.
+  return sessionOrder(
+    base.map(({ lineId, songId, ...card }) => {
     void lineId;
     void songId;
     const found = lineByVocab.get(card.vocabId);
     const line = found ? lineById.get(found.lineId) : undefined;
     return {
       ...card,
+      misses: misses.get(card.vocabId) ?? 0,
       ...extras.get(card.vocabId),
       context: line ? { songTitle: found?.songId ? (titleById.get(found.songId) ?? null) : null, ...line } : null,
     };
-  });
+    }),
+  );
 }
 
 // Every word the person has met (the Master Dictionary), narrowed by status.
@@ -90,7 +104,7 @@ export async function cardsForFilter(supabase: SupabaseClient, filter: StudyFilt
       lineId: null,
       songId: null,
     }));
-  return withContext(supabase, shuffle(base));
+  return withContext(supabase, base);
 }
 
 // One song's words. `scope` narrows to the words still to learn, or to the learned ones.
@@ -135,7 +149,7 @@ export async function cardsForSong(
       };
     })
     .filter((c) => (scope === "all" ? true : scope === "learned" ? c.status === "learned" : c.status !== "learned"));
-  return { title: songRes.data.title, cards: await withContext(supabase, shuffle(base)) };
+  return { title: songRes.data.title, cards: await withContext(supabase, base) };
 }
 
 // One vocabulary module's words. `scope` narrows to the words still to learn, or to the learned ones.
@@ -180,5 +194,5 @@ export async function cardsForModule(
       };
     })
     .filter((c) => (scope === "all" ? true : scope === "learned" ? c.status === "learned" : c.status !== "learned"));
-  return { title: moduleRes.data.title, cards: await withContext(supabase, shuffle(base)) };
+  return { title: moduleRes.data.title, cards: await withContext(supabase, base) };
 }
