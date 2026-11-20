@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CARDS, VOWEL_CARDS, type LetterCard } from "@/lib/alef-bet/letters";
+import { VoiceSwitch } from "./voice-switch";
 
 export const metadata = { title: "Alef-bet · milim" };
 
@@ -8,7 +9,10 @@ export const metadata = { title: "Alef-bet · milim" };
 export default function AlefBetPage() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-8">
-      <h1 className="text-3xl font-semibold leading-tight">Alef-bet</h1>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <h1 className="text-3xl font-semibold leading-tight">Alef-bet</h1>
+        <VoiceSwitch />
+      </div>
 
       <Section title="Letters" hebrew="אותיות">
         {/* Right to left, like Hebrew reads: alef is at the top right. */}

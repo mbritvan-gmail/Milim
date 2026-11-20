@@ -1,24 +1,29 @@
 "use client";
 
 import { useRef } from "react";
-import { clipSrc } from "@/lib/alef-bet/audio-clips";
+import { clipSrc, hasClip } from "@/lib/alef-bet/audio-clips";
+import { useVoice } from "@/lib/alef-bet/use-voice";
 
 // Only one clip plays at a time, so tapping another stops the first.
 let playing: HTMLAudioElement | null = null;
 
-// A round speaker button that plays one recorded clip when tapped. Never plays by itself. If there is no
-// clip for this id, nothing is shown.
+// A round speaker button that plays one recorded clip when tapped, in the voice chosen on the Alef-bet page.
+// Never plays by itself. If there is no clip for this id, nothing is shown.
 export function SpeakerButton({ clipId, label }: { clipId: string; label: string }) {
-  const audio = useRef<HTMLAudioElement | null>(null);
-  const src = clipSrc(clipId);
-  if (!src) return null;
+  const voice = useVoice();
+  const audio = useRef<{ src: string; el: HTMLAudioElement } | null>(null);
+  if (!hasClip(clipId)) return null;
 
   function play() {
-    if (playing && playing !== audio.current) playing.pause();
-    if (!audio.current) audio.current = new Audio(src!);
-    audio.current.currentTime = 0;
-    playing = audio.current;
-    audio.current.play().catch(() => {});
+    const src = clipSrc(clipId, voice) ?? clipSrc(clipId, voice === "female" ? "male" : "female");
+    if (!src) return;
+    if (playing) playing.pause();
+    // A new player only when the voice (so the file) has changed.
+    if (!audio.current || audio.current.src !== src) audio.current = { src, el: new Audio(src) };
+    const el = audio.current.el;
+    el.currentTime = 0;
+    playing = el;
+    el.play().catch(() => {});
   }
 
   return (
