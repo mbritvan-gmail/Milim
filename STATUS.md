@@ -1,6 +1,6 @@
 # Milim: where we left off
 
-Last updated: 2026-11-18. Branch: `claude/milim-handoff-review-pmh51c`. Live preview: https://milim-seven.vercel.app
+Last updated: 2026-11-20. Branch: `claude/milim-handoff-review-pmh51c` (the Alef-bet work is on it too). Live preview: https://milim-seven.vercel.app. A full code review of this stretch was done on 2026-11-20 and its fixes pushed; the Vercel deploys of every recent commit succeeded.
 
 ## How to continue (read this first in a new chat)
 **What milim is:** a mobile-first web app that teaches Hebrew through song lyrics. Next.js 16 (App Router, cacheComponents, `proxy.ts`; read `node_modules/next/dist/docs/` before writing Next code, see `AGENTS.md`), Tailwind, Supabase (Postgres + auth + RLS), Vercel at milim.britvan.net, Anthropic for AI behind a provider interface (`src/lib/ai`). Brand is lowercase "milim".
@@ -10,18 +10,20 @@ Last updated: 2026-11-18. Branch: `claude/milim-handoff-review-pmh51c`. Live pre
 **How we work**
 - Develop on branch `claude/milim-handoff-review-pmh51c`; commit and push after each change (that is how it deploys to Vercel). Do not open a PR unless asked.
 - For anything with new UI the user usually asks for a mockup first, on their Design canvas artifact (https://claude.ai/artifact/WKRPZHy6Q97EHsJSQrmMzX; read the live `project/canvas.json` before publishing, the user edits it too). Do not build until they approve.
-- Verify with `npm run build` and `npx eslint`; `npx tsc --noEmit` shows two known errors from generated types (`LayoutProps`, `.next/types`), ignore those. For visual checks use Playwright against `next start` with a temporary page under `src/app/(app)/ui-test`, and delete it afterwards. Unit-test pure logic (e.g. `src/lib/lyric-repeats.ts`, `src/lib/nikud-run.ts`) with an esbuild bundle in the scratchpad.
-- Pop-up screens are intercepting routes under `src/app/(app)/@modal` using `<Overlay nav>` (keeps the bottom bar; study screens use `<Overlay>` full screen). Small panels (`src/components/sheet.tsx`) are portals centered on screen.
+- Verify with `npm run build` and `npx eslint`; `npx tsc --noEmit` shows two known errors from generated types (`LayoutProps`, `.next/types`), ignore those. For visual checks use Playwright against `next start` with a temporary page under `src/app/(app)/ui-test`, and delete it afterwards. Unit-test pure logic (e.g. `src/lib/lyric-repeats.ts`, `src/lib/section-detect.ts`, `src/lib/study.ts`) with an esbuild bundle in the scratchpad; test SQL on a throwaway local Postgres (stub `auth.uid()`). Without Supabase env vars the proxy lets every page through, so a temporary `ui-test` page can be opened in Playwright after a build without them.
+- **Database gotchas:** the database returns at most 1000 rows per request whatever `.limit()` says, so lists that can grow use `readAllRows` (`src/lib/paged.ts`) with a unique `.order()`. Never run an old SQL script again after a newer one replaced its functions (see `20261118000000_learning_model.sql`); run each script once, in date order. The app tolerates a missing newer column wherever possible and shows a plain message when it cannot.
+- **Parallel sessions:** another session (the Alef-bet trainer) pushes to this branch too; always `git pull` first, and stay out of `src/app/(app)/alef-bet`, `src/lib/alef-bet` and `src/app/(app)/@modal/(.)alef-bet` unless asked.
+- Pop-up screens are intercepting routes under `src/app/(app)/@modal` using `<Overlay nav>` (keeps the bottom bar; study sessions at `/study` and Alef-bet cards use `<Overlay>` full screen). Landing pages of the Home modules (`/songs`, `/vocabulary`, `/flashcards`, `/dictionary`, `/alef-bet`) are standalone pages, not pop-ups. Small panels (`src/components/sheet.tsx`) are portals centered on screen.
 - Styling: theme tokens in `src/app/globals.css` (dark default, light, system). Home glass tiles use `.module-tile`; the song page uses colors scoped to `.song-page`. Do not restyle other screens unless asked.
 - Cost: the whole song library cost about 20 cents to add nikud; one verb conjugation is about 4 cents (so conjugations stay on demand and are saved for everyone in `word_forms`).
 
-**Recently finished (2026-11):** smoked-glass Home with new glyphs and Frank Ruhl Libre title; lyrics-first song page (repeats collapse via `src/lib/lyric-repeats.ts`, Lyrics size setting Small/Medium/Large); songs get nikud automatically when added (`src/app/(app)/songs/new/actions.ts` + `src/lib/nikud-run.ts`); the Edit-mode Add nikud button and the bulk buttons were removed.
+**Recently finished (2026-11):** smoked-glass Home; lyrics-first song page; every song has nikud and new songs get it automatically; section headers guessed for new songs (plain `Chorus` / `Verse 1` recognised too) and editable in Edit mode; Dictionary (look things up, search, sort) split from Flash Cards (the place to practise: by status, a Song or a Pack), Flash Cards landing is a standalone page and sessions are pop-ups at `/study`; smarter flash card spacing and remembered misses; the 1000-word Dictionary limit fixed; app-wide Voice setting (Settings > Sound); the Alef-bet trainer with recorded clips in two voices.
 
 **Next up (pick with the user)**
-1. (Done: all existing songs now have nikud; see "Nikud for existing songs".)
-2. (Done: Dictionary is for looking things up, Flash Cards is where you start practising; see "Dictionary and Flash Cards split".)
-3. Before sharing widely: report/takedown path, terms note, sign-up control (invite only), Anthropic spend limit, Deezer terms check.
-4. Notifications (suggestions, filled requests); pronouns/prepositions forms; "N new words" pack updates; nikud in Dictionary rows.
+1. The owner has another major app update planned for the next session: ask what it is first.
+2. **Goal-based learning program** (brainstorming in the owner's chat first; they will bring a one-page summary): a daily plan built from the songs and Packs a person has added (flash cards, questions, reviews of learned words over time, other reinforcement), shaped by a goal. Reviewing learned words over time and a "just N cards" session size were deliberately left for it. Mock up on the Design canvas before building.
+3. Before sharing widely: report/takedown path, terms note, sign-up control (invite only), Anthropic spend limit, Deezer terms check, **Azure terms for bundling the generated Alef-bet audio**, and a Hebrew speaker listening to every Alef-bet clip.
+4. Notifications (suggestions, filled requests); pronouns/prepositions forms; "N new words" pack updates.
 
 ## Nikud for existing songs
 - Done (2026-11): every song now has nikud, added with a temporary Settings tool that has since been removed. New songs get nikud automatically when added. The temporary database function `fill_line_nikud` has been dropped. There is no button or automatic catch-up for nikud any more: only new songs get it, when they are added.
@@ -46,7 +48,7 @@ Last updated: 2026-11-18. Branch: `claude/milim-handoff-review-pmh51c`. Live pre
 - Settings > **Sound** (marked Whole app) has **Voice** (Female / Male), saved to `profiles.speech_voice` (default `female`). Read it anywhere with `loadSettings(...).speechVoice` (`SpeechVoice`, `isSpeechVoice` in `src/lib/settings.ts`); older databases without the column fall back to `female`. Saving without the column shows a friendly "voice script hasn't been run" message. Meant for every spoken-word feature, so the name is generic.
 
 ## SQL scripts (user)
-All scripts live in `supabase/migrations/`. The user has run them as features shipped (the latest, `20261204000000_lyrics_size.sql`, is run). If a feature says it needs a database update, ask which script and have them run it; each is safe to run again.
+All scripts live in `supabase/migrations/`. The user has run them as features shipped: through `20261204000000_lyrics_size.sql`, then `20261208000000_reorder_lines.sql` (section moving), `20261210000000_miss_tracking.sql` (remembered misses) and `20261212000000_speech_voice.sql` (Voice) are all run (confirmed by the user). If a feature says it needs a database update, ask which script and have them run it. Most are safe to run again, but run each once in date order and never re-run `20261118000000_learning_model.sql` after the miss-tracking script.
 
 ## Done
 - Product decisions locked (see README "Rules baked into the database").
@@ -194,7 +196,8 @@ All scripts live in `supabase/migrations/`. The user has run them as features sh
 7. Before sharing widely: report / takedown path for public lyrics and a short terms note, Anthropic spend limit and usage watching, tighten who may add vocab entries.
 8. Notifications: tell owners when someone suggests an edit (in-app notifications or email); tell suggesters when it is approved or rejected.
 9. Later ideas: a small "due" badge on the Dictionary tab, a "words not reviewed in 30 days" nudge for learned words, more dictionary upgrades.
-10. Housekeeping: delete the stray Vercel variable named `default`; lowercase "milim" in the Supabase email template.
+10. Housekeeping: delete the stray Vercel variable named `default`; lowercase "milim" in the Supabase email template. Optional SQL, once the simplified Alef-bet page is confirmed live: `drop table if exists public.alef_cards_seen;`.
+11. Still not seen in the live app (built and checked only with tests and stand-in data): section editing in Edit mode and automatic sections for a new song, the Dictionary "from ..." lines and Sort, the Flash Cards pickers and the `/study` pop-up routing (X returns to the page you came from), the new spacing and miss ordering in a real session, and the Voice setting saving to the account.
 
 ## Notes
 - Naming: a song's word list is called the **Song Vocabulary** (not "key words"); the **Dictionary** is the words from all of a person's songs.
@@ -233,7 +236,7 @@ All scripts live in `supabase/migrations/`. The user has run them as features sh
 - New setting **Lyrics size** (Small / Medium / Large, default Medium) in Settings. **Needs SQL:** `supabase/migrations/20261204000000_lyrics_size.sql` (until it runs, the size just stays Medium and saving shows a message).
 - Colors are scoped to `.song-page` (dark and light values in `globals.css`); other screens unchanged.
 
-## Alef-bet trainer (branch `claude/alef-bet-trainer`; no SQL needed)
+## Alef-bet trainer (now on the main working branch; no SQL needed)
 - Home has a fifth tile, **Alef-bet** (second, between Songs and Vocabulary; lavender, an alef set in Heebo 400, 44px, via `src/components/alef-glyph.tsx`). Do not change the tile; the owner likes it as is.
 - `/alef-bet` is **one page with every letter and vowel**, nothing to check off, no groups, no progress, no subtitle: Letters (אותיות, 22 tiles, right to left so alef is top right, final forms share their letter's tile) and Vowels (תנועות, 6 tiles). Tapping a tile opens its card full screen over the page (`@modal/(.)alef-bet/[card]`, like Flash Cards); opened directly it is a normal page. **Next / Previous go through all 28 cards in order** (22 letters, then 6 vowels); the header says "Letter 2 of 22" / "Vowel 1 of 6"; the last card says Done; the X is on the right.
 - Design decisions (owner, 2026-11): one card per letter showing print, script, sounds and an example word (no back of card, no flash cards, **no quizzes**, **no progress saving, no database table**). Letters are not stored as words, so they never reach the Dictionary, flash cards or song quizzes. No Basic words link on this page: the owner's "Basic words" Word Pack is just a normal Pack in Vocabulary. No offline mode.
