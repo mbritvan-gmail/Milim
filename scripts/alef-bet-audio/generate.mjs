@@ -13,7 +13,6 @@
 //
 // Clips marked with a carrier word need ffmpeg on this computer. The key is read from the environment and is never written anywhere. After a run it writes:
 //   src/lib/alef-bet/audio-manifest.json   which clips exist per voice (the app reads this)
-//   public/audio/alef-bet/review.html      a page to listen to every clip (a Hebrew speaker must do this); delete it afterwards
 //   docs/alef-bet-audio.md                 provider, voices and date (kept for the licence record)
 
 import { mkdir, readFile, writeFile, access, mkdtemp, rm } from "node:fs/promises";
@@ -160,29 +159,8 @@ const sortKeys = (o) => Object.fromEntries(Object.entries(o).sort());
 const sorted = Object.fromEntries(Object.entries(manifest).sort().map(([v, m]) => [v, sortKeys(m)]));
 await writeFile(manifestPath, JSON.stringify(sorted, null, 1) + "\n");
 
-// A page to listen to every clip, both voices side by side. It lives in public/ so it is served by the site
-// itself (open /audio/alef-bet/review.html while signed in). Delete it once the clips have been reviewed.
-const voiceNames = Object.keys(sorted);
-const rows = everyClip
-  .filter((c) => voiceNames.some((v) => sorted[v][c.id]))
-  .map((c) => {
-    const players = voiceNames
-      .map((v) => (sorted[v][c.id] ? `<td><audio controls preload="none" src="${v}/${sorted[v][c.id]}"></audio></td>` : "<td>-</td>"))
-      .join("");
-    return `<tr><td><input type="checkbox" data-id="${c.id}" aria-label="${c.id} sounds wrong"></td><td class="id">${c.id}</td><td lang="he" dir="rtl" class="he">${escapeXml(c.text)}</td>${players}</tr>`;
-  })
-  .join("\n");
-await writeFile(
-  path.join(outRoot, "review.html"),
-  `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Alef-bet clips: review</title>
-<style>body{font-family:system-ui,sans-serif;margin:16px;max-width:760px}td,th{padding:6px 8px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}.he{font-size:28px;font-family:Assistant,'Arial Hebrew',sans-serif}.id{font-size:12px;color:#666}audio{width:150px;height:32px}button{font:inherit;padding:10px 16px;border-radius:10px;border:1px solid #888;background:#eee;margin:8px 0}#out{white-space:pre-wrap;background:#f6f6f6;padding:8px;border-radius:8px}</style>
-<h1>Listen to every clip</h1><p>Columns: ${voiceNames.join(" and ")}. Tick a row if either voice says it wrong, then press the button and send me the copied list.</p>
-<button onclick="var ids=[].map.call(document.querySelectorAll('input:checked'),function(i){return i.dataset.id});var t=ids.length?ids.join(', '):'none wrong';document.getElementById('out').textContent=t;if(navigator.clipboard)navigator.clipboard.writeText(t).catch(function(){})">Copy the ticked ones</button><div id="out"></div>
-<table><tr><th>Wrong?</th><th>Clip</th><th>Hebrew</th>${voiceNames.map((v) => `<th>${v}</th>`).join("")}</tr>${rows}</table></html>`,
-);
-
 await writeFile(
   path.join(root, "docs/alef-bet-audio.md"),
-  `# Alef-bet sound clips\n\n- Provider: Microsoft Azure AI Speech (text to speech), region ${region}\n- Voices: he-IL-HilaNeural (female, folder hila) and he-IL-AvriNeural (male, folder avri)\n- Generated: ${new Date().toISOString().slice(0, 10)}\n- Clips: ${Object.entries(sorted).map(([v, m]) => `${v} ${Object.keys(m).length}`).join(", ")} of ${everyClip.length} each\n- Script: scripts/alef-bet-audio/generate.mjs (slowed 15% for learners)\n\nStatus: the owner listened to samples in both voices and approved them. **Not yet reviewed clip by clip by a Hebrew speaker**: listen to every clip (/audio/alef-bet/review.html) and remove or redo wrong ones (\`--only id --redo\`) before wide release. Check Azure's terms on using generated audio inside a published app before wide release.\n`,
+  `# Alef-bet sound clips\n\n- Provider: Microsoft Azure AI Speech (text to speech), region ${region}\n- Voices: he-IL-HilaNeural (female, folder hila) and he-IL-AvriNeural (male, folder avri)\n- Generated: ${new Date().toISOString().slice(0, 10)}\n- Clips: ${Object.entries(sorted).map(([v, m]) => `${v} ${Object.keys(m).length}`).join(", ")} of ${everyClip.length} each\n- Script: scripts/alef-bet-audio/generate.mjs (slowed 15% for learners)\n\nStatus: the owner listened to samples in both voices and approved them. **Not yet reviewed clip by clip by a Hebrew speaker**: listen to every clip and remove or redo wrong ones (\`--only id --redo\`) before wide release. Check Azure's terms on using generated audio inside a published app before wide release.\n`,
 );
-console.log("Wrote the manifest, review.html and docs/alef-bet-audio.md.");
+console.log("Wrote the manifest and docs/alef-bet-audio.md.");

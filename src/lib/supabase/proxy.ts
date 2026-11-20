@@ -2,8 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseConfigured, supabaseKey, supabaseUrl } from "./env";
 
-// Routes anyone can open without signing in. /audio holds the Alef-bet sound clips (plain files, like the images).
-const PUBLIC_PATHS = ["/", "/login", "/auth", "/audio"];
+// Routes anyone can open without signing in.
+const PUBLIC_PATHS = ["/", "/login", "/auth"];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some(

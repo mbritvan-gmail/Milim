@@ -102,14 +102,14 @@ export const CARDS: LetterCard[] = [
   L("pe", "פ",
     "pe",
     [s("פ" + DAGESH, "p", "with a dot inside"), s("פ", "f", "no dot"), s("ף", "f", "final form: only at the end of a word", 1)],
-    [w("", "פֶּ", "ה", "pe", "mouth"), w("", "פֶּ", "רַח", "perakh", "flower", { say: "פרח" }), w("כַּ", "ף", "", "kaf", "spoon", { say: "כף" })],
+    [w("", "פֶּ", "ה", "pe", "mouth"), w("", "פֶּ", "רַח", "perakh", "flower"), w("כַּ", "ף", "", "kaf", "spoon", { say: "כף" })],
     { final: "ף", name2: "fe", forms: ["פ" + DAGESH, "פ", "ף"] },
   ),
   L("tsadi", "צ", "tsadi", [s("צ", "ts", ""), s("ץ", "ts", "final form: only at the end of a word", 0)], [w("", "צָ", "ב", "tsav", "turtle"), w("", "צִ", "פּוֹר", "tsipor", "bird", { say: "ציפור" }), w("עֵ", "ץ", "", "ets", "tree", { say: "עץ" })], { final: "ץ" }),
   L("kuf", "ק", "kuf", [s("ק", "k", "")], [w("", "קָ", "פֶה", "kafe", "coffee"), w("", "קֶ", "רַח", "kerakh", "ice", { say: "קרח" }), w("", "ק", "וֹף", "kof", "monkey", { say: "קוף" })]),
   L("resh", "ר", "resh", [s("ר", "r", "not rolled")], [w("", "רֹ", "אשׁ", "rosh", "head"), w("", "רֶ", "גֶל", "regel", "foot", { say: "רגל" }), w("", "רַ", "כֶּבֶת", "rakevet", "train", { say: "רכבת" })]),
   L("shin", "ש", "shin", [s("ש" + SHIN_DOT, "sh", "dot on the right (shin)"), s("ש" + SIN_DOT, "s", "dot on the left (sin)")], [w("", "שָׁ", "לוֹם", "shalom", "hello, peace"), w("", "שֵׁ", "ם", "shem", "name"), w("", "שָׂ", "מֵחַ", "sameakh", "happy", { say: "שמח" })], { name2: "sin", forms: ["ש" + SHIN_DOT, "ש" + SIN_DOT] }),
-  L("tav", "ת", "tav", [s("ת", "t", "")], [w("", "תּ", "וּת", "tut", "berry", { say: "תות", carrier: "זה" }), w("", "תַּ", "פּוּחַ", "tapuakh", "apple", { say: "תפוח" }), w("", "תִּ", "ינוֹק", "tinok", "baby", { say: "תינוק" })]),
+  L("tav", "ת", "tav", [s("ת", "t", "")], [w("", "תּ", "וּת", "tut", "strawberry", { say: "תות", carrier: "זה" }), w("", "תַּ", "פּוּחַ", "tapuakh", "apple", { say: "תפוח" }), w("", "תִּ", "ינוֹק", "tinok", "baby", { say: "תינוק" })]),
 ];
 
 // Vowel signs, shown on alef. Alef is silent, so each sign on its own gives the pure vowel sound.
@@ -131,7 +131,7 @@ export const VOWEL_CARDS: LetterCard[] = [
   V("v-e", on(TSERE) + "  " + on(SEGOL), "e", [s(on(TSERE), "e", "tsere (two dots side by side)"), s(on(SEGOL), "e", "segol (three dots)")], [w("", "לֶ", "חֶם", "lekhem", "bread"), w("", "נֵ", "ר", "ner", "candle"), w("", "שֵׁ", "ם", "shem", "name")]),
   V("v-i", on(HIRIQ) + "  א" + HIRIQ + "י", "i", [s(on(HIRIQ), "ee", "hiriq (one dot)"), s("א" + HIRIQ + "י", "ee", "often written with a yod")], [w("", "שִׁי", "ר", "shir", "song"), w("", "פִּי", "ל", "pil", "elephant", { say: "פיל" }), w("", "תִּי", "נוֹק", "tinok", "baby", { say: "תינוק" })]),
   V("v-o", on(HOLAM) + "  או" + HOLAM, "o", [s(on(HOLAM), "o", "holam (a dot on top)"), s("או" + HOLAM, "o", "often written with a vav")], [w("", "טוֹ", "ב", "tov", "good"), w("", "רֹ", "אשׁ", "rosh", "head"), w("", "דֹּ", "ב", "dov", "bear", { say: "דב" })]),
-  V("v-u", on(KUBUTZ) + "  או" + DAGESH, "u", [s(on(KUBUTZ), "u", "kubutz (three dots on a slant)"), s("או" + DAGESH, "u", "shuruk (a vav with a dot)")], [w("", "סוּ", "ס", "sus", "horse"), w("", "תּוּ", "ת", "tut", "berry", { say: "תות", carrier: "זה" }), w("", "שֻׁ", "לְחָן", "shulkhan", "table", { say: "שולחן" })]),
+  V("v-u", on(KUBUTZ) + "  או" + DAGESH, "u", [s(on(KUBUTZ), "u", "kubutz (three dots on a slant)"), s("או" + DAGESH, "u", "shuruk (a vav with a dot)")], [w("", "סוּ", "ס", "sus", "horse"), w("", "תּוּ", "ת", "tut", "strawberry", { say: "תות", carrier: "זה" }), w("", "שֻׁ", "לְחָן", "shulkhan", "table", { say: "שולחן" })]),
   V("v-shva", on(SHVA), "shva", [{ ...s(on(SHVA), "silent", "shva: two dots, one above the other. In some words it is a very short “e”."), silent: true }], [w("", "זְ", "מַן", "zman", "time"), w("", "שְׁ", "תַּיִם", "shtayim", "two", { say: "שתיים" }), w("", "בְּ", "רָכָה", "bracha", "blessing", { say: "ברכה" })]),
 ];
 
