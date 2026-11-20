@@ -110,10 +110,10 @@ export function CardRunner({
               ניקוד
             </span>
           </div>
-          {/* The nikud in order, down the page. Tap a cell to hear that letter with that nikud. */}
+          {/* The nikud in order, down the page. Tap a cell to hear that letter with that nikud. A letter with two forms lists the first on the right, the way Hebrew reads. */}
           <div className="overflow-hidden rounded-2xl border border-border bg-surface">
             {nikudRows(card).map((row, r) => (
-              <div key={row.vowel} className={`flex items-center ${r > 0 ? "border-t border-border" : ""}`}>
+              <div key={row.vowel} className={`flex flex-row-reverse items-center ${r > 0 ? "border-t border-border" : ""}`}>
                 {row.cells.map((cell) => (
                   <button
                     key={cell.clipId}
@@ -136,16 +136,14 @@ export function CardRunner({
         <ul className="flex flex-col gap-2">
           {card.sounds.map((sound, i) => (
             <li key={i} className="flex items-center gap-3.5 rounded-xl border border-border bg-surface px-3.5 py-2">
-              <span lang="he" className="hebrew w-14 shrink-0 text-center text-4xl font-bold leading-none text-accent">
-                {sound.form}
-              </span>
-              <div className="flex flex-col">
+              <div className="flex flex-1 flex-col">
                 <p className="text-[17px] font-semibold">{sound.say}</p>
                 {sound.note && <p className="text-xs text-muted">{sound.note}</p>}
               </div>
-              <span className="ml-auto">
-                <SpeakerButton voice={voice} clipId={`${card.id}-sound-${i + 1}`} label={`Hear the sound: ${sound.say}`} />
+              <span lang="he" className="hebrew w-14 shrink-0 text-center text-4xl font-bold leading-none text-accent">
+                {sound.form}
               </span>
+              <SpeakerButton voice={voice} clipId={`${card.id}-sound-${i + 1}`} label={`Hear the sound: ${sound.say}`} />
             </li>
           ))}
         </ul>
@@ -159,10 +157,9 @@ export function CardRunner({
           </span>
         </div>
         <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-          {/* Hebrew sits on the right, English on the left: the way each is read. The speaker is at the left end. */}
+          {/* English on the left, Hebrew on the right: the way each is read. The speaker is at the right end. */}
           {card.examples.map((word, i) => (
-            <div key={word.translit} className={`flex items-center gap-3 py-2 pl-2 pr-3.5 ${i > 0 ? "border-t border-border" : ""}`}>
-              <SpeakerButton voice={voice} clipId={wordClipId(word)} label={`Hear the word: ${word.translit}`} />
+            <div key={word.translit} className={`flex items-center gap-3 py-2 pl-3.5 pr-2 ${i > 0 ? "border-t border-border" : ""}`}>
               <span className="flex-1 text-sm">
                 {showTranslit && (
                   <>
@@ -177,6 +174,7 @@ export function CardRunner({
                 <span className="font-bold text-accent">{show(word.hl)}</span>
                 {show(word.post)}
               </span>
+              <SpeakerButton voice={voice} clipId={wordClipId(word)} label={`Hear the word: ${word.translit}`} />
             </div>
           ))}
         </div>
