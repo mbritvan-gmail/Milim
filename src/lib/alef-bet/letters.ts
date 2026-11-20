@@ -280,7 +280,7 @@ export type Clip = { id: string; text: string; kind: "name" | "sound" | "word"; 
 const SHIN_SHVA = "ש" + "\u05B0" + SHIN_DOT; // shin with the two dots, as chosen by ear
 // Names that needed a hint (chosen by ear, 2026-11). Every other name is the letter with the two dots under it.
 const NAME_HINT: Record<string, string> = {
-  "bet-name": "\u02c8bet", "bet-name2": "\u02c8vet", "kaf-name": "\u02c8kaf", "pe-name": "\u02c8pe", "pe-name2": "\u02c8fe",
+  "bet-name": "\u02c8bet", "bet-name2": "\u02c8vet", "kaf-name": "\u02c8kaf", "kaf-name2": "\u02c8xaf", "pe-name": "\u02c8pe", "pe-name2": "\u02c8fe",
   "shin-name2": "\u02c8sin", "vav-name": "\u02c8vav", "lamed-name": "\u02c8lamed", "ayin-name": "\u02c8ajin",
 };
 // The text for each name that is not simply "letter + two dots".
