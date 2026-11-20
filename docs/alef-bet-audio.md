@@ -6,4 +6,4 @@
 - Clips: avri 87, hila 87 of 87 each
 - Script: scripts/alef-bet-audio/generate.mjs (slowed 15% for learners)
 
-Status: the owner listened to samples in both voices and approved them. **Not yet reviewed clip by clip by a Hebrew speaker**: listen to every clip (scripts/alef-bet-audio/review.html) and remove or redo wrong ones (`--only id --redo`) before wide release. Check Azure's terms on using generated audio inside a published app before wide release.
+Status: the owner listened to samples in both voices and approved them. **Not yet reviewed clip by clip by a Hebrew speaker**: listen to every clip (/audio/alef-bet/review.html) and remove or redo wrong ones (`--only id --redo`) before wide release. Check Azure's terms on using generated audio inside a published app before wide release.
