@@ -187,7 +187,7 @@ Illustrative; adapt it to the project's conventions and to the "where letters li
 
 Prefer words already in the dictionary. These are only fallbacks.
 
-אבא aba · בית bayit · גן gan · דג dag · הר har · זמן zman · חתול chatul · טוב tov · יד yad · כלב kelev · לחם lekhem · מים mayim · סוס sus · פה pe · קפה kafe · ראש rosh · שלום shalom · תות tut
+אבא aba · בית bayit · גן gan · דג dag · הר har · זמן zman · חתול chatul · טוב tov · יד yad · כלב kelev · לחם lechem · מים mayim · סוס sus · פה pe · קפה kafe · ראש rosh · שלום shalom · תות tut
 
 ## 13. Done when
 

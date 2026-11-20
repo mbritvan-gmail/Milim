@@ -47,6 +47,7 @@ export function CardRunner({
   // A clip never carries on over the next card or after the card is closed.
   useEffect(() => () => stopClips(), [index]);
   const isLast = index === cards.length - 1;
+  const notes = notesFor(card);
   // A letter whose dot changes its name shows its forms side by side (bet and vet), in print and in script.
   const printText = card.forms ? card.forms.join(" ") : card.print;
   const scriptText = card.forms ? card.forms.join(" ") : card.script;
@@ -159,7 +160,7 @@ export function CardRunner({
         </ul>
       )}
 
-      {notesFor(card).length > 0 && (
+      {notes.length > 0 && (
         <section className="flex flex-col gap-2">
           <div className="flex items-baseline justify-between px-0.5">
             <h2 className="text-[17px] font-semibold">Notes</h2>
@@ -168,8 +169,8 @@ export function CardRunner({
             </span>
           </div>
           <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-            {notesFor(card).map((note, i) => (
-              <div key={note.text} className={`flex items-center gap-3 px-3.5 py-2.5 ${i > 0 ? "border-t border-border" : ""}`}>
+            {notes.map((note, i) => (
+              <div key={i} className={`flex items-center gap-3 px-3.5 py-2.5 ${i > 0 ? "border-t border-border" : ""}`}>
                 <span className="flex-1 text-sm leading-snug">{note.text}</span>
                 {note.glyph && (
                   <span lang="he" className="hebrew whitespace-pre text-[28px] font-bold leading-tight">
