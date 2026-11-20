@@ -159,13 +159,10 @@ export function CardRunner({
           </span>
         </div>
         <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+          {/* Hebrew sits on the right, English on the left: the way each is read. The speaker is at the left end. */}
           {card.examples.map((word, i) => (
-            <div key={word.translit} className={`flex items-center gap-3 py-2 pl-3.5 pr-2 ${i > 0 ? "border-t border-border" : ""}`}>
-              <span lang="he" className="hebrew min-w-24 text-3xl leading-snug">
-                {show(word.pre)}
-                <span className="font-bold text-accent">{show(word.hl)}</span>
-                {show(word.post)}
-              </span>
+            <div key={word.translit} className={`flex items-center gap-3 py-2 pl-2 pr-3.5 ${i > 0 ? "border-t border-border" : ""}`}>
+              <SpeakerButton voice={voice} clipId={wordClipId(word)} label={`Hear the word: ${word.translit}`} />
               <span className="flex-1 text-sm">
                 {showTranslit && (
                   <>
@@ -175,7 +172,11 @@ export function CardRunner({
                 )}
                 {word.english}
               </span>
-              <SpeakerButton voice={voice} clipId={wordClipId(word)} label={`Hear the word: ${word.translit}`} />
+              <span lang="he" className="hebrew text-3xl leading-snug">
+                {show(word.pre)}
+                <span className="font-bold text-accent">{show(word.hl)}</span>
+                {show(word.post)}
+              </span>
             </div>
           ))}
         </div>

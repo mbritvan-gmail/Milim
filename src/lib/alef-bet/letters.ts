@@ -13,6 +13,8 @@ export type Sound = {
   note: string;
   /** A final form says the same as an earlier row of its card: the index of that row (it has no clips of its own). */
   as?: number;
+  /** The sign is usually silent (shva): no clip, so no speaker. */
+  silent?: boolean;
 };
 
 export type Example = {
@@ -130,7 +132,7 @@ export const VOWEL_CARDS: LetterCard[] = [
   V("v-i", on(HIRIQ) + "  א" + HIRIQ + "י", "i", [s(on(HIRIQ), "ee", "hiriq (one dot)"), s("א" + HIRIQ + "י", "ee", "often written with a yod")], [w("", "שִׁי", "ר", "shir", "song"), w("", "פִּי", "ל", "pil", "elephant", { say: "פיל" }), w("", "תִּי", "נוֹק", "tinok", "baby", { say: "תינוק" })]),
   V("v-o", on(HOLAM) + "  או" + HOLAM, "o", [s(on(HOLAM), "o", "holam (a dot on top)"), s("או" + HOLAM, "o", "often written with a vav")], [w("", "טוֹ", "ב", "tov", "good"), w("", "רֹ", "אשׁ", "rosh", "head"), w("", "דֹּ", "ב", "dov", "bear", { say: "דב" })]),
   V("v-u", on(KUBUTZ) + "  או" + DAGESH, "u", [s(on(KUBUTZ), "u", "kubutz (three dots on a slant)"), s("או" + DAGESH, "u", "shuruk (a vav with a dot)")], [w("", "סוּ", "ס", "sus", "horse"), w("", "תּוּ", "ת", "tut", "berry", { say: "תות", carrier: "זה" }), w("", "שֻׁ", "לְחָן", "shulkhan", "table", { say: "שולחן" })]),
-  V("v-shva", on(SHVA), "shva", [s(on(SHVA), "e", "shva (two dots, one above the other)")], [w("", "זְ", "מַן", "zman", "time"), w("", "שְׁ", "תַּיִם", "shtayim", "two", { say: "שתיים" }), w("", "בְּ", "רָכָה", "bracha", "blessing", { say: "ברכה" })]),
+  V("v-shva", on(SHVA), "shva", [{ ...s(on(SHVA), "silent", "shva: two dots, one above the other. In some words it is a very short “e”."), silent: true }], [w("", "זְ", "מַן", "zman", "time"), w("", "שְׁ", "תַּיִם", "shtayim", "two", { say: "שתיים" }), w("", "בְּ", "רָכָה", "bracha", "blessing", { say: "ברכה" })]),
 ];
 
 export const ALL_CARDS: LetterCard[] = [...CARDS, ...VOWEL_CARDS];
@@ -270,7 +272,9 @@ export function allClips(): Clip[] {
         for (const v of VOWEL_OPTIONS) add({ id: soundClipId(card, i, v.id), text: soundSpeak(card, i, v.id), kind: "sound" });
       });
     } else {
-      card.sounds.forEach((_, i) => add({ id: soundClipId(card, i), text: soundSpeak(card, i, DEFAULT_VOWEL), kind: "sound" }));
+      card.sounds.forEach((sound, i) => {
+        if (!sound.silent) add({ id: soundClipId(card, i), text: soundSpeak(card, i, DEFAULT_VOWEL), kind: "sound" });
+      });
     }
     for (const word of card.examples) {
       add({ id: wordClipId(word), text: word.say ?? word.pre + word.hl + word.post, kind: "word", ...(word.carrier ? { carrier: word.carrier } : {}) });
