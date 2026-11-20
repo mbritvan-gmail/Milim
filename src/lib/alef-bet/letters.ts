@@ -166,11 +166,13 @@ export const plainHebrew = (text: string) => text.replace(NIKUD, "");
 //   word  "word-<translit>"             the example word
 // ---------------------------------------------------------------------------
 export const VOWEL_OPTIONS = [
-  { id: "a", sign: "\u05B7" }, // patach
-  { id: "e", sign: "\u05B5" }, // tsere
-  { id: "i", sign: "\u05B4" }, // hiriq
-  { id: "o", sign: "\u05B9" }, // holam
-  { id: "u", sign: "\u05BB" }, // kubutz
+  // `sign` is what the clips use; `shown` is what the picker button shows: the usual forms of that vowel on alef
+  // (or on vav for the two that are written with it).
+  { id: "a", sign: "\u05B7", shown: "\u05D0\u05B7 \u05D0\u05B8" }, // patach, kamatz
+  { id: "e", sign: "\u05B5", shown: "\u05D0\u05B5 \u05D0\u05B6" }, // tsere, segol
+  { id: "i", sign: "\u05B4", shown: "\u05D0\u05B4" }, // hiriq
+  { id: "o", sign: "\u05B9", shown: "\u05D0\u05B9 \u05D5\u05B9" }, // holam, vav with holam
+  { id: "u", sign: "\u05BB", shown: "\u05D0\u05BB \u05D5\u05BC" }, // kubutz, shuruk
 ] as const;
 export type VowelId = (typeof VOWEL_OPTIONS)[number]["id"];
 export const DEFAULT_VOWEL: VowelId = "a";

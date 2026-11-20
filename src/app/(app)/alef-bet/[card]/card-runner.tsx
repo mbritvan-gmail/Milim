@@ -88,9 +88,12 @@ export function CardRunner({
                 type="button"
                 onClick={() => setVowel(v.id)}
                 aria-pressed={vowel === v.id}
-                className={`h-10 flex-1 rounded-full border text-base font-semibold transition-colors ${vowel === v.id ? "border-transparent bg-accent text-accent-contrast" : "border-border text-muted hover:bg-surface hover:text-foreground"}`}
+                aria-label={`Vowel ${v.id}`}
+                className={`flex h-11 flex-1 items-center justify-center rounded-full border transition-colors ${vowel === v.id ? "border-transparent bg-accent text-accent-contrast" : "border-border hover:bg-surface"}`}
               >
-                {v.id}
+                <span lang="he" className="hebrew whitespace-pre text-[26px] font-semibold leading-none">
+                  {v.shown}
+                </span>
               </button>
             ))}
           </div>
